@@ -20,6 +20,8 @@ app.use(express.static(__dirname + '/pub'));
 
 app.get('/', routes.index);
 
+app.post('/update', routes.index);
+
 var port = process.env.PORT || 8080;
 
 app.listen(port, function() {

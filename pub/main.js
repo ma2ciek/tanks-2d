@@ -44,13 +44,14 @@ var board = {
 	}
 }
 
-var data = {
-	audio: {
-		shot: new Audio('gun_shot.wav')
-	}
-}
-
 var game = {
+	audio: {
+		shot: (function() {
+			var a = new Audio('gun_shot.wav');
+			a.volume = 0.5;
+			return a;
+		})()
+	},
 	context: null,
 	counter: 0,
 	timer: {
@@ -168,7 +169,7 @@ var tank = {
 	},
 	shot: function() {
 		bullets.create();
-		data.audio.shot.cloneNode().play();
+		game.audio.shot.cloneNode().play();
 	},
 	'draw': function() {
 		var ctx = game_context
@@ -304,14 +305,14 @@ var bullets = {
 				i--;
 				continue;
 			}
-			for (var j = 0; j<board.elems.length; j++) {
+			for (var j = 0; j < board.elems.length; j++) {
 				var e = board.elems[j];
-				if(b.x + b.r > e.x1 && b.x - b.r < e.x2 && b.y + b.r > e.y1 && b.y - b.r < e.y2) {
+				if (b.x + b.r > e.x1 && b.x - b.r < e.x2 && b.y + b.r > e.y1 && b.y - b.r < e.y2) {
 					e.life--;
-					if(e.life <= 0) {
+					if (e.life <= 0) {
 						bg_context.clearRect(e.x1, e.y1, e.y1, e.y2);
 						board.elems.splice(j, 1);
-					} 
+					}
 					bullets.list.splice(i, 1);
 					i--;
 					break;
