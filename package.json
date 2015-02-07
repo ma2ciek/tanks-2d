@@ -1,0 +1,23 @@
+{
+  "name": "tanks-2d",
+  "version": "0.0.1",
+  "description": "Tanks 2D game",
+  "main": "index.js",
+  "engines": {
+    "node": "0.10.x"
+  },
+  "dependencies": {
+    "jade" : "~1.9.x",
+    "express": "~4.9.x",
+    "body-parser": "~1.11.x",
+    "method-override": "*"
+  },
+  "keywords": [
+    "go",
+    "go master",
+    "online",
+    "Maciej Bukowski"
+  ],
+  "license": "Copyright",
+  "private": "true"
+}
