@@ -3,6 +3,27 @@
 var game_context;
 var bg_context;
 var PI = Math.PI;
+var socket = io();
+
+
+// CHAT
+function submit() {
+	if($('#m').val() == "") return;
+	socket.emit('message', $('#m').val());
+	$('#messages').append('<li class="my"><span>' + $('#m').val() + '</span></li>');
+	$('#m').val('');
+}
+socket.on('message', function(msg) {
+	$('#messages').append('<li><span>' +  msg + '</span></li>');
+});
+socket.on('n-message', function(msg) {
+	$('#messages').append('<li class="neutral"><span>' +  msg + '</span></li>');
+});
+socket.on('clients', function(msg) {
+	$('#clients').text(msg);
+});
+
+
 
 window.addEventListener('load', function load() {
 	game_context = $('#game')[0].getContext('2d');
@@ -31,12 +52,8 @@ var board = {
 	}],
 	create: function() {
 		$('canvas').attr({
-			width: 1000,
-			height: 500
-		});
-		$('main').css({
-			width: '1000px',
-			height: '500px'
+			width: board.WIDTH,
+			height: board.HEIGHT
 		});
 
 		for (var i = 0; i < board.elems.length; i++) {
@@ -119,6 +136,7 @@ var tank = {
 		life: 100,
 	},
 	move: function() {
+
 		var r = this.attr['radius'];
 		var x = this.attr['x'];
 		var y = this.attr['y'];
@@ -219,8 +237,15 @@ var tank = {
 }
 
 function events() {
+	var focus = 0;
+	$('#m').focusin(function() {
+		focus = 1;
+	}).focusout(function() {
+		focus = 0;
+	});
 
 	window.addEventListener('keydown', function(e) {
+		if (focus == 1) return;
 		switch (e.which) {
 			case 37: // LEFT
 			case 65: // A
@@ -238,11 +263,16 @@ function events() {
 			case 83: // S
 				tank.attr['dirY'] = 1;
 				break;
+
+			case 13: // Enter - czat
+				if (!focus) $('#m').trigger('focus');
+				else $('#m').trigger('focusout');
 			default:
 				break;
 		}
 	});
 	window.addEventListener('keyup', function(e) {
+		if (focus == 1) return;
 		switch (e.which) {
 			case 37: // LEFT
 			case 65: // A
@@ -264,7 +294,6 @@ function events() {
 		var rect = can.getBoundingClientRect();
 		player.attr['mx'] = evt.clientX - rect.left;
 		player.attr['my'] = evt.clientY - rect.top;
-
 	});
 	can.addEventListener('click', function(evt) {
 		tank.shot();

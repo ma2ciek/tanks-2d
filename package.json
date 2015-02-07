@@ -7,10 +7,12 @@
     "node": "0.10.x"
   },
   "dependencies": {
-    "jade" : "~1.9.x",
-    "express": "~4.9.x",
     "body-parser": "~1.11.x",
-    "method-override": "*"
+    "express": "~4.9.x",
+    "jade": "~1.9.x",
+    "method-override": "*",
+    "socket.io": "1.3.3",
+    "http": "*"
   },
   "keywords": [
     "go",

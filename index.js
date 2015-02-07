@@ -1,9 +1,10 @@
-var express = require('express');
 var bodyParser = require('body-parser');
 var routes = require('./routes');
 var methodOverride = require('method-override');
-
-var app = module.exports = express();
+var express = require('express');
+var app = express();
+var http = require('http').Server(app);
+var io = require('socket.io')(http);
 
 app.set('view engine', 'jade');
 app.set('views', __dirname + '/views');
@@ -20,12 +21,25 @@ app.use(express.static(__dirname + '/pub'));
 
 app.get('/', routes.index);
 
-app.post('/update', function(req, res) {
-	console.log(req.body.tank_x);
-});
-
 var port = process.env.PORT || 8080;
 
-app.listen(port, function() {
-	console.log("Listening on %d", port);
+io.on('connection', function(socket){
+  	socket.broadcast.emit('n-message', 'Nowa osoba dołączyła do rozmowy');
+  	socket.on('disconnect', function(){
+    	io.emit('n-message', 'Osoba się rozłączyła');
+	});
+	socket.on('message', function(msg){
+		socket.broadcast.emit('message', msg);
+	});
+});
+setInterval(function() {
+	var clients = io.engine.clientsCount
+	if(clients == 1) clients += ' person connected';
+	else clients += ' persons connected'
+	io.emit('clients', clients);
+}, 1000);
+
+
+http.listen(3000, function(){
+  console.log('listening on *:3000');
 });

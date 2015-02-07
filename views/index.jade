@@ -5,9 +5,16 @@ html(lang='pl')
 		meta(http-equiv='PRAGMA', content='NO-CACHE')
 		meta(http-equiv='CACHE-CONTROL', content='NO-CACHE')
 		link(rel='stylesheet', href='style.css', type='text/css')
+		script(src='/socket.io/socket.io.js')
 		script(src='jquery-2.1.0.min.js')
 		script(src='main.js')
 	body
 		main
 			canvas(id='bg')
 			canvas(id='game')
+			div#chat
+				div#clients
+				ul#messages
+				form(action="javascript:submit()")
+					input#m(autocomplete="off") 
+					button Send
