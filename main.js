@@ -64,7 +64,6 @@ var game = {
 		context.stroke();
 		context.closePath();
 
-
 		// Player 2
 		// do dodania
 
@@ -79,9 +78,7 @@ var game = {
 			context.fillStyle = '#333';
 			context.fill();
 			context.closePath();
-
 		}
-
 
 		//game.counter++;
 		//game.timer.id = window.setTimeout(game.draw, game.timer.remaining());
@@ -116,7 +113,6 @@ var player = (function() {
 	}
 })();
 
-
 function animate() {
 	var r = player.get('radius');
 	var x = player.get('x');
@@ -132,9 +128,7 @@ function animate() {
 	x += dx * speed;
 	y += dy * speed;
 
-
-	// kolizje
-
+	// Kolizje
 	if (x < r) {
 		x = r;
 	} else if (x > 500 - r) {
@@ -148,8 +142,6 @@ function animate() {
 
 	player.set('x', x).set('y', y);
 }
-
-
 
 function events() {
 
