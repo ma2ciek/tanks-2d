@@ -5,8 +5,8 @@ var bg_context;
 var PI = Math.PI;
 
 window.addEventListener('load', function load() {
-	game_context = $('#game').getContext('2d');
-	bg_context = $('#bg').getContext('2d');
+	game_context = $('#game')[0].getContext('2d');
+	bg_context = $('#bg')[0].getContext('2d');
 	game.timer.start = +new Date();
 	events();
 	board.create();
@@ -14,6 +14,8 @@ window.addEventListener('load', function load() {
 });
 
 var board = {
+	WIDTH: 1000,
+	HEIGHT: 500,
 	proto: function(x, y, type, src) {
 		// do dodania
 	},
@@ -28,6 +30,15 @@ var board = {
 		life: 10
 	}],
 	create: function() {
+		$('canvas').attr({
+			width: 1000,
+			height: 500
+		});
+		$('main').css({
+			width: '1000px',
+			height: '500px'
+		});
+
 		for (var i = 0; i < board.elems.length; i++) {
 			var e = board.elems[i];
 			e.obj.src = e.src;
@@ -81,7 +92,7 @@ var game = {
 	},
 	clearboard: function() {
 		var context = game_context;
-		context.clearRect(0, 0, 500, 500);
+		context.clearRect(0, 0, board.WIDTH, board.HEIGHT);
 	}
 }
 var player = {
@@ -104,7 +115,8 @@ var tank = {
 			y1: 0,
 			x2: 0,
 			y2: 0
-		}
+		},
+		life: 100,
 	},
 	move: function() {
 		var r = this.attr['radius'];
@@ -124,13 +136,13 @@ var tank = {
 		// Kolizje ze ścianami
 		if (x < r) {
 			x = r;
-		} else if (x > 500 - r) {
-			x = 500 - r;
+		} else if (x > board.WIDTH - r) {
+			x = board.WIDTH - r;
 		}
 		if (y < r) {
 			y = r;
-		} else if (y > 500 - r) {
-			y = 500 - r;
+		} else if (y > board.HEIGHT - r) {
+			y = board.HEIGHT - r;
 		}
 
 		// Kolizje z boksami
@@ -247,11 +259,12 @@ function events() {
 			default:
 		}
 	});
-	var can = $('#game');
+	var can = $('#game')[0];
 	can.addEventListener('mousemove', function(evt) {
 		var rect = can.getBoundingClientRect();
 		player.attr['mx'] = evt.clientX - rect.left;
 		player.attr['my'] = evt.clientY - rect.top;
+
 	});
 	can.addEventListener('click', function(evt) {
 		tank.shot();
@@ -300,7 +313,7 @@ var bullets = {
 			b.x += b.sx * 10;
 			b.y += b.sy * 10;
 
-			if (b.x < 0 || b.y < 0 || b.x > 500 || b.y > 500) {
+			if (b.x < 0 || b.y < 0 || b.x > board.WIDTH || b.y > board.HEIGHT) {
 				bullets.list.splice(i, 1);
 				i--;
 				continue;

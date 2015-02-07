@@ -20,7 +20,9 @@ app.use(express.static(__dirname + '/pub'));
 
 app.get('/', routes.index);
 
-app.post('/update', routes.index);
+app.post('/update', function(req, res) {
+	console.log(req.body.tank_x);
+});
 
 var port = process.env.PORT || 8080;
 
