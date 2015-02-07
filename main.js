@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 var game_context;
 var bg_context;
@@ -18,13 +18,14 @@ var board = {
 		// do dodania
 	},
 	elems: [{
-		"type": "box",
-		"x1": 200,
-		"y1": 200,
-		"x2": 264,
-		"y2": 264,
-		"src": "./img/box.jpg",
-		"obj": new Image()
+		type: 'box',
+		x1: 200,
+		y1: 200,
+		x2: 264,
+		y2: 264,
+		src: './img/box.jpg',
+		obj: new Image(),
+		life: 10
 	}],
 	create: function() {
 		for (var i = 0; i < board.elems.length; i++) {
@@ -84,8 +85,8 @@ var game = {
 }
 var player = {
 	attr: {
-		"mx": 0,
-		"my": 0,
+		'mx': 0,
+		'my': 0,
 	}
 };
 
@@ -115,8 +116,6 @@ var tank = {
 		var dy = this.attr['dirY'];
 
 		if (dx != 0 && dy != 0) speed /= 1.4;
-
-
 
 		x += dx * speed;
 		y += dy * speed;
@@ -212,19 +211,19 @@ function events() {
 		switch (e.which) {
 			case 37: // LEFT
 			case 65: // A
-				tank.attr["dirX"] = -1;
+				tank.attr['dirX'] = -1;
 				break;
 			case 38: // UP
 			case 87: // W
-				tank.attr["dirY"] = -1;
+				tank.attr['dirY'] = -1;
 				break;
 			case 39: // RIGHT
 			case 68: // D
-				tank.attr["dirX"] = 1;
+				tank.attr['dirX'] = 1;
 				break;
 			case 40: // DOWN
 			case 83: // S
-				tank.attr["dirY"] = 1;
+				tank.attr['dirY'] = 1;
 				break;
 			default:
 				break;
@@ -236,13 +235,13 @@ function events() {
 			case 65: // A
 			case 39: // RIGHT
 			case 68: // D
-				tank.attr["dirX"] = 0;
+				tank.attr['dirX'] = 0;
 				break;
 			case 38: // UP
 			case 87: // W
 			case 40: // DOWN
 			case 83: // S
-				tank.attr["dirY"] = 0;
+				tank.attr['dirY'] = 0;
 				break;
 			default:
 		}
@@ -288,6 +287,8 @@ var bullets = {
 
 		this.sx = (mx - x) / size;
 		this.sy = (my - y) / size;
+
+		this.r = 5;
 	},
 	create: function() {
 		bullets.list.push(new bullets.proto());
@@ -301,7 +302,24 @@ var bullets = {
 			if (b.x < 0 || b.y < 0 || b.x > 500 || b.y > 500) {
 				bullets.list.splice(i, 1);
 				i--;
+				continue;
 			}
+			for (var j = 0; j<board.elems.length; j++) {
+				var e = board.elems[j];
+				if(b.x + b.r > e.x1 && b.x - b.r < e.x2 && b.y + b.r > e.y1 && b.y - b.r < e.y2) {
+					e.life--;
+					if(e.life <= 0) {
+						bg_context.clearRect(e.x1, e.y1, e.y1, e.y2);
+						board.elems.splice(j, 1);
+					} 
+					bullets.list.splice(i, 1);
+					i--;
+					break;
+
+				}
+			}
+
+
 		}
 	},
 	draw: function() {
@@ -309,7 +327,7 @@ var bullets = {
 		for (var i = 0; i < bullets.list.length; i++) {
 			var b = bullets.list[i];
 			context.beginPath();
-			context.arc(b.x, b.y, 5, 0, 2 * PI, false);
+			context.arc(b.x, b.y, b.r, 0, 2 * PI, false);
 			context.fillStyle = '#333';
 			context.fill();
 			context.closePath();
