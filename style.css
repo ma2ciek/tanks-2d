@@ -3,10 +3,21 @@ body {
 	background: #333;
 }
 
-canvas {
+main {
 	width: 500px;
 	height: 500px;
 	margin: 20px auto;
 	background: white;
 	display: block;
+	position: relative;
+}
+
+canvas#bg {
+	z-index: 0;
+	position: absolute;
+}
+
+canvas#game {
+	z-index: 1;
+	position: absolute;
 }

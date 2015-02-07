@@ -1,14 +1,53 @@
 "use strict";
 
+var game_context;
+var bg_context;
+var PI = Math.PI;
+
 window.addEventListener('load', function load() {
-	game.context = $('canvas').getContext('2d');
+	game_context = $('#game').getContext('2d');
+	bg_context = $('#bg').getContext('2d');
 	game.timer.start = +new Date();
-	game.context.webkitImageSmoothingEnabled = true;
 	events();
+	board.create();
 	game.draw();
 });
 
-var PI = Math.PI;
+var board = {
+	proto: function(x, y, type, src) {
+		// do dodania
+	},
+	elems: [{
+		"type": "box",
+		"x1": 200,
+		"y1": 200,
+		"x2": 264,
+		"y2": 264,
+		"src": "./img/box.jpg",
+		"obj": new Image()
+	}],
+	create: function() {
+		for (var i = 0; i < board.elems.length; i++) {
+			var e = board.elems[i];
+			e.obj.src = e.src;
+			switch (e.type) {
+				case 'box':
+					e.obj.onload = function() {
+						bg_context.drawImage(e.obj, e.x1, e.y1, e.x2 - e.x1, e.y2 - e.y1);
+					}
+					break;
+				default:
+					break;
+			}
+		}
+	}
+}
+
+var data = {
+	audio: {
+		shot: new Audio('gun_shot.wav')
+	}
+}
 
 var game = {
 	context: null,
@@ -28,119 +67,143 @@ var game = {
 
 	draw: function() {
 
-		var context = game.context;
+		game.clearboard();
 
-		context.clearRect(0, 0, 500, 500);
+		tank.move();
+		tank.draw();
 
-		animate();
-
-		// Player 1
-		context.beginPath();
-		context.arc(player.get('x'), player.get('y'), 20, 0, 2 * PI, false);
-		context.strokeStyle = '#333';
-		context.lineWidth = 3;
-		context.stroke();
-		context.closePath();
-
-		context.beginPath();
-		context.arc(player.get('x'), player.get('y'), 10, 0, 2 * PI, false);
-		context.fillStyle = '#333';
-		context.fill();
-		context.closePath();
-
-		var v = new vector(player.get('mx') - player.get('x'), player.get('my') - player.get('y'));
-		player.set('lufa', {
-			x1: player.get('x') + v.unit.x * 8,
-			y1: player.get('y') + v.unit.y * 8,
-			x2: player.get('x') + v.unit.x * 30,
-			y2: player.get('y') + v.unit.y * 30
-		})
-
-
-		context.beginPath();
-		context.moveTo(player.get('lufa').x1, player.get('lufa').y1);
-		context.lineWidth = 6;
-		context.lineTo(player.get('lufa').x2, player.get('lufa').y2);
-		context.stroke();
-		context.closePath();
-
-		// Player 2
-		// do dodania
-
-		// BULLETS
-
-		bullets.animate();
-
-		for (var i = 0; i < bullets.list.length; i++) {
-			var b = bullets.list[i];
-			context.beginPath();
-			context.arc(b.x, b.y, 5, 0, 2 * PI, false);
-			context.fillStyle = '#333';
-			context.fill();
-			context.closePath();
-		}
-
-		//game.counter++;
-		//game.timer.id = window.setTimeout(game.draw, game.timer.remaining());
+		bullets.move();
+		bullets.draw();
 
 		window.requestAnimationFrame(game.draw)
+	},
+	clearboard: function() {
+		var context = game_context;
+		context.clearRect(0, 0, 500, 500);
 	}
 }
-var player = (function() {
-	// CZOŁG
-	var attr = {
-		"x": 100,
-		"y": 100,
-		"max_speed": 6,
-		"dirX": 0,
-		"dirY": 0,
-		"radius": 22,
+var player = {
+	attr: {
 		"mx": 0,
 		"my": 0,
-		"lufa": {
-			"x": 0,
-			"y": 0
+	}
+};
+
+var tank = {
+	attr: {
+		x: 100,
+		y: 100,
+		speed: 6,
+		dirX: 0,
+		dirY: 0,
+		radius: 22,
+		lufa: {
+			x1: 0,
+			y1: 0,
+			x2: 0,
+			y2: 0
 		}
-	}
-	return {
-		'get': function(key) {
-			return attr[key];
-		},
-		'set': function(key, value) {
-			attr[key] = value;
-			return this;
+	},
+	move: function() {
+		var r = this.attr['radius'];
+		var x = this.attr['x'];
+		var y = this.attr['y'];
+
+		var speed = this.attr['speed'];
+
+		var dx = this.attr['dirX'];
+		var dy = this.attr['dirY'];
+
+		if (dx != 0 && dy != 0) speed /= 1.4;
+
+
+
+		x += dx * speed;
+		y += dy * speed;
+
+		// Kolizje ze ścianami
+		if (x < r) {
+			x = r;
+		} else if (x > 500 - r) {
+			x = 500 - r;
 		}
+		if (y < r) {
+			y = r;
+		} else if (y > 500 - r) {
+			y = 500 - r;
+		}
+
+		// Kolizje z boksami
+
+		for (var i = 0; i < board.elems.length; i++) {
+			var b = board.elems[i];
+			if (b.type != 'box') continue;
+
+			if (b.x1 < x + r && b.x2 > x - r && b.y1 < y + r && b.y2 > y - r) {
+
+				if (dx == -1) {
+					if (Math.abs(b.x2 - (x - r)) <= Math.abs(dx * speed)) { // kolizja z prawym bokiem boxu
+						x = b.x2 + r;
+					}
+				} else if (dx == 1) {
+					if (Math.abs(b.x1 - (x + r)) <= Math.abs(dx * speed)) { // kolizja z lewym bokiem boxu
+						x = b.x1 - r;
+					}
+				}
+
+				if (dy == -1) {
+					if (Math.abs(b.y2 - (y - r)) <= Math.abs(dy * speed)) { // kolizja z prawym bokiem boxu
+						y = b.y2 + r;
+					}
+				} else if (dy == 1) {
+					if (Math.abs(b.y1 - (y + r)) <= Math.abs(dy * speed)) { // kolizja z lewym bokiem boxu
+						y = b.y1 - r;
+					}
+				}
+
+			}
+		}
+
+		this.attr['x'] = x;
+		this.attr['y'] = y;
+	},
+	shot: function() {
+		bullets.create();
+		data.audio.shot.cloneNode().play();
+	},
+	'draw': function() {
+		var ctx = game_context
+		var pa = player.attr;
+		var ta = tank.attr;
+
+		ctx.beginPath();
+		ctx.arc(ta['x'], ta['y'], 20, 0, 2 * PI, false);
+		ctx.strokeStyle = '#333';
+		ctx.lineWidth = 3;
+		ctx.stroke();
+		ctx.closePath();
+
+		ctx.beginPath();
+		ctx.arc(ta['x'], ta['y'], 10, 0, 2 * PI, false);
+		ctx.fillStyle = '#333';
+		ctx.fill();
+		ctx.closePath();
+
+		var v = new vector(pa['mx'] - ta['x'], pa['my'] - ta['y']);
+		ta['lufa'] = {
+			x1: ta['x'] + v.unit.x * 8,
+			y1: ta['y'] + v.unit.y * 8,
+			x2: ta['x'] + v.unit.x * 30,
+			y2: ta['y'] + v.unit.y * 30
+		};
+
+		ctx.beginPath();
+		ctx.moveTo(ta['lufa'].x1, ta['lufa'].y1);
+		ctx.lineWidth = 6;
+		ctx.lineTo(ta['lufa'].x2, ta['lufa'].y2);
+		ctx.stroke();
+		ctx.closePath();
 	}
-})();
-
-function animate() {
-	var r = player.get('radius');
-	var x = player.get('x');
-	var y = player.get('y');
-
-	var speed = player.get("max_speed");
-
-	var dx = player.get('dirX');
-	var dy = player.get('dirY');
-
-	if (dx != 0 && dy != 0) speed /= 1.4;
-
-	x += dx * speed;
-	y += dy * speed;
-
-	// Kolizje
-	if (x < r) {
-		x = r;
-	} else if (x > 500 - r) {
-		x = 500 - r;
-	}
-	if (y < r) {
-		y = r;
-	} else if (y > 500 - r) {
-		y = 500 - r;
-	}
-
-	player.set('x', x).set('y', y);
 }
 
 function events() {
@@ -149,19 +212,19 @@ function events() {
 		switch (e.which) {
 			case 37: // LEFT
 			case 65: // A
-				player.set("dirX", -1);
+				tank.attr["dirX"] = -1;
 				break;
 			case 38: // UP
 			case 87: // W
-				player.set("dirY", -1);
+				tank.attr["dirY"] = -1;
 				break;
 			case 39: // RIGHT
 			case 68: // D
-				player.set("dirX", 1);
+				tank.attr["dirX"] = 1;
 				break;
 			case 40: // DOWN
 			case 83: // S
-				player.set("dirY", 1);
+				tank.attr["dirY"] = 1;
 				break;
 			default:
 				break;
@@ -173,25 +236,25 @@ function events() {
 			case 65: // A
 			case 39: // RIGHT
 			case 68: // D
-				player.set("dirX", 0);
+				tank.attr["dirX"] = 0;
 				break;
 			case 38: // UP
 			case 87: // W
 			case 40: // DOWN
 			case 83: // S
-				player.set("dirY", 0);
+				tank.attr["dirY"] = 0;
 				break;
 			default:
 		}
 	});
-	var canvas = $('canvas');
-	canvas.addEventListener('mousemove', function(evt) {
-		var rect = canvas.getBoundingClientRect();
-		player.set('mx', evt.clientX - rect.left);
-		player.set('my', evt.clientY - rect.top);
+	var can = $('#game');
+	can.addEventListener('mousemove', function(evt) {
+		var rect = can.getBoundingClientRect();
+		player.attr['mx'] = evt.clientX - rect.left;
+		player.attr['my'] = evt.clientY - rect.top;
 	});
-	canvas.addEventListener('click', function(evt) {
-		bullets.create();
+	can.addEventListener('click', function(evt) {
+		tank.shot();
 	});
 }
 
@@ -210,14 +273,16 @@ var vector = function(x, y) {
 var bullets = {
 	list: [],
 	proto: function() {
-		var x = player.get('x');
-		var y = player.get('y');
-		var mx = player.get('mx');
-		var my = player.get('my');
+		var pa = player.attr;
+		var ta = tank.attr;
+		var x = tank.attr['x'];
+		var y = tank.attr['y'];
+		var mx = player.attr['mx'];
+		var my = player.attr['my'];
 
 		var that = this;
-		this.x = player.get('lufa').x2;
-		this.y = player.get('lufa').y2;
+		this.x = tank.attr['lufa'].x2;
+		this.y = tank.attr['lufa'].y2;
 
 		var size = Math.sqrt((mx - x) * (mx - x) + (my - y) * (my - y));
 
@@ -227,16 +292,27 @@ var bullets = {
 	create: function() {
 		bullets.list.push(new bullets.proto());
 	},
-	animate: function() {
+	move: function() {
 		for (var i = 0; i < bullets.list.length; i++) {
 			var b = bullets.list[i];
 			b.x += b.sx * 10;
 			b.y += b.sy * 10;
 
-			if(b.x < 0 || b.y < 0 || b.x > 500 || b.y > 500) {
+			if (b.x < 0 || b.y < 0 || b.x > 500 || b.y > 500) {
 				bullets.list.splice(i, 1);
 				i--;
 			}
+		}
+	},
+	draw: function() {
+		var context = game_context;
+		for (var i = 0; i < bullets.list.length; i++) {
+			var b = bullets.list[i];
+			context.beginPath();
+			context.arc(b.x, b.y, 5, 0, 2 * PI, false);
+			context.fillStyle = '#333';
+			context.fill();
+			context.closePath();
 		}
 	}
 }
