@@ -76,7 +76,7 @@ setInterval(function() {
 	io.emit('clients', clients);
 }, 1000);
 
-setInterval(gameLoop, 20);
+setInterval(gameLoop, 15);
 
 http.listen(port, function() {
 	console.log(port);
