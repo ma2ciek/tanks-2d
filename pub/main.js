@@ -117,24 +117,33 @@ var tank = {
 
 			if(id == i) {
 				ctx.strokeStyle = '#333';
+				ctx.fillStyle = '#333';
 			}
 			else {
-				ctx.strokeStyle = 'red';
+				ctx.strokeStyle = '#0a4';
+				ctx.fillStyle = '#0a4';
 			}
 
 			ctx.beginPath();
-			ctx.arc(ta['x'], ta['y'], 20, 0, 2 * PI, false);
-			
+			ctx.arc(ta['x'], ta['y'], 20, 0, 2 * PI, false);			
 			ctx.lineWidth = 3;
 			ctx.stroke();
 			ctx.closePath();
 
 			ctx.beginPath();
 			ctx.arc(ta['x'], ta['y'], 10, 0, 2 * PI, false);
-			ctx.fillStyle = '#333';
 			ctx.fill();
 			ctx.closePath();
 
+
+			ctx.beginPath();
+			ctx.lineWidth = 9;
+			ctx.arc(ta['x'], ta['y'], 14, 0, PI * ta.life / 5, false);
+			ctx.strokeStyle = '#fc0';
+			ctx.stroke();
+			ctx.closePath();
+
+			(id == i)? ctx.strokeStyle = '#333' :ctx.strokeStyle = '#0a4';
 			ctx.beginPath();
 			ctx.moveTo(ta['lufa'].x1, ta['lufa'].y1);
 			ctx.lineWidth = 6;
@@ -142,11 +151,13 @@ var tank = {
 			ctx.stroke();
 			ctx.closePath();
 
+
 		}
 	}
 }
 
 function events() {
+	
 	var focus = 0;
 	$('#m').focusin(function() {
 		focus = 1;
@@ -155,7 +166,7 @@ function events() {
 	});
 
 	window.addEventListener('keydown', function(e) {
-		if (focus == 1) return;
+		if (focus == 1 || !(id in tank.list)) return;
 		switch (e.which) {
 			case 37: // LEFT
 			case 65: // A
@@ -190,7 +201,7 @@ function events() {
 		}
 	});
 	window.addEventListener('keyup', function(e) {
-		if (focus == 1) return;
+		if (focus == 1 || !(id in tank.list)) return;
 		switch (e.which) {
 			case 37: // LEFT
 			case 65: // A
@@ -213,6 +224,7 @@ function events() {
 	});
 	var can = $('#game')[0];
 	can.addEventListener('mousemove', function(evt) {
+		if (!(id in tank.list)) return;
 		var rect = can.getBoundingClientRect();
 		socket.emit('client-event', {
 			mx: evt.clientX - rect.left
@@ -222,6 +234,7 @@ function events() {
 		});
 	});
 	can.addEventListener('click', function(evt) {
+		if (!(id in tank.list)) return;
 		tank.shot();
 		socket.emit('client-event', {
 			shot: true

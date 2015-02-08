@@ -34,7 +34,7 @@ io.on('connection', function(socket) {
 
 	socket.on('disconnect', function() {
 		io.emit('n-message', 'Osoba się rozłączyła');
-		if(!delete tank.list[socket.id]) {
+		if (!delete tank.list[socket.id]) {
 			console.log('ERROR - nie można usunąć czołgu');
 		}
 	});
@@ -44,7 +44,7 @@ io.on('connection', function(socket) {
 	socket.on('client-event', function(msg) {
 
 		var id = socket.id;
-
+		if(!id in tank.list) return;
 		for (var i in msg) {
 			switch (i) {
 				case 'mx':
@@ -119,6 +119,7 @@ var tank = {
 		this.dirX = 0;
 		this.dirY = 0;
 		this.radius = 22;
+		this.r = 22;
 		this.lufa = {
 			x1: 0,
 			y1: 0,
@@ -126,7 +127,7 @@ var tank = {
 			y2: 0
 		};
 		this.id = id;
-		this.life = 100;
+		this.life = 10;
 		this.shot = function() {
 			bullets.create(this.id);
 		}
@@ -217,25 +218,35 @@ var bullets = {
 			b.x += b.sx * 10;
 			b.y += b.sy * 10;
 
+			// Kolizja ze ścianami
 			if (b.x < 0 || b.y < 0 || b.x > board.WIDTH || b.y > board.HEIGHT) {
 				bullets.list.splice(i, 1);
 				i--;
 				continue;
 			}
+			// Kolizja z boxami
 			for (var j = 0; j < board.elems.length; j++) {
 				var e = board.elems[j];
 				if (b.x + b.r > e.x1 && b.x - b.r < e.x2 && b.y + b.r > e.y1 && b.y - b.r < e.y2) {
-					// e.life--;
-					// if (e.life <= 0) {
-					//	bg_context.clearRect(e.x1, e.y1, e.y1, e.y2);
-					//	board.elems.splice(j, 1);
-					// }
 					bullets.list.splice(i, 1);
 					i--;
 					break;
 
 				}
 			}
+			for (var id in tank.list) {
+				var t = tank.list[id];
+				if (b.owner == t.id) continue;
+				if ((t.x - b.x) * (t.x - b.x) + (t.y - b.y) * (t.y - b.y) < (t.r + b.r) * (t.r + b.r)) {
+					bullets.list.splice(i, 1);
+					if (!--t.life) {
+						delete tank.list[id];
+					}
+				}
+			}
+
+
+
 		}
 	},
 	proto: function(id) {
@@ -253,6 +264,7 @@ var bullets = {
 		this.sy = (my - y) / size;
 
 		this.r = 5;
+		this.owner = id;
 	},
 	create: function(id) {
 		bullets.list.push(new bullets.proto(id));
