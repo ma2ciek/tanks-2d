@@ -28,9 +28,10 @@ var port = process.env.PORT || 8080;
 
 io.on('connection', function(socket) {
 	socket.broadcast.emit('n-message', 'Nowa osoba dołączyła do rozmowy');
-
+	socket.emit('n-message', 'Dołączyłeś do rozmowy')
 	console.log(socket.id);
 	tank.create(socket.id);
+
 
 	socket.on('disconnect', function() {
 		io.emit('n-message', 'Osoba się rozłączyła');
@@ -76,7 +77,7 @@ setInterval(function() {
 	io.emit('clients', clients);
 }, 1000);
 
-setInterval(gameLoop, 15);
+setInterval(gameLoop, 20);
 
 http.listen(port, function() {
 	console.log(port);
@@ -92,29 +93,46 @@ function gameLoop() {
 function send_data() {
 	var res = JSON.stringify({
 		tank: tank.list,
-		bullets: bullets.list
+		bullets: bullets.list,
+		boxes: board.list
 	});
 	io.emit('game-update', res);
 }
 
-var board = {
+var canvas = {
 	WIDTH: 1000,
-	HEIGHT: 500,
-	elems: [{
+	HEIGHT: 500
+}
+
+var board = {
+	WIDTH: 2000,
+	HEIGHT: 1000,
+	list: [{
 		type: 'box',
 		x1: 200,
 		y1: 200,
 		x2: 264,
-		y2: 264,
-		life: 10
+		y2: 264
+	}, {
+		type: 'box',
+		x1: 320,
+		y1: 320,
+		x2: 384,
+		y2: 384,
+	}, {
+		type: 'box',
+		x1: 320,
+		y1: 120,
+		x2: 384,
+		y2: 184,
 	}],
 }
 
 var tank = {
 	list: {},
 	proto: function(id) {
-		this.x = 100;
-		this.y = 100;
+		this.x = losuj(50, 1950);
+		this.y = losuj(50, 950);
 		this.speed = 6;
 		this.dirX = 0;
 		this.dirY = 0;
@@ -129,7 +147,9 @@ var tank = {
 		this.id = id;
 		this.life = 10;
 		this.mx = 0,
-		this.my = 0
+			this.my = 0,
+			this.posX = 0,
+			this.posY = 0
 	},
 	shot: function(id) {
 		bullets.create(id);
@@ -173,8 +193,8 @@ var tank = {
 
 			// Kolizje z boksami
 
-			for (var i = 0; i < board.elems.length; i++) {
-				var b = board.elems[i];
+			for (var i = 0; i < board.list.length; i++) {
+				var b = board.list[i];
 				if (b.type != 'box') continue;
 
 				if (b.x1 < x + r && b.x2 > x - r && b.y1 < y + r && b.y2 > y - r) {
@@ -207,8 +227,8 @@ var tank = {
 			t.x = x;
 			t.y = y;
 
-			t.mx = t.mPosX + x - board.WIDTH/2;
-			t.my = t.mPosY + y - board.HEIGHT/2;
+			t.mx = t.mPosX + x - canvas.WIDTH / 2;
+			t.my = t.mPosY + y - canvas.HEIGHT / 2;
 
 
 			var v = new vector(t.mx - t.x, t.my - t.y);
@@ -236,8 +256,8 @@ var bullets = {
 				continue;
 			}
 			// Kolizja z boxami
-			for (var j = 0; j < board.elems.length; j++) {
-				var e = board.elems[j];
+			for (var j = 0; j < board.list.length; j++) {
+				var e = board.list[j];
 				if (b.x + b.r > e.x1 && b.x - b.r < e.x2 && b.y + b.r > e.y1 && b.y - b.r < e.y2) {
 					bullets.list.splice(i, 1);
 					i--;
@@ -292,4 +312,10 @@ var vector = function(x, y) {
 		x: this.x / this.size,
 		y: this.y / this.size
 	};
+}
+
+function losuj(a, b) {
+	var r = Math.random() * (a - b);
+	r += a + b;
+	return Math.round(r);
 }

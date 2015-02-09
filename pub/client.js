@@ -30,67 +30,52 @@ socket.on('clients', function(msg) {
 
 window.addEventListener('load', function load() {
 	game_context = $('#game')[0].getContext('2d');
-	bg_context = $('#game')[0].getContext('2d');
+	bg_context = $('#bg')[0].getContext('2d');
+	board.adjust();
 	events();
-	board.create();
 
 	socket.on('game-update', function(msg) {
 		id = socket.id;
 		var msg = JSON.parse(msg);
 		tank.list = msg.tank;
 		bullets.list = msg.bullets;
+		board.list = msg.boxes;
+
 		game.draw();
 	});
-
 });
 
-var board = {
+var canvas = {
 	WIDTH: 1000,
-	HEIGHT: 500,
-	bg: (function() {
-		var img = new Image();
-		img.src = './img/bg.jpg';
-	})(),
-	draw_background: function() {
-		//game_context.drawImage(board.bg, 0, 0, 500, 500);
-	},
-	elems: [{
-		type: 'box',
-		x1: 200,
-		y1: 200,
-		x2: 264,
-		y2: 264,
-		src: './img/box.jpg',
-	}],
-	create: function() {
-		$('canvas').attr({
-			width: board.WIDTH,
-			height: board.HEIGHT
-		});
+	HEIGHT: 500
+}
 
-		for (var i = 0; i < board.elems.length; i++) {
-			var e = board.elems[i];
-			switch (e.type) {
-				case 'box':
-					e.obj = new Image();
-					e.obj.src = e.src;
-					e.obj.onload = function(e) {
-						var wsp = rel(e.x, e.y);
-						bg_context.drawImage(e.obj, e.x1, e.y1, e.x2 - e.x1, e.y2 - e.y1);
-					}
-					break;
-				default:
-					break;
-			}
-		}
+var board = {
+	WIDTH: 2000,
+	HEIGHT: 1000,
+	draw_background: function() {
+		var wsp = rel(-board.WIDTH / 2, -board.HEIGHT / 2);
+		bg_context.drawImage(resources.list.bg, wsp.x + 1000, wsp.y + 500, 2000, 1000);
+
+		game_context.beginPath();
+		game_context.rect(wsp.x + board.WIDTH / 2, wsp.y + board.HEIGHT / 2, board.WIDTH, board.HEIGHT);
+		game_context.stroke();
+		game_context.closePath()
+	},
+	list: [],
+	adjust: function() {
+		$('canvas').attr({
+			width: canvas.WIDTH,
+			height: canvas.HEIGHT
+		});
 	},
 	draw: function() {
-		for (var i = 0; i < board.elems.length; i++) {
-			var e = board.elems[i];
-			var wsp = rel(e.x, e.y);
+		for (var i = 0; i < board.list.length; i++) {
+			var e = board.list[i];
+			var wsp = rel(e.x1, e.y1);
 			switch (e.type) {
 				case 'box':
-					game_context.drawImage(e.obj, wsp.x, wsp.y, e.x2 - e.x1, e.y2 - e.y1);
+					game_context.drawImage(resources.list.box, wsp.x, wsp.y, e.x2 - e.x1, e.y2 - e.y1);
 					break;
 				default:
 					break;
@@ -116,12 +101,13 @@ var game = {
 	draw: function() {
 		game.clearboard();
 		board.draw_background();
+		board.draw();
 		tank.draw();
 		bullets.draw();
 	},
 	clearboard: function() {
-		var context = game_context;
-		context.clearRect(0, 0, board.WIDTH, board.HEIGHT);
+		game_context.clearRect(0, 0, canvas.WIDTH, canvas.HEIGHT);
+		bg_context.clearRect(0, 0, canvas.WIDTH, canvas.HEIGHT);
 	}
 }
 
@@ -131,7 +117,6 @@ var tank = {
 		game.audio.shot.cloneNode().play();
 	},
 	'draw': function() {
-
 		for (var i in tank.list) {
 			var ctx = game_context;
 			var ta = tank.list[i];
@@ -174,8 +159,6 @@ var tank = {
 			ctx.lineTo(wsp2.x, wsp2.y);
 			ctx.stroke();
 			ctx.closePath();
-
-
 		}
 	}
 }
@@ -194,24 +177,28 @@ function events() {
 		switch (evt.which) {
 			case 37: // LEFT
 			case 65: // A
+				tank.list[id].dirX = -1;
 				socket.emit('client-event', {
 					dirX: -1,
 				});
 				break;
 			case 38: // UP
 			case 87: // W
+				tank.list[id].dirY = -1;
 				socket.emit('client-event', {
 					dirY: -1,
 				});
 				break;
 			case 39: // RIGHT
 			case 68: // D
+				tank.list[id].dirX = 1;
 				socket.emit('client-event', {
 					dirX: 1,
 				});
 				break;
 			case 40: // DOWN
 			case 83: // S
+				tank.list[id].dirY = 1;
 				socket.emit('client-event', {
 					dirY: 1,
 				});
@@ -231,6 +218,7 @@ function events() {
 			case 65: // A
 			case 39: // RIGHT
 			case 68: // D
+				tank.list[id].dirX = 0;
 				socket.emit('client-event', {
 					dirX: 0
 				});
@@ -239,6 +227,7 @@ function events() {
 			case 87: // W
 			case 40: // DOWN
 			case 83: // S
+				tank.list[id].dirY = 0;
 				socket.emit('client-event', {
 					dirY: 0
 				});
@@ -249,7 +238,10 @@ function events() {
 	var can = $('#game')[0];
 	can.addEventListener('mousemove', function(evt) {
 		if (!(id in tank.list)) return;
+
 		var rect = can.getBoundingClientRect();
+		tank.list[id].mPosX = evt.clientX - rect.left;
+		tank.list[id].mPosY = evt.clientY - rect.top;
 		socket.emit('client-event', {
 			mx: evt.clientX - rect.left,
 			my: evt.clientY - rect.top
@@ -271,6 +263,7 @@ var bullets = {
 		for (var i = 0; i < bullets.list.length; i++) {
 			var b = bullets.list[i];
 			var wsp = rel(b.x, b.y);
+			context.strokeStyle
 			context.beginPath();
 			context.arc(wsp.x, wsp.y, b.r, 0, 2 * PI, false);
 			context.fillStyle = '#333';
@@ -283,7 +276,34 @@ var bullets = {
 function rel(x, y) {
 	var my_tank = tank.list[id];
 	return {
-		x: x + board.WIDTH / 2 - my_tank.x,
-		y: y + board.HEIGHT / 2 - my_tank.y
+		x: x + canvas.WIDTH / 2 - my_tank.x,
+		y: y + canvas.HEIGHT / 2 - my_tank.y
 	}
+}
+
+
+var resources = {
+	list: {
+		bg: (function() {
+			var img = new Image();
+			img.src = './img/bg.jpg';
+			return img;
+		})(),
+		box: (function() {
+			var img = new Image();
+			img.src = './img/box.jpg';
+			return img;
+		})()
+	}
+}
+
+// prototyp wektora
+var vector = function(x, y) {
+	this.x = x;
+	this.y = y;
+	this.size = Math.sqrt(x * x + y * y);
+	this.unit = {
+		x: this.x / this.size,
+		y: this.y / this.size
+	};
 }
