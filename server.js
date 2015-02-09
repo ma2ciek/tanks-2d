@@ -44,23 +44,23 @@ io.on('connection', function(socket) {
 	socket.on('client-event', function(msg) {
 
 		var id = socket.id;
-		if(!id in tank.list) return;
+		if (!id in tank.list) return;
 		for (var i in msg) {
 			switch (i) {
 				case 'mx':
-					tank.list[id]['mx'] = msg[i];
+					tank.list[id].mPosX = msg[i];
 					break;
 				case 'my':
-					tank.list[id]['my'] = msg[i];
+					tank.list[id].mPosY = msg[i];
 					break;
 				case 'shot':
-					tank.list[id].shot();
+					tank.shot(id);
 					break;
 				case 'dirX':
-					tank.list[id]['dirX'] = msg[i];
+					tank.list[id].dirX = msg[i];
 					break;
 				case 'dirY':
-					tank.list[id]['dirY'] = msg[i];
+					tank.list[id].dirY = msg[i];
 					break;
 				default:
 					console.log(i, msg[i]);
@@ -128,9 +128,11 @@ var tank = {
 		};
 		this.id = id;
 		this.life = 10;
-		this.shot = function() {
-			bullets.create(this.id);
-		}
+		this.mx = 0,
+		this.my = 0
+	},
+	shot: function(id) {
+		bullets.create(id);
 	},
 	create: function(id) {
 		tank.list[id] = new tank.proto(id);
@@ -147,7 +149,12 @@ var tank = {
 			var dx = tank.list[id]['dirX'];
 			var dy = tank.list[id]['dirY'];
 
-			if (dx != 0 && dy != 0) speed /= 1.4;
+			var old = {
+				x: tank.list[id].x,
+				y: tank.list[id].y
+			};
+
+			if (dx != 0 && dy != 0) speed = Math.round(speed / 1.4);
 
 			x += dx * speed;
 			y += dy * speed;
@@ -195,17 +202,21 @@ var tank = {
 				}
 			}
 
-			tank.list[id].x = x;
-			tank.list[id].y = y;
+			var t = tank.list[id];
+
+			t.x = x;
+			t.y = y;
+
+			t.mx = t.mPosX + x - board.WIDTH/2;
+			t.my = t.mPosY + y - board.HEIGHT/2;
 
 
-			var ta = tank.list[id];
-			var v = new vector(ta['mx'] - ta['x'], ta['my'] - ta['y']);
-			ta['lufa'] = {
-				x1: ta['x'] + v.unit.x * 8,
-				y1: ta['y'] + v.unit.y * 8,
-				x2: ta['x'] + v.unit.x * 30,
-				y2: ta['y'] + v.unit.y * 30
+			var v = new vector(t.mx - t.x, t.my - t.y);
+			t.lufa = {
+				x1: t.x + v.unit.x * 8,
+				y1: t.y + v.unit.y * 8,
+				x2: t.x + v.unit.x * 30,
+				y2: t.y + v.unit.y * 30
 			};
 		}
 	}
@@ -215,8 +226,8 @@ var bullets = {
 	move: function() {
 		for (var i = 0; i < bullets.list.length; i++) {
 			var b = bullets.list[i];
-			b.x += b.sx * 10;
-			b.y += b.sy * 10;
+			b.x += b.sx * b.speed;
+			b.y += b.sy * b.speed;
 
 			// Kolizja ze ścianami
 			if (b.x < 0 || b.y < 0 || b.x > board.WIDTH || b.y > board.HEIGHT) {
@@ -265,6 +276,7 @@ var bullets = {
 
 		this.r = 5;
 		this.owner = id;
+		this.speed = 10;
 	},
 	create: function(id) {
 		bullets.list.push(new bullets.proto(id));
