@@ -27,6 +27,9 @@ socket.on('n-message', function(msg) {
 socket.on('clients', function(msg) {
 	$('#clients').text(msg);
 });
+socket.on('disconnect', function () {
+    alert("You are disconnected");  
+});
 
 window.addEventListener('load', function load() {
 	game_context = $('#game')[0].getContext('2d');
@@ -40,7 +43,6 @@ window.addEventListener('load', function load() {
 		tank.list = msg.tank;
 		bullets.list = msg.bullets;
 		board.list = msg.boxes;
-
 		game.draw();
 	});
 });
@@ -58,6 +60,7 @@ var board = {
 		bg_context.drawImage(resources.list.bg, wsp.x + 1000, wsp.y + 500, 2000, 1000);
 
 		game_context.beginPath();
+		game_context.strokeStyle = '#000';
 		game_context.rect(wsp.x + board.WIDTH / 2, wsp.y + board.HEIGHT / 2, board.WIDTH, board.HEIGHT);
 		game_context.stroke();
 		game_context.closePath()

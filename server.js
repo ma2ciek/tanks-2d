@@ -245,6 +245,11 @@ var bullets = {
 	list: [],
 	move: function() {
 		for (var i = 0; i < bullets.list.length; i++) {
+			if(bullets.list[i].x === undefined) {
+				bullets.list.splice(i, 1);
+				i--;
+				continue;
+			}
 			var b = bullets.list[i];
 			b.x += b.sx * b.speed;
 			b.y += b.sy * b.speed;
@@ -270,6 +275,7 @@ var bullets = {
 				if (b.owner == t.id) continue;
 				if ((t.x - b.x) * (t.x - b.x) + (t.y - b.y) * (t.y - b.y) < (t.r + b.r) * (t.r + b.r)) {
 					bullets.list.splice(i, 1);
+					i--;
 					if (!--t.life) {
 						delete tank.list[id];
 					}
