@@ -28,10 +28,13 @@ var port = process.env.PORT || 8080;
 
 io.on('connection', function(socket) {
 	socket.broadcast.emit('n-message', 'Nowa osoba dołączyła do rozmowy');
-	socket.emit('n-message', 'Dołączyłeś do rozmowy')
+	socket.emit('n-message', 'Dołączyłeś do rozmowy');
 	console.log(socket.id);
-	tank.create(socket.id);
 
+	socket.on('join-game', function() {
+		tank.create(socket.id);
+		socket.emit('tanks', JSON.stringify(tank.list));
+	});
 
 	socket.on('disconnect', function() {
 		io.emit('n-message', 'Osoba się rozłączyła');
@@ -77,7 +80,7 @@ setInterval(function() {
 	io.emit('clients', clients);
 }, 1000);
 
-setInterval(gameLoop, 20);
+setInterval(gameLoop, 15);
 
 http.listen(port, function() {
 	console.log(port);
@@ -245,7 +248,7 @@ var bullets = {
 	list: [],
 	move: function() {
 		for (var i = 0; i < bullets.list.length; i++) {
-			if(bullets.list[i].x === undefined) {
+			if (bullets.list[i].x === undefined) {
 				bullets.list.splice(i, 1);
 				i--;
 				continue;
