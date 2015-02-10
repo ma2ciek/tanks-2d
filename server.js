@@ -27,14 +27,9 @@ var port = process.env.PORT || 8080;
 
 
 io.on('connection', function(socket) {
-	socket.broadcast.emit('n-message', 'Nowa osoba dołączyła do rozmowy');
-	socket.emit('n-message', 'Dołączyłeś do rozmowy');
+	socket.broadcast.emit('n-message', 'Nowa osoba dołączyła do gry');
+	socket.emit('n-message', 'Dołączyłeś do gry');
 	console.log(socket.id);
-
-	socket.on('join-game', function() {
-		tank.create(socket.id);
-		socket.emit('tanks', JSON.stringify(tank.list));
-	});
 
 	socket.on('disconnect', function() {
 		io.emit('n-message', 'Osoba się rozłączyła');
@@ -42,13 +37,19 @@ io.on('connection', function(socket) {
 			console.log('ERROR - nie można usunąć czołgu');
 		}
 	});
+
+	socket.on('join-game', function(msg) {
+		tank.create(socket.id);
+		players[socket.id] = JSON.parse(msg);
+	});
+
 	socket.on('message', function(msg) {
 		socket.broadcast.emit('message', msg);
 	});
 	socket.on('client-event', function(msg) {
 
 		var id = socket.id;
-		if (!id in tank.list) return;
+		if (!id in tank.list || id == null) return;
 		for (var i in msg) {
 			switch (i) {
 				case 'mx':
@@ -97,14 +98,17 @@ function send_data() {
 	var res = JSON.stringify({
 		tank: tank.list,
 		bullets: bullets.list,
-		boxes: board.list
+		boxes: board.list,
+		date: +new Date(),
+		nr: ++nr
 	});
 	io.emit('game-update', res);
 }
 
-var canvas = {
-	WIDTH: 1000,
-	HEIGHT: 500
+var nr = 0;
+
+var players = {
+
 }
 
 var board = {
@@ -136,7 +140,7 @@ var tank = {
 	proto: function(id) {
 		this.x = losuj(50, 1950);
 		this.y = losuj(50, 950);
-		this.speed = 6;
+		this.speed = 4;
 		this.dirX = 0;
 		this.dirY = 0;
 		this.radius = 22;
@@ -230,8 +234,8 @@ var tank = {
 			t.x = x;
 			t.y = y;
 
-			t.mx = t.mPosX + x - canvas.WIDTH / 2;
-			t.my = t.mPosY + y - canvas.HEIGHT / 2;
+			t.mx = t.mPosX + x - players[id].SCREEN_WIDTH / 2;
+			t.my = t.mPosY + y - players[id].SCREEN_HEIGHT / 2;
 
 
 			var v = new vector(t.mx - t.x, t.my - t.y);

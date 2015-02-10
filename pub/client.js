@@ -14,26 +14,43 @@ stats.domElement.style.top = '0px';
 
 // CHAT
 function submit() {
-	if ($('#m').val() == "") return;
-	socket.emit('message', $('#m').val());
-	$('#messages').append('<li class="my"><span>' + $('#m').val() + '</span></li>');
-	$('#m').val('');
+	if ($('#m').val() == "") $('#chat').hide();
+	else {
+		socket.emit('message', $('#m').val());
+		$('#messages').append('<li class="my"><span>' + $('#m').val() + '</span></li>');
+		$('#m').val('');
+	}
 }
 
 // Socket Event Handlers
 function socket_handlers() {
 	socket.on('message', function(msg) {
 		$('#messages').append('<li><span>' + msg + '</span></li>');
-
 	});
 	socket.on('n-message', function(msg) {
+		
 		$('#messages').append('<li class="neutral"><span>' + msg + '</span></li>');
 	});
 	socket.on('clients', function(msg) {
 		$('#clients').text(msg);
+		game.id = socket.id;
 	});
 	socket.on('disconnect', function() {
 		alert("You are disconnected");
+	});
+
+	socket.on('game-update', function(msg) {
+		var msg = JSON.parse(msg);
+
+		game.diff = new Date() - msg.date;
+
+		var reqTime = game.ping - game.diff;
+		if (game.id in msg.tank && msg.nr > game.nr) {
+			game.nr = msg.nr;
+			setTimeout(function() {
+				game.draw(msg)
+			}, reqTime ); // IT WORKS!!!
+		}
 	});
 }
 
@@ -44,8 +61,10 @@ window.addEventListener('load', function load() {
 	socket_handlers();
 	$('body').append(stats.domElement);
 
+	game_events();
+
 	$('#game')[0].addEventListener('click', function(evt) {
-		if (!(game.id in tank.list)) 
+		if (!(game.id in tank.list) || game.id === null)
 			game.play();
 		else {
 			tank.shot();
@@ -56,29 +75,38 @@ window.addEventListener('load', function load() {
 	});
 });
 
-var canvas = {
-	WIDTH: 1000,
-	HEIGHT: 500
+var player = {
+	SCREEN_WIDTH: 1000,
+	SCREEN_HEIGHT: 500
 }
 
 var board = {
 	WIDTH: 2000,
 	HEIGHT: 1000,
 	draw_background: function() {
-		var wsp = game.rel(-board.WIDTH / 2, -board.HEIGHT / 2);
-		bg_context.drawImage(resources.list.bg, wsp.x + 1000, wsp.y + 500, 2000, 1000);
+		var wsp = game.rel(0, 0);
+		// bg_context.drawImage(resources.list.bg, wsp.x + 1000, wsp.y + 500, 2000, 1000);
 
-		game_context.beginPath();
-		game_context.strokeStyle = '#000';
-		game_context.rect(wsp.x + board.WIDTH / 2, wsp.y + board.HEIGHT / 2, board.WIDTH, board.HEIGHT);
-		game_context.stroke();
-		game_context.closePath()
+		var x1 = wsp.x, x2 = wsp.x + board.WIDTH , 
+			y1 = wsp.y, y2 = wsp.y + board.HEIGHT 
+		bg_context.strokeStyle = '#000';
+		bg_context.lineWidth = 5;
+		bg_context.beginPath();
+		bg_context.moveTo(x1, y1);
+		bg_context.lineTo(x1, y2);
+		bg_context.lineTo(x2, y2);
+		bg_context.lineTo(x2, y1);
+		bg_context.lineTo(x1, y1);
+		bg_context.stroke();
+		bg_context.closePath()
 	},
 	list: [],
 	adjust: function() {
+		player.SCREEN_WIDTH = $(window).width() - 300;
+		player.SCREEN_HEIGHT = $(window).height();
 		$('canvas').attr({
-			width: canvas.WIDTH,
-			height: canvas.HEIGHT
+			width: player.SCREEN_WIDTH,
+			height: player.SCREEN_HEIGHT
 		});
 	},
 	draw: function() {
@@ -87,16 +115,26 @@ var board = {
 			var wsp = game.rel(e.x1, e.y1);
 			switch (e.type) {
 				case 'box':
-					game_context.drawImage(resources.list.box, wsp.x, wsp.y, e.x2 - e.x1, e.y2 - e.y1);
+					bg_context.drawImage(resources.list.box, wsp.x, wsp.y, e.x2 - e.x1, e.y2 - e.y1);
 					break;
 				default:
 					break;
 			}
 		}
+	},
+	clear: function() {
+		
+
+	bg_context.clearRect(0, 0, player.SCREEN_WIDTH, player.SCREEN_HEIGHT);
+
+
+	game_context.clearRect(0, 0, player.SCREEN_WIDTH, player.SCREEN_HEIGHT);
 	}
 }
 
 var game = {
+	nr: 0,
+	ping: 50, // [ms]
 	id: null,
 	audio: {
 		shot: (function() {
@@ -111,43 +149,33 @@ var game = {
 	context: null,
 	counter: 0,
 
-	draw: function() {
-		game.clearboard();
-		board.draw_background();
+	draw: function(msg) {
+
+		stats.begin();
+		stats.end();
+		board.clear();
+		
+		tank.list = msg.tank;
+		bullets.list = msg.bullets;
+		board.list = msg.boxes;
+
+		board.draw_background();	
 		board.draw();
 		tank.draw();
 		bullets.draw();
-		stats.end();
-		stats.begin();
-	},
-	clearboard: function() {
-		game_context.clearRect(0, 0, canvas.WIDTH, canvas.HEIGHT);
-		bg_context.clearRect(0, 0, canvas.WIDTH, canvas.HEIGHT);
+		
+
 	},
 	rel: function(x, y) {
 		var my_tank = tank.list[game.id];
 		return {
-			x: x + canvas.WIDTH / 2 - my_tank.x,
-			y: y + canvas.HEIGHT / 2 - my_tank.y
+			x: x + player.SCREEN_WIDTH / 2 - my_tank.x,
+			y: y + player.SCREEN_HEIGHT / 2 - my_tank.y
 		}
 	},
 	play: function() {
-		game_events();
-
-		socket.emit('join-game');
-
-		socket.on('tanks', function(msg) {
-			game.id = socket.id;
-			tank.list = JSON.parse(msg);
-
-			socket.on('game-update', function(msg) {
-				var msg = JSON.parse(msg);
-				tank.list = msg.tank;
-				bullets.list = msg.bullets;
-				board.list = msg.boxes;
-				game.draw();
-			});
-		});
+		var msg = JSON.stringify(player);
+		socket.emit('join-game', msg);
 	}
 }
 
@@ -156,7 +184,7 @@ var tank = {
 	shot: function() {
 		game.audio.shot.cloneNode().play();
 	},
-	'draw': function() {
+	draw: function() {
 		for (var i in tank.list) {
 			var ctx = game_context;
 			var ta = tank.list[i];
@@ -174,9 +202,9 @@ var tank = {
 			ctx.arc(wsp.x, wsp.y, 20, 0, 2 * PI, false);
 			ctx.lineWidth = 3;
 			ctx.stroke();
-			ctx.closePath();
+			
+			ctx.moveTo(wsp.x, wsp.y);
 
-			ctx.beginPath();
 			ctx.arc(wsp.x, wsp.y, 10, 0, 2 * PI, false);
 			ctx.fill();
 			ctx.closePath();
@@ -184,8 +212,14 @@ var tank = {
 
 			ctx.beginPath();
 			ctx.lineWidth = 9;
-			ctx.arc(wsp.x, wsp.y, 14, 0, PI * ta.life / 5, false);
 			ctx.strokeStyle = '#fc0';
+			ctx.arc(wsp.x, wsp.y, 14, 0, PI * ta.life / 5, false);
+			ctx.stroke();
+			ctx.closePath();
+
+			ctx.beginPath();
+			ctx.strokeStyle = '#f00';
+			ctx.arc(wsp.x, wsp.y, 14, PI * ta.life / 5, 2 * PI, false);
 			ctx.stroke();
 			ctx.closePath();
 
@@ -244,8 +278,8 @@ function game_events() {
 				});
 				break;
 			case 13: // Enter - czat
-				if (!focus) $('#m').trigger('focus');
-				else $('#m').trigger('focusout');
+				$('#chat').show();
+				$('#m').trigger('focus');
 				break;
 			default:
 				break;
@@ -286,16 +320,6 @@ function game_events() {
 			mx: evt.clientX - rect.left,
 			my: evt.clientY - rect.top
 		});
-	});
-	can.addEventListener('click', function(evt) {
-		if (!(game.id in tank.list)) 
-			game.play();
-		else {
-			tank.shot();
-			socket.emit('client-event', {
-				shot: true
-			});
-		}
 	});
 }
 

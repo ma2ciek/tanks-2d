@@ -10,12 +10,11 @@ html(lang='pl')
 		script(src='lib/stats.min.js')
 		script(src='client.js')
 	body
-		main
-			canvas(id='bg')
-			canvas(id='game')
-			div#chat
-				div#clients
-				ul#messages
-				form(action="javascript:submit()")
-					input#m(autocomplete="off") 
-					button Send
+		canvas(id='bg')
+		canvas(id='game')
+		div#chat
+			div#clients
+			ul#messages
+			form(action="javascript:submit()")
+				input#m(autocomplete="off") 
+				button Send
