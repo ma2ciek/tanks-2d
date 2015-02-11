@@ -192,10 +192,13 @@ function events() {
 					dirY: 1
 				});
 				break;
-
 			case 13: // Enter - czat
 				if (!focus) $('#m').trigger('focus');
 				else $('#m').trigger('focusout');
+				break;
+			case 32: // SPACE
+				$(window).trigger('click');
+				break;
 			default:
 				break;
 		}
