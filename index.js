@@ -76,7 +76,7 @@ setInterval(function() {
 	io.emit('clients', clients);
 }, 1000);
 
-setInterval(gameLoop, 20);
+setInterval(gameLoop, 15);
 
 http.listen(port, function() {
 	console.log(port);
@@ -92,9 +92,14 @@ function gameLoop() {
 function send_data() {
 	var res = JSON.stringify({
 		tank: tank.list,
-		bullets: bullets.list
+		bullets: bullets.list,
+		date: +new Date(),
+		nr: ++packages.nr
 	});
 	io.emit('game-update', res);
+}
+var packages = {
+	nr: 0
 }
 
 var board = {

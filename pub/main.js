@@ -37,11 +37,18 @@ window.addEventListener('load', function load() {
 	socket.on('game-update', function(msg) {
 		id = socket.id;
 		var msg = JSON.parse(msg);
-		tank.list = msg.tank;
-		bullets.list = msg.bullets;
-		game.draw();
+		game.diff = +new Date - msg.date
+		var t = game.ping - game.diff;
+		if (msg.nr > game.package_nr) {
+			game.package_nr = msg.nr;
+			//setTimeout(function() {
+				tank.list = msg.tank;
+				bullets.list = msg.bullets;
+				game.draw();
+			//}, t)
+		}
 	});
-	
+
 });
 
 var board = {
@@ -80,6 +87,8 @@ var board = {
 }
 
 var game = {
+	ping: 50,
+	package_nr: 0,
 	audio: {
 		shot: (function() {
 			var a = new Audio('gun_shot.wav');
@@ -114,18 +123,20 @@ var tank = {
 		for (var i in tank.list) {
 			var ctx = game_context;
 			var ta = tank.list[i];
+			ta.x = Math.round(ta.x);
+			ta.y = Math.round(ta.y);
 
-			if(id == i) {
+
+			if (id == i) {
 				ctx.strokeStyle = '#333';
 				ctx.fillStyle = '#333';
-			}
-			else {
+			} else {
 				ctx.strokeStyle = '#0a4';
 				ctx.fillStyle = '#0a4';
 			}
 
 			ctx.beginPath();
-			ctx.arc(ta['x'], ta['y'], 20, 0, 2 * PI, false);			
+			ctx.arc(ta['x'], ta['y'], 20, 0, 2 * PI, false);
 			ctx.lineWidth = 3;
 			ctx.stroke();
 			ctx.closePath();
@@ -143,7 +154,7 @@ var tank = {
 			ctx.stroke();
 			ctx.closePath();
 
-			(id == i)? ctx.strokeStyle = '#333' :ctx.strokeStyle = '#0a4';
+			(id == i) ? ctx.strokeStyle = '#333': ctx.strokeStyle = '#0a4';
 			ctx.beginPath();
 			ctx.moveTo(ta['lufa'].x1, ta['lufa'].y1);
 			ctx.lineWidth = 6;
@@ -157,7 +168,7 @@ var tank = {
 }
 
 function events() {
-	
+
 	var focus = 0;
 	$('#m').focusin(function() {
 		focus = 1;
@@ -197,7 +208,11 @@ function events() {
 				else $('#m').trigger('focusout');
 				break;
 			case 32: // SPACE
-				$(window).trigger('click');
+				if (!(id in tank.list)) return;
+				tank.shot();
+				socket.emit('client-event', {
+					shot: true
+				});
 				break;
 			default:
 				break;
