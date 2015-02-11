@@ -49,7 +49,7 @@ function socket_handlers() {
 			game.nr = msg.nr;
 			setTimeout(function() {
 				game.draw(msg)
-			}, reqTime ); // IT WORKS!!!
+			}, Math.max(0, reqTime) ); // IT WORKS!!!
 		} else {
 			delete tank.list[game.id]
 			board.clear();
