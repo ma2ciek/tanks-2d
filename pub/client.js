@@ -6,11 +6,11 @@ var PI = Math.PI;
 var socket = io();
 
 // STATS.JS
-var stats = new Stats();
-stats.setMode(0); // 0: fps, 1: ms
-stats.domElement.style.position = 'absolute';
-stats.domElement.style.left = '0px';
-stats.domElement.style.top = '0px';
+//var stats = new Stats();
+//stats.setMode(1); // 0: fps, 1: ms
+//stats.domElement.style.position = 'absolute';
+//stats.domElement.style.left = '0px';
+//stats.domElement.style.top = '0px';
 
 // CHAT
 function submit() {
@@ -50,6 +50,10 @@ function socket_handlers() {
 			setTimeout(function() {
 				game.draw(msg)
 			}, reqTime ); // IT WORKS!!!
+		} else {
+			delete tank.list[game.id]
+			board.clear();
+			board.draw_play_button();
 		}
 	});
 }
@@ -59,8 +63,6 @@ window.addEventListener('load', function load() {
 	bg_context = $('#bg')[0].getContext('2d');
 	board.adjust();
 	socket_handlers();
-	$('body').append(stats.domElement);
-
 	game_events();
 
 	$('#game')[0].addEventListener('click', function(evt) {
@@ -102,7 +104,7 @@ var board = {
 	},
 	list: [],
 	adjust: function() {
-		player.SCREEN_WIDTH = $(window).width() - 300;
+		player.SCREEN_WIDTH = $(window).width();
 		player.SCREEN_HEIGHT = $(window).height();
 		$('canvas').attr({
 			width: player.SCREEN_WIDTH,
@@ -122,13 +124,18 @@ var board = {
 			}
 		}
 	},
-	clear: function() {
-		
-
-	bg_context.clearRect(0, 0, player.SCREEN_WIDTH, player.SCREEN_HEIGHT);
-
-
-	game_context.clearRect(0, 0, player.SCREEN_WIDTH, player.SCREEN_HEIGHT);
+	clear: function() {	
+		bg_context.clearRect(0, 0, player.SCREEN_WIDTH, player.SCREEN_HEIGHT);
+	},
+	draw_play_button: function() {
+		var ctx = bg_context;
+		var gradient=ctx.createLinearGradient(0,0,player.SCREEN_WIDTH,0);
+		gradient.addColorStop("0","magenta");
+		gradient.addColorStop("0.5","blue");
+		gradient.addColorStop("1.0","red");
+		ctx.fillStyle = gradient;
+		ctx.font = "80px Georgia";
+		ctx.fillText("PLAY",player.SCREEN_WIDTH / 2 - 100, player.SCREEN_HEIGHT / 2 );
 	}
 }
 
@@ -150,21 +157,20 @@ var game = {
 	counter: 0,
 
 	draw: function(msg) {
-
-		stats.begin();
-		stats.end();
+		var t1 = +new Date();
+		
 		board.clear();
 		
 		tank.list = msg.tank;
 		bullets.list = msg.bullets;
-		board.list = msg.boxes;
-
-		board.draw_background();	
-		board.draw();
-		tank.draw();
-		bullets.draw();
+		board.list = msg.boxes;	
 		
+		tank.draw();
+		board.draw_background();
+		board.draw();
+		bullets.draw();
 
+		var t2 = +new Date();
 	},
 	rel: function(x, y) {
 		var my_tank = tank.list[game.id];
@@ -186,7 +192,7 @@ var tank = {
 	},
 	draw: function() {
 		for (var i in tank.list) {
-			var ctx = game_context;
+			var ctx = bg_context;
 			var ta = tank.list[i];
 			var wsp = game.rel(ta.x, ta.y);
 
@@ -326,7 +332,7 @@ function game_events() {
 var bullets = {
 	list: [],
 	draw: function() {
-		var context = game_context;
+		var context = bg_context;
 		for (var i = 0; i < bullets.list.length; i++) {
 			var b = bullets.list[i];
 			var wsp = game.rel(b.x, b.y);

@@ -49,7 +49,7 @@ io.on('connection', function(socket) {
 	socket.on('client-event', function(msg) {
 
 		var id = socket.id;
-		if (!id in tank.list || id == null) return;
+		if (!tank.list.hasOwnProperty(id) || !id) return;
 		for (var i in msg) {
 			switch (i) {
 				case 'mx':
