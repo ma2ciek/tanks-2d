@@ -66,7 +66,8 @@ window.addEventListener('load', function load() {
 
 var game = {
 	nr: 0,
-	ping: 50, // [ms]
+	max_ping: 50, // [ms]
+	const_ping: 0,
 	id: null,
 	last_time: +new Date(),
 	audio: {
@@ -89,9 +90,9 @@ var game = {
 	update: function(msg) {
 		var msg = JSON.parse(msg);
 
-		game.diff = new Date() - msg.date;
-
-		var reqTime = game.ping - game.diff;
+		game.ping = new Date() - msg.date + game.const_ping;
+		if(game.ping < 0) game.const_ping = -(new Date() - msg.date); // Czemu taki Error występuje???
+		var reqTime = game.max_ping - game.ping;
 		if (game.id in msg.tank && msg.nr > game.nr) {
 			game.nr = msg.nr;
 			setTimeout(function() {
@@ -137,7 +138,7 @@ var game = {
 		context.fillStyle = 'white'
 		context.fillText('FPS: ' + Math.floor(1000 / t), 15, 15);
 
-		context.fillText('PING: ' + Math.floor(game.diff), 80, 15);
+		context.fillText('PING: ' + Math.floor(game.ping), 80, 15);
 	},
 	disconnect: function() {
 		alert("You are disconnected from the server");
