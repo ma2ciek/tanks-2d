@@ -1,16 +1,9 @@
 body {
 	margin: 0;
-	background: #EEE;
+	background: #000;
 	font-family: Arial, Calibri;
 	-webkit-user-select: none;
 	-khtml-user-select: none;
-}
-
-canvas#bg {
-	z-index: 0;
-	position: absolute;
-	left: 0;
-	top: 0;
 }
 
 canvas#game {
@@ -19,6 +12,7 @@ canvas#game {
 	left: 0;
 	top: 0;
 	cursor: crosshair;
+	background: #333;
 }
 
 #chat {
@@ -31,6 +25,7 @@ canvas#game {
 	background: #FFF;
 	border-left: 1px solid #333;
 	display: none;
+	z-index: 10;
 }
 div#clients {
 	position: absolute;
@@ -42,7 +37,7 @@ ul#messages {
 	margin: 0;
 	padding: 0;
 	list-style: none;
-	height: 400px;
+	height: 300px;
 	overflow: auto;
 }
 ul li {
@@ -68,7 +63,7 @@ ul li.neutral span {
 }
 
 
-form {
+input#m {
 	position: absolute;
 	bottom: 10px;
 }

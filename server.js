@@ -229,6 +229,10 @@ var tank = {
 				}
 			}
 
+			// Kolizje z innymi czołgami
+			// DO DODANIA!!
+
+
 			var t = tank.list[id];
 
 			t.x = x;
@@ -252,7 +256,7 @@ var bullets = {
 	list: [],
 	move: function() {
 		for (var i = 0; i < bullets.list.length; i++) {
-			if (bullets.list[i].x === undefined) {
+			if (bullets.list[i] === undefined) {
 				bullets.list.splice(i, 1);
 				i--;
 				continue;
@@ -288,9 +292,6 @@ var bullets = {
 					}
 				}
 			}
-
-
-
 		}
 	},
 	proto: function(id) {
