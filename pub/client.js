@@ -311,6 +311,9 @@ function game_events() {
 					$('#chat').show();
 					$('#m').trigger('focus');
 					break;
+				case 32: // SPACE
+					$('#game').trigger('click');
+					break;
 				default:
 					break;
 			}
