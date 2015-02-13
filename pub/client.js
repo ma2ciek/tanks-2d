@@ -14,26 +14,44 @@ var socket = io();
 // CHAT
 var chat = {
 	message: function(msg) {
-		('#messages').append('<li><span>' + msg + '</span></li>');
+		$('#messages').append('<li><span></span></li>').find('li:last-child span').text( msg );
+		chat.scroll();
 	},
 	neutral_message: function(msg) {
-		$('#messages').append('<li class="neutral"><span>' + msg + '</span></li>');
+		$('#messages').append('<li class="neutral"><span></span></li>').find('li:last-child span').text( msg );
+		chat.scroll();
 	},
 	clients: function(msg) {
 		$('#clients').text(msg);
 		game.id = socket.id;
 	},
 	submit: function() {
-		if ($('#m').val() == "" && chat.focus == 1) {
+		if ($('#m').val() == "" && chat.isOpen == 1) {
 			$('#chat').hide();
-			console.log('c2');
+			chat.isOpen = 0;
 		} else {
 			socket.emit('message', $('#m').val());
-			$('#messages').append('<li class="my"><span>' + $('#m').val() + '</span></li>');
+			$('#messages').append('<li class="my"><span></span></li>').find('li:last-child span').text( $('#m').val() );
 			$('#m').val('');
+			chat.scroll(0);
 		}
 	},
-	focus: 0
+	scroll: function (t) {
+		$('#messages').animate({
+			scrollTop: $('#messages')[0].scrollHeight - $('#messages').height()
+		}, t || 100);
+	},
+	show: function () {
+		chat.isOpen = 1;
+		$('#chat').show();
+		$('#m').focus();
+	}, 
+	close: function () {
+		chat.isOpen = 0;
+		$('#chat').hide();
+		$('#m').blur();
+	},
+	isOpen: 0
 }
 
 // Socket Event Handlers
@@ -266,16 +284,19 @@ var tank = {
 }
 
 function game_events() {
-	$('#m').focus(function() {
-		chat.focus = 1;
-	}).blur(function() {
-		chat.focus = 0;
-	});
-	$('#m').blur();
 	window.addEventListener('keydown', function(evt) {
-		if (chat.focus == 1 && evt.which == 13) {
-			chat.submit();
-		} else if (game.id in tank.list && !chat.focus) {
+		if (chat.isOpen == 1) {
+			switch (evt.which) {
+				case 13: // ENTER
+					chat.submit();
+					break;
+				case 27: // ESC<script>
+					chat.close();
+					break;
+				default:
+					break;
+			}
+		} else if (game.id in tank.list) {
 			switch (evt.which) {
 				case 37: // LEFT
 				case 65: // A
@@ -306,9 +327,7 @@ function game_events() {
 					});
 					break;
 				case 13: // Enter - czat
-					console.log('chat');
-					$('#chat').show();
-					$('#m').trigger('focus');
+					chat.show();
 					break;
 				case 32: // SPACE
 					$('#game').trigger('click');
@@ -319,7 +338,7 @@ function game_events() {
 		}
 	});
 	window.addEventListener('keyup', function(e) {
-		if (game.id in tank.list && !chat.focus) {
+		if (game.id in tank.list) {
 			switch (e.which) {
 				case 37: // LEFT
 				case 65: // A
@@ -344,15 +363,15 @@ function game_events() {
 		}
 	});
 	canvas.addEventListener('mousemove', function(evt) {
-		if (!(game.id in tank.list)) return;
-
-		var rect = canvas.getBoundingClientRect();
-		tank.list[game.id].mPosX = evt.clientX - rect.left;
-		tank.list[game.id].mPosY = evt.clientY - rect.top;
-		socket.emit('client-event', {
-			mx: evt.clientX - rect.left,
-			my: evt.clientY - rect.top
-		});
+		if (game.id in tank.list) {
+			var rect = canvas.getBoundingClientRect();
+			tank.list[game.id].mPosX = evt.clientX - rect.left;
+			tank.list[game.id].mPosY = evt.clientY - rect.top;
+			socket.emit('client-event', {
+				mx: evt.clientX - rect.left,
+				my: evt.clientY - rect.top
+			});
+		}
 	});
 }
 
