@@ -27,10 +27,9 @@ var port = process.env.PORT || 8080;
 
 
 io.on('connection', function(socket) {
-	socket.broadcast.emit('n-message', 'Nowa osoba dołączyła do rozmowy');
-
+	socket.broadcast.emit('n-message', 'Nowa osoba dołączyła do gry');
+	socket.emit('n-message', 'Dołączyłeś do gry');
 	console.log(socket.id);
-	tank.create(socket.id);
 
 	socket.on('disconnect', function() {
 		io.emit('n-message', 'Osoba się rozłączyła');
@@ -38,29 +37,35 @@ io.on('connection', function(socket) {
 			console.log('ERROR - nie można usunąć czołgu');
 		}
 	});
+
+	socket.on('join-game', function(msg) {
+		tank.create(socket.id);
+		players[socket.id] = JSON.parse(msg);
+	});
+
 	socket.on('message', function(msg) {
 		socket.broadcast.emit('message', msg);
 	});
 	socket.on('client-event', function(msg) {
 
 		var id = socket.id;
-		if(!id in tank.list) return;
+		if (!tank.list.hasOwnProperty(id) || !id) return;
 		for (var i in msg) {
 			switch (i) {
 				case 'mx':
-					tank.list[id]['mx'] = msg[i];
+					tank.list[id].mPosX = msg[i];
 					break;
 				case 'my':
-					tank.list[id]['my'] = msg[i];
+					tank.list[id].mPosY = msg[i];
 					break;
 				case 'shot':
-					tank.list[id].shot();
+					tank.shot(id);
 					break;
 				case 'dirX':
-					tank.list[id]['dirX'] = msg[i];
+					tank.list[id].dirX = msg[i];
 					break;
 				case 'dirY':
-					tank.list[id]['dirY'] = msg[i];
+					tank.list[id].dirY = msg[i];
 					break;
 				default:
 					console.log(i, msg[i]);
@@ -93,6 +98,7 @@ function send_data() {
 	var res = JSON.stringify({
 		tank: tank.list,
 		bullets: bullets.list,
+		board: board.list,
 		date: +new Date(),
 		nr: ++packages.nr
 	});
@@ -102,25 +108,42 @@ var packages = {
 	nr: 0
 }
 
+var nr = 0;
+
+var players = {
+
+}
+
 var board = {
-	WIDTH: 1000,
-	HEIGHT: 500,
-	elems: [{
+	WIDTH: 2000,
+	HEIGHT: 1000,
+	list: [{
 		type: 'box',
 		x1: 200,
 		y1: 200,
 		x2: 264,
-		y2: 264,
-		life: 10
+		y2: 264
+	}, {
+		type: 'box',
+		x1: 320,
+		y1: 320,
+		x2: 384,
+		y2: 384,
+	}, {
+		type: 'box',
+		x1: 320,
+		y1: 120,
+		x2: 384,
+		y2: 184,
 	}],
 }
 
 var tank = {
 	list: {},
 	proto: function(id) {
-		this.x = 100;
-		this.y = 100;
-		this.speed = 6;
+		this.x = losuj(50, 1950);
+		this.y = losuj(50, 950);
+		this.speed = 4;
 		this.dirX = 0;
 		this.dirY = 0;
 		this.radius = 22;
@@ -133,9 +156,13 @@ var tank = {
 		};
 		this.id = id;
 		this.life = 10;
-		this.shot = function() {
-			bullets.create(this.id);
-		}
+		this.mx = 0,
+			this.my = 0,
+			this.posX = 0,
+			this.posY = 0
+	},
+	shot: function(id) {
+		bullets.create(id);
 	},
 	create: function(id) {
 		tank.list[id] = new tank.proto(id);
@@ -152,7 +179,12 @@ var tank = {
 			var dx = tank.list[id]['dirX'];
 			var dy = tank.list[id]['dirY'];
 
-			if (dx != 0 && dy != 0) speed /= 1.4;
+			var old = {
+				x: tank.list[id].x,
+				y: tank.list[id].y
+			};
+
+			if (dx != 0 && dy != 0) speed = Math.round(speed / 1.4);
 
 			x += dx * speed;
 			y += dy * speed;
@@ -171,8 +203,8 @@ var tank = {
 
 			// Kolizje z boksami
 
-			for (var i = 0; i < board.elems.length; i++) {
-				var b = board.elems[i];
+			for (var i = 0; i < board.list.length; i++) {
+				var b = board.list[i];
 				if (b.type != 'box') continue;
 
 				if (b.x1 < x + r && b.x2 > x - r && b.y1 < y + r && b.y2 > y - r) {
@@ -200,17 +232,25 @@ var tank = {
 				}
 			}
 
-			tank.list[id].x = x;
-			tank.list[id].y = y;
+			// Kolizje z innymi czołgami
+			// DO DODANIA!!
 
 
-			var ta = tank.list[id];
-			var v = new vector(ta['mx'] - ta['x'], ta['my'] - ta['y']);
-			ta['lufa'] = {
-				x1: ta['x'] + v.unit.x * 8,
-				y1: ta['y'] + v.unit.y * 8,
-				x2: ta['x'] + v.unit.x * 30,
-				y2: ta['y'] + v.unit.y * 30
+			var t = tank.list[id];
+
+			t.x = x;
+			t.y = y;
+
+			t.mx = t.mPosX + x - players[id].SCREEN_WIDTH / 2;
+			t.my = t.mPosY + y - players[id].SCREEN_HEIGHT / 2;
+
+
+			var v = new vector(t.mx - t.x, t.my - t.y);
+			t.lufa = {
+				x1: t.x + v.unit.x * 8,
+				y1: t.y + v.unit.y * 8,
+				x2: t.x + v.unit.x * 30,
+				y2: t.y + v.unit.y * 30
 			};
 		}
 	}
@@ -219,9 +259,14 @@ var bullets = {
 	list: [],
 	move: function() {
 		for (var i = 0; i < bullets.list.length; i++) {
+			if (bullets.list[i] === undefined) {
+				bullets.list.splice(i, 1);
+				i--;
+				continue;
+			}
 			var b = bullets.list[i];
-			b.x += b.sx * 10;
-			b.y += b.sy * 10;
+			b.x += b.sx * b.speed;
+			b.y += b.sy * b.speed;
 
 			// Kolizja ze ścianami
 			if (b.x < 0 || b.y < 0 || b.x > board.WIDTH || b.y > board.HEIGHT) {
@@ -230,8 +275,8 @@ var bullets = {
 				continue;
 			}
 			// Kolizja z boxami
-			for (var j = 0; j < board.elems.length; j++) {
-				var e = board.elems[j];
+			for (var j = 0; j < board.list.length; j++) {
+				var e = board.list[j];
 				if (b.x + b.r > e.x1 && b.x - b.r < e.x2 && b.y + b.r > e.y1 && b.y - b.r < e.y2) {
 					bullets.list.splice(i, 1);
 					i--;
@@ -244,14 +289,12 @@ var bullets = {
 				if (b.owner == t.id) continue;
 				if ((t.x - b.x) * (t.x - b.x) + (t.y - b.y) * (t.y - b.y) < (t.r + b.r) * (t.r + b.r)) {
 					bullets.list.splice(i, 1);
+					i--;
 					if (!--t.life) {
 						delete tank.list[id];
 					}
 				}
 			}
-
-
-
 		}
 	},
 	proto: function(id) {
@@ -270,6 +313,7 @@ var bullets = {
 
 		this.r = 5;
 		this.owner = id;
+		this.speed = 10;
 	},
 	create: function(id) {
 		bullets.list.push(new bullets.proto(id));
@@ -285,4 +329,10 @@ var vector = function(x, y) {
 		x: this.x / this.size,
 		y: this.y / this.size
 	};
+}
+
+function losuj(a, b) {
+	var r = Math.random() * (a - b);
+	r += a + b;
+	return Math.round(r);
 }
