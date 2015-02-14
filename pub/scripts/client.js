@@ -37,8 +37,8 @@ var timestamps = [];
 var game = {
 	timerId: null,
 	nr: 0,
-	max_ping: 100, // [ms]
-	const_ping: 0,
+	ping: 0,
+	delay: 100, // [ms]
 	last_time: Date.now(),
 	frame_time: 0,
 	audio: {
@@ -79,7 +79,7 @@ var game = {
 	},
 	draw: function() {
 
-		var t = Date.now() - game.max_ping;
+		var t = Date.now() - game.delay;
 		game.frame_time = t;
 		for (var i = 0; i < timestamps.length; i++) {
 			if (t > timestamps[i].date) break;
@@ -268,9 +268,14 @@ var tank = {
 				ctx.stroke();
 				ctx.closePath();
 
-				/* 
-				var wsp1 = game.rel(ta.lufa.x1, ta.lufa.y1);
-				var wsp2 = game.rel(ta.lufa.x2, ta.lufa.y2);
+				
+				var l_x1 = game.interp(game.msg1.tank[i].lufa.x1, game.msg2.tank[i].lufa.x1);
+				var l_x2 = game.interp(game.msg1.tank[i].lufa.x2, game.msg2.tank[i].lufa.x2);
+				var l_y1 = game.interp(game.msg1.tank[i].lufa.y1, game.msg2.tank[i].lufa.y1);
+				var l_y2 = game.interp(game.msg1.tank[i].lufa.y2, game.msg2.tank[i].lufa.y2);
+
+				var wsp1 = game.rel(l_x1, l_y1);
+				var wsp2 = game.rel(l_x2, l_y2);
 
 				(player.id == i) ? ctx.strokeStyle = '#333': ctx.strokeStyle = '#0a4';
 				ctx.beginPath();
@@ -279,7 +284,6 @@ var tank = {
 				ctx.lineTo(wsp2.x, wsp2.y);
 				ctx.stroke();
 				ctx.closePath();
-				*/
 			}
 		}
 	}
