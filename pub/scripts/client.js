@@ -40,7 +40,7 @@ var game = {
 	last_time: +new Date(),
 	audio: {
 		shot: (function() {
-			var a = new Audio('gun_shot.wav');
+			var a = new Audio('audio/gun_shot.wav');
 			a.volume = 0.5;
 			return a;
 		})(),
