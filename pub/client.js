@@ -4,13 +4,6 @@ var canvas, context;
 var PI = Math.PI;
 var socket = io();
 
-// STATS.JS
-//var stats = new Stats();
-//stats.setMode(1); // 0: fps, 1: ms
-//stats.domElement.style.position = 'absolute';
-//stats.domElement.style.left = '0px';
-//stats.domElement.style.top = '0px';
-
 // CHAT
 var chat = {
 	message: function(msg) {
@@ -51,7 +44,8 @@ var chat = {
 		$('#chat').hide();
 		$('#m').blur();
 	},
-	isOpen: 0
+	isOpen: 0,
+	isFocus: 0
 }
 
 // Socket Event Handlers
@@ -285,18 +279,12 @@ var tank = {
 
 function game_events() {
 	window.addEventListener('keydown', function(evt) {
-		if (chat.isOpen == 1) {
-			switch (evt.which) {
-				case 13: // ENTER
-					chat.submit();
-					break;
-				case 27: // ESC<script>
-					chat.close();
-					break;
-				default:
-					break;
-			}
-		} else if (game.id in tank.list) {
+		if (chat.isFocus == 1 && evt.which == 13 ) { // ENTER
+			chat.submit();
+		} else if (chat.isOpen == 1 && evt.which == 27) {
+			chat.close();
+		}
+		else if (game.id in tank.list && !chat.isFocus) {
 			switch (evt.which) {
 				case 37: // LEFT
 				case 65: // A
@@ -373,6 +361,11 @@ function game_events() {
 			});
 		}
 	});
+	$('#m').focus(function() {
+		chat.isFocus = 1;
+	}).blur(function() {
+		chat.isFocus = 0;
+	})
 }
 
 var bullets = {
