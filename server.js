@@ -81,7 +81,7 @@ setInterval(function() {
 	io.emit('clients', clients);
 }, 1000);
 
-setInterval(gameLoop, 12);
+setInterval(gameLoop, 100);
 
 http.listen(port, function() {
 	console.log(port);
@@ -99,7 +99,7 @@ function send_data() {
 		tank: tank.list,
 		bullets: bullets.list,
 		board: board.list,
-		date: +new Date(),
+		date: Date.now(),
 		nr: ++packages.nr
 	});
 	io.emit('game-update', res);
@@ -108,11 +108,7 @@ var packages = {
 	nr: 0
 }
 
-var nr = 0;
-
-var players = {
-
-}
+var players = {};
 
 var board = {
 	WIDTH: 2000,
@@ -143,7 +139,7 @@ var tank = {
 	proto: function(id) {
 		this.x = losuj(50, 1950);
 		this.y = losuj(50, 950);
-		this.speed = 4;
+		this.speed = 10;
 		this.dirX = 0;
 		this.dirY = 0;
 		this.radius = 22;

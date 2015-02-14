@@ -1,5 +1,11 @@
 "use strict";
 
+if (!Date.now) {
+	Date.now = function() {
+		return new Date().getTime();
+	}
+}
+
 var canvas, context;
 var PI = Math.PI;
 var socket = io();
@@ -21,7 +27,7 @@ window.addEventListener('load', function load() {
 	game_events();
 
 	canvas.addEventListener('click', function(evt) {
-		if (!(game.id in tank.list) || game.id === null)
+		if (!my_tank.exist || game.id === null)
 			game.play();
 		else {
 			tank.shot();
@@ -32,12 +38,17 @@ window.addEventListener('load', function load() {
 	});
 });
 
+
+var timestamps = [];
+
+
 var game = {
+	timerId: null,
 	nr: 0,
-	max_ping: 50, // [ms]
+	max_ping: 100, // [ms]
 	const_ping: 0,
 	id: null,
-	last_time: +new Date(),
+	last_time: Date.now(),
 	audio: {
 		shot: (function() {
 			var a = new Audio('audio/gun_shot.wav');
@@ -51,41 +62,56 @@ var game = {
 	context: null,
 	counter: 0,
 	play: function() {
-		var msg = JSON.stringify(player);
-		socket.emit('join-game', msg);
-		game.draw();
+		if (!game.timerId) {
+			var msg = JSON.stringify(player);
+			socket.emit('join-game', msg);
+			game.draw();
+		}
 	},
 	update: function(msg) {
 		var msg = JSON.parse(msg);
 
-		game.ping = new Date() - msg.date + game.const_ping;
-		if(game.ping < 0) game.const_ping = -(new Date() - msg.date); // Czemu taki Error występuje???
-		var reqTime = game.max_ping - game.ping;
-		if (game.id in msg.tank && msg.nr > game.nr) {
+		game.ping = Date.now() - msg.date;
+
+		if (msg.nr > game.nr) {
 			game.nr = msg.nr;
-			setTimeout(function() {
-				tank.list = msg.tank;
-				bullets.list = msg.bullets;
-				board.list = msg.board;
-			}, Math.max(0, reqTime)); // IT WORKS!!!
-		} else {
-			delete tank.list[game.id]
+
+			// Od najstarszych do najnowszych
+			if (timestamps.length > 20) timestamps.pop();
+			timestamps.unshift(msg);
+
+		} else if(!my_tank.exist) {
 			board.clear();
 			board.draw_play_button();
 		}
 	},
 	draw: function() {
-		if (game.id in tank.list) {
-			board.draw_background();
-			tank.draw();
-			board.draw();
-			bullets.draw();
-			game.fps_count()
+
+		var t = Date.now() - game.max_ping;
+		for (var i = 0; i < timestamps.length; i++) {
+			if (t > timestamps[i].date) break;
 		}
-		requestAnimationFrame(game.draw);
+		game.ts_id = i;
+		// czas t pomiędzy i-1 oraz i
+		if (i < 21 && i >= 1) {
+			if (game.id in timestamps[i].tank && game.id in timestamps[i-1].tank) {
+				my_tank.exist = 1;
+				var msg1 = timestamps[i];
+				var msg2 = timestamps[i-1];
+
+				get_my_pos(msg1, msg2, t);
+				board.draw_background(msg1, msg2, t);
+				tank.draw(msg1, msg2, t);
+				//	board.draw(i, t);
+				//	bullets.draw(i, t);
+				game.fps_count()
+			} else {
+				my_tank.exist = 0;
+			}
+		}
+		game.timerId = requestAnimationFrame(game.draw);
 	},
 	rel: function(x, y) {
-		var my_tank = tank.list[game.id];
 		return {
 			x: x + player.SCREEN_WIDTH / 2 - my_tank.x,
 			y: y + player.SCREEN_HEIGHT / 2 - my_tank.y
@@ -94,14 +120,15 @@ var game = {
 	times: [],
 	time_sum: 0,
 	fps_count: function() {
-		var d = +new Date() - game.last_time;
-		game.last_time = +new Date();
+		var d = Date.now() - game.last_time;
+		game.last_time = Date.now();
 
-		if (game.times.length >= 50) game.time_sum -= game.times.pop();
 		game.times.unshift(d);
+		if (game.times.length >= 50) game.time_sum -= game.times.pop();
+
 		game.time_sum += d;
 		var t = game.time_sum / game.times.length;
-		
+
 		context.font = "13px Arial";
 		context.fillStyle = 'white'
 		context.fillText('FPS: ' + Math.floor(1000 / t), 15, 15);
@@ -120,7 +147,8 @@ var player = {
 var board = {
 	WIDTH: 2000,
 	HEIGHT: 1000,
-	draw_background: function() {
+	draw_background: function(i, t) {
+
 		context.clearRect(0, 0, player.SCREEN_WIDTH, player.SCREEN_HEIGHT);
 
 		var wsp = game.rel(0, 0);
@@ -136,7 +164,6 @@ var board = {
 		context.fill();
 		context.closePath()
 	},
-	list: [],
 	adjust: function() {
 		player.SCREEN_WIDTH = $(window).width();
 		player.SCREEN_HEIGHT = $(window).height();
@@ -175,96 +202,100 @@ var board = {
 
 
 var tank = {
-	list: {},
 	shot: function() {
 		game.audio.shot.cloneNode().play();
 	},
-	draw: function() {
-		for (var i in tank.list) {
-			var ctx = context;
-			var ta = tank.list[i];
-			var wsp = game.rel(ta.x, ta.y);
+	draw: function(msg1, msg2, time) {
+		for (var i in msg1.tank) {
+			if(i in msg2.tank) { // mógł zostać zabity
 
-			if (game.id == i) {
-				ctx.strokeStyle = '#333';
-				ctx.fillStyle = '#333';
-			} else {
-				ctx.strokeStyle = '#0a4';
-				ctx.fillStyle = '#0a4';
+
+				var x = interp(msg1.date, time, msg2.date, msg1.tank[i].x, msg2.tank[i].x);
+				var y = interp(msg1.date, time, msg2.date, msg1.tank[i].y, msg2.tank[i].y);
+				var life = msg1.tank[i].life; // msg1 jest starsze
+
+				var ctx = context;
+
+				var wsp = game.rel(x, y);
+
+				if (game.id == i) {
+					ctx.strokeStyle = '#333';
+					ctx.fillStyle = '#333';
+				} else {
+					ctx.strokeStyle = '#0a4';
+					ctx.fillStyle = '#0a4';
+				}
+
+				ctx.beginPath();
+				ctx.arc(wsp.x, wsp.y, 20, 0, 2 * PI, false);
+				ctx.lineWidth = 3;
+				ctx.stroke();
+
+				ctx.moveTo(wsp.x, wsp.y);
+
+				ctx.arc(wsp.x, wsp.y, 10, 0, 2 * PI, false);
+				ctx.fill();
+				ctx.closePath();
+
+
+				ctx.beginPath();
+				ctx.lineWidth = 9;
+				ctx.strokeStyle = '#fc0';
+				ctx.arc(wsp.x, wsp.y, 14, 0, PI * life / 5, false);
+				ctx.stroke();
+				ctx.closePath();
+
+				ctx.beginPath();
+				ctx.strokeStyle = '#f00';
+				ctx.arc(wsp.x, wsp.y, 14, PI * life / 5, 2 * PI, false);
+				ctx.stroke();
+				ctx.closePath();
+
+				/* 
+				var wsp1 = game.rel(ta.lufa.x1, ta.lufa.y1);
+				var wsp2 = game.rel(ta.lufa.x2, ta.lufa.y2);
+
+				(game.id == i) ? ctx.strokeStyle = '#333': ctx.strokeStyle = '#0a4';
+				ctx.beginPath();
+				ctx.moveTo(wsp1.x, wsp1.y);
+				ctx.lineWidth = 6;
+				ctx.lineTo(wsp2.x, wsp2.y);
+				ctx.stroke();
+				ctx.closePath();
+				*/
 			}
-
-			ctx.beginPath();
-			ctx.arc(wsp.x, wsp.y, 20, 0, 2 * PI, false);
-			ctx.lineWidth = 3;
-			ctx.stroke();
-
-			ctx.moveTo(wsp.x, wsp.y);
-
-			ctx.arc(wsp.x, wsp.y, 10, 0, 2 * PI, false);
-			ctx.fill();
-			ctx.closePath();
-
-
-			ctx.beginPath();
-			ctx.lineWidth = 9;
-			ctx.strokeStyle = '#fc0';
-			ctx.arc(wsp.x, wsp.y, 14, 0, PI * ta.life / 5, false);
-			ctx.stroke();
-			ctx.closePath();
-
-			ctx.beginPath();
-			ctx.strokeStyle = '#f00';
-			ctx.arc(wsp.x, wsp.y, 14, PI * ta.life / 5, 2 * PI, false);
-			ctx.stroke();
-			ctx.closePath();
-
-			var wsp1 = game.rel(ta.lufa.x1, ta.lufa.y1);
-			var wsp2 = game.rel(ta.lufa.x2, ta.lufa.y2);
-
-			(game.id == i) ? ctx.strokeStyle = '#333': ctx.strokeStyle = '#0a4';
-			ctx.beginPath();
-			ctx.moveTo(wsp1.x, wsp1.y);
-			ctx.lineWidth = 6;
-			ctx.lineTo(wsp2.x, wsp2.y);
-			ctx.stroke();
-			ctx.closePath();
 		}
 	}
 }
 
 function game_events() {
 	window.addEventListener('keydown', function(evt) {
-		if (chat.isFocus == 1 && evt.which == 13 ) { // ENTER
+		if (chat.isFocus == 1 && evt.which == 13) { // ENTER
 			chat.submit();
 		} else if (chat.isOpen == 1 && evt.which == 27) {
 			chat.close();
-		}
-		else if (game.id in tank.list && !chat.isFocus) {
+		} else if (my_tank.exist && !chat.isFocus) {
 			switch (evt.which) {
 				case 37: // LEFT
 				case 65: // A
-					tank.list[game.id].dirX = -1;
 					socket.emit('client-event', {
 						dirX: -1,
 					});
 					break;
 				case 38: // UP
 				case 87: // W
-					tank.list[game.id].dirY = -1;
 					socket.emit('client-event', {
 						dirY: -1,
 					});
 					break;
 				case 39: // RIGHT
 				case 68: // D
-					tank.list[game.id].dirX = 1;
 					socket.emit('client-event', {
 						dirX: 1,
 					});
 					break;
 				case 40: // DOWN
 				case 83: // S
-					tank.list[game.id].dirY = 1;
 					socket.emit('client-event', {
 						dirY: 1,
 					});
@@ -281,13 +312,12 @@ function game_events() {
 		}
 	});
 	window.addEventListener('keyup', function(e) {
-		if (game.id in tank.list) {
+		if (my_tank.exist) {
 			switch (e.which) {
 				case 37: // LEFT
 				case 65: // A
 				case 39: // RIGHT
 				case 68: // D
-					tank.list[game.id].dirX = 0;
 					socket.emit('client-event', {
 						dirX: 0
 					});
@@ -296,7 +326,6 @@ function game_events() {
 				case 87: // W
 				case 40: // DOWN
 				case 83: // S
-					tank.list[game.id].dirY = 0;
 					socket.emit('client-event', {
 						dirY: 0
 					});
@@ -306,10 +335,8 @@ function game_events() {
 		}
 	});
 	canvas.addEventListener('mousemove', function(evt) {
-		if (game.id in tank.list) {
+		if (my_tank.exist) {
 			var rect = canvas.getBoundingClientRect();
-			tank.list[game.id].mPosX = evt.clientX - rect.left;
-			tank.list[game.id].mPosY = evt.clientY - rect.top;
 			socket.emit('client-event', {
 				mx: evt.clientX - rect.left,
 				my: evt.clientY - rect.top
@@ -324,14 +351,13 @@ function game_events() {
 }
 
 var bullets = {
-	list: [],
 	draw: function() {
 		for (var i = 0; i < bullets.list.length; i++) {
 			var b = bullets.list[i];
 			var wsp = game.rel(b.x, b.y);
-				
+
 			context.beginPath();
-			context.fillStyle = '#333';	
+			context.fillStyle = '#333';
 			context.arc(wsp.x, wsp.y, b.r, 0, 2 * PI, false);
 			context.fill();
 			context.closePath();
@@ -352,7 +378,7 @@ var resources = {
 			return img;
 		})()
 	}
-}
+};
 
 // prototyp wektora
 var vector = function(x, y) {
@@ -363,4 +389,24 @@ var vector = function(x, y) {
 		x: this.x / this.size,
 		y: this.y / this.size
 	};
+};
+
+var interp = function(Ta, Tb, Tc, A, C) {
+	// Zwraca wartość środkowej wartości
+	// Ta & Tc - Timestamps 
+	// Tb - Animation time
+	// A & C - Wartości odpowiadające Ta & Tc
+	return (A * (Tc - Tb) + C * (Tb - Ta)) / (Tc - Ta);
+}
+
+var my_tank = {
+	x: null,
+	y: null,
+	exist: 0,
+	angle: 0 // kąt lufy
+}
+
+function get_my_pos(msg1, msg2, t) {
+	my_tank.x = interp(msg1.date, t, msg2.date, msg1.tank[game.id].x, msg2.tank[game.id].x);
+	my_tank.y = interp(msg1.date, t, msg2.date, msg1.tank[game.id].y, msg2.tank[game.id].y);
 }
