@@ -93,7 +93,6 @@ http.listen(port, function() {
 	console.log(port);
 });
 
-
 function gameLoop() {
 	tank.move();
 	bullets.move();

@@ -31,13 +31,24 @@ window.addEventListener('load', function load() {
 });
 
 
-var timestamps = [];
+var packages = [];
 
 
 var game = {
 	timerId: null,
 	nr: 0,
-	ping: 0,
+	ping: {
+		sum: 0,
+		amount: 0,
+		av: 0,
+		actual: 0,
+		addState: function(x) {
+			this.actual = x;
+			this.sum += x;
+			this.amount += 1;
+			this.av = this.sum / this.amount;
+		},
+	},
 	delay: 100, // [ms]
 	last_time: Date.now(),
 	frame_time: 0,
@@ -54,7 +65,8 @@ var game = {
 	context: null,
 	counter: 0,
 	play: function() {
-		if (!game.timerId) {
+		if (!player.exist) {
+			cancelAnimationFrame(game.timerId);
 			var msg = JSON.stringify(player);
 			socket.emit('join-game', msg);
 			game.draw();
@@ -63,34 +75,31 @@ var game = {
 	update: function(msg) {
 		var msg = JSON.parse(msg);
 
-		game.ping = Date.now() - msg.date;
+		game.ping.addState(Date.now() - msg.date);
 
 		if (msg.nr > game.nr) {
 			game.nr = msg.nr;
 
 			// Od najstarszych do najnowszych
-			if (timestamps.length > 20) timestamps.pop();
-			timestamps.unshift(msg);
+			if (packages.length > 20) packages.pop();
+			packages.unshift(msg);
 
-		} else if (!player.exist) {
-			board.clear();
-			board.draw_play_button();
 		}
 	},
 	draw: function() {
 
-		var t = Date.now() - game.delay;
+		var t = Date.now() - game.delay + game.ping.av;
 		game.frame_time = t;
-		for (var i = 0; i < timestamps.length; i++) {
-			if (t > timestamps[i].date) break;
+		for (var i = 0; i < packages.length; i++) {
+			if (t > packages[i].date) break;
 		}
 		game.ts_id = i;
 		// czas t pomiędzy i-1 oraz i
 		if (i < 21 && i >= 1) {
-			if (player.id in timestamps[i].tank && player.id in timestamps[i - 1].tank) {
+			if (player.id in packages[i].tank && player.id in packages[i - 1].tank) {
 				player.exist = 1;
-				game.msg1 = timestamps[i];
-				game.msg2 = timestamps[i - 1];
+				game.msg1 = packages[i];
+				game.msg2 = packages[i - 1];
 
 				player.pos();
 
@@ -101,6 +110,8 @@ var game = {
 				game.fps_count()
 			} else {
 				player.exist = 0;
+				board.clear();
+				board.draw_play_button();
 			}
 		}
 		game.timerId = requestAnimationFrame(game.draw);
@@ -126,14 +137,14 @@ var game = {
 		context.font = "13px Arial";
 		context.fillStyle = 'white'
 		context.fillText('FPS: ' + Math.floor(1000 / t), 15, 15);
-		context.fillText('PING: ' + Math.floor(game.ping), 80, 15);
+		context.fillText('PING: ' + Math.floor(game.ping.actual), 80, 15);
 	},
 	disconnect: function() {
 		alert("You are disconnected from the server");
 	},
 	interp: function(A, C) {
 		// Zwraca wartość środkowej wartości
-		// Ta & Tc - Timestamps 
+		// Ta & Tc - packages 
 		// Tb - Animation time
 		// A & C - Wartości odpowiadające Ta & Tc
 		return (A * (game.msg2.date - game.frame_time) + C * (game.frame_time - game.msg1.date)) / (game.msg2.date - game.msg1.date);
@@ -158,21 +169,16 @@ var board = {
 	WIDTH: 2000,
 	HEIGHT: 1000,
 	draw_background: function() {
-
-		context.clearRect(0, 0, player.SCREEN_WIDTH, player.SCREEN_HEIGHT);
-
 		var wsp = game.rel(0, 0);
-
 		var x1 = Math.max(wsp.x, 0),
 			x2 = Math.min(wsp.x + board.WIDTH, player.SCREEN_WIDTH),
 			y1 = Math.max(wsp.y, 0),
 			y2 = Math.min(wsp.y + board.HEIGHT, player.SCREEN_HEIGHT);
 
-		context.beginPath();
+		context.clearRect(0, 0, player.SCREEN_WIDTH, player.SCREEN_HEIGHT);
 		context.fillStyle = '#060'
 		context.rect(x1, y1, x2, y2);
 		context.fill();
-		context.closePath()
 	},
 	adjust: function() {
 		player.SCREEN_WIDTH = $(window).outerWidth()
@@ -239,8 +245,8 @@ var tank = {
 					ctx.strokeStyle = '#333';
 					ctx.fillStyle = '#333';
 				} else {
-					ctx.strokeStyle = '#0a4';
-					ctx.fillStyle = '#0a4';
+					ctx.strokeStyle = '#c60';
+					ctx.fillStyle = '#c60';
 				}
 
 				ctx.beginPath();
@@ -277,7 +283,7 @@ var tank = {
 				var wsp1 = game.rel(l_x1, l_y1);
 				var wsp2 = game.rel(l_x2, l_y2);
 
-				(player.id == i) ? ctx.strokeStyle = '#333': ctx.strokeStyle = '#0a4';
+				(player.id == i) ? ctx.strokeStyle = '#333': ctx.strokeStyle = '#c60';
 				ctx.beginPath();
 				ctx.moveTo(wsp1.x, wsp1.y);
 				ctx.lineWidth = 6;
