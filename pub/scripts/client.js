@@ -22,6 +22,7 @@ function socket_handlers() {
 window.addEventListener('load', function load() {
 	canvas = $('#game')[0];
 	context = canvas.getContext('2d');
+
 	board.adjust();
 	socket_handlers();
 	game_events();
@@ -49,6 +50,7 @@ var game = {
 	const_ping: 0,
 	id: null,
 	last_time: Date.now(),
+	frame_time: 0,
 	audio: {
 		shot: (function() {
 			var a = new Audio('audio/gun_shot.wav');
@@ -80,7 +82,7 @@ var game = {
 			if (timestamps.length > 20) timestamps.pop();
 			timestamps.unshift(msg);
 
-		} else if(!my_tank.exist) {
+		} else if (!my_tank.exist) {
 			board.clear();
 			board.draw_play_button();
 		}
@@ -88,22 +90,24 @@ var game = {
 	draw: function() {
 
 		var t = Date.now() - game.max_ping;
+		game.frame_time = t;
 		for (var i = 0; i < timestamps.length; i++) {
 			if (t > timestamps[i].date) break;
 		}
 		game.ts_id = i;
 		// czas t pomiędzy i-1 oraz i
 		if (i < 21 && i >= 1) {
-			if (game.id in timestamps[i].tank && game.id in timestamps[i-1].tank) {
+			if (game.id in timestamps[i].tank && game.id in timestamps[i - 1].tank) {
 				my_tank.exist = 1;
-				var msg1 = timestamps[i];
-				var msg2 = timestamps[i-1];
+				game.msg1 = timestamps[i];
+				game.msg2 = timestamps[i - 1];
 
-				get_my_pos(msg1, msg2, t);
-				board.draw_background(msg1, msg2, t);
-				tank.draw(msg1, msg2, t);
-				//	board.draw(i, t);
-				//	bullets.draw(i, t);
+				my_tank.pos();
+
+				board.draw_background();
+				tank.draw();
+				board.draw();
+				bullets.draw();
 				game.fps_count()
 			} else {
 				my_tank.exist = 0;
@@ -136,6 +140,13 @@ var game = {
 	},
 	disconnect: function() {
 		alert("You are disconnected from the server");
+	},
+	interp: function(A, C) {
+		// Zwraca wartość środkowej wartości
+		// Ta & Tc - Timestamps 
+		// Tb - Animation time
+		// A & C - Wartości odpowiadające Ta & Tc
+		return (A * (game.msg2.date - game.frame_time) + C * (game.frame_time - game.msg1.date)) / (game.msg2.date - game.msg1.date);
 	}
 }
 
@@ -145,9 +156,10 @@ var player = {
 }
 
 var board = {
+	bg_canvas: $('<canvas>'),
 	WIDTH: 2000,
 	HEIGHT: 1000,
-	draw_background: function(i, t) {
+	draw_background: function() {
 
 		context.clearRect(0, 0, player.SCREEN_WIDTH, player.SCREEN_HEIGHT);
 
@@ -165,17 +177,29 @@ var board = {
 		context.closePath()
 	},
 	adjust: function() {
-		player.SCREEN_WIDTH = $(window).width();
-		player.SCREEN_HEIGHT = $(window).height();
+		player.SCREEN_WIDTH = $(window).outerWidth()
+		player.SCREEN_HEIGHT = $(window).outerHeight();
 		$('canvas').attr({
 			width: player.SCREEN_WIDTH,
 			height: player.SCREEN_HEIGHT
 		});
+		socket.emit('client-event', {
+			sw: player.SCREEN_WIDTH,
+			sh: player.SCREEN_HEIGHT
+		})
+		board.bg_canvas.attr({
+			width: player.SCREEN_WIDTH + board.WIDTH,
+			height: player.SCREEN_HEIGHT + board.HEIGHT
+		});
 	},
 	draw: function() {
-		for (var i = 0; i < board.list.length; i++) {
-			var e = board.list[i];
-			var wsp = game.rel(e.x1, e.y1);
+		for (var i = 0; i < game.msg1.board.length; i++) {
+
+			var x = game.interp(game.msg1.board[i].x1, game.msg2.board[i].x1);
+			var y = game.interp(game.msg1.board[i].y1, game.msg2.board[i].y1);
+
+			var e = game.msg1.board[i];
+			var wsp = game.rel(x, y);
 			switch (e.type) {
 				case 'box':
 					context.drawImage(resources.list.box, wsp.x, wsp.y, e.x2 - e.x1, e.y2 - e.y1);
@@ -205,14 +229,13 @@ var tank = {
 	shot: function() {
 		game.audio.shot.cloneNode().play();
 	},
-	draw: function(msg1, msg2, time) {
-		for (var i in msg1.tank) {
-			if(i in msg2.tank) { // mógł zostać zabity
+	draw: function() {
+		for (var i in game.msg1.tank) {
+			if (i in game.msg2.tank) { // mógł zostać zabity
 
-
-				var x = interp(msg1.date, time, msg2.date, msg1.tank[i].x, msg2.tank[i].x);
-				var y = interp(msg1.date, time, msg2.date, msg1.tank[i].y, msg2.tank[i].y);
-				var life = msg1.tank[i].life; // msg1 jest starsze
+				var x = game.interp(game.msg1.tank[i].x, game.msg2.tank[i].x);
+				var y = game.interp(game.msg1.tank[i].y, game.msg2.tank[i].y);
+				var life = game.msg1.tank[i].life; // msg1 jest starsze
 
 				var ctx = context;
 
@@ -334,6 +357,7 @@ function game_events() {
 			}
 		}
 	});
+	window.addEventListener('resize', board.adjust);
 	canvas.addEventListener('mousemove', function(evt) {
 		if (my_tank.exist) {
 			var rect = canvas.getBoundingClientRect();
@@ -352,15 +376,19 @@ function game_events() {
 
 var bullets = {
 	draw: function() {
-		for (var i = 0; i < bullets.list.length; i++) {
-			var b = bullets.list[i];
-			var wsp = game.rel(b.x, b.y);
+		for (var i in game.msg1.bullets) {
+			if (game.msg1.bullets[i] && game.msg2.bullets[i]) { // trzeba zamienić na identyfikatory!!!
+				var x = game.interp(game.msg1.bullets[i].x, game.msg2.bullets[i].x);
+				var y = game.interp(game.msg1.bullets[i].y, game.msg2.bullets[i].y);
+				var r = 5;
+				var wsp = game.rel(x, y);
 
-			context.beginPath();
-			context.fillStyle = '#333';
-			context.arc(wsp.x, wsp.y, b.r, 0, 2 * PI, false);
-			context.fill();
-			context.closePath();
+				context.beginPath();
+				context.fillStyle = '#333';
+				context.arc(wsp.x, wsp.y, r, 0, 2 * PI, false);
+				context.fill();
+				context.closePath();
+			}
 		}
 	}
 }
@@ -391,22 +419,13 @@ var vector = function(x, y) {
 	};
 };
 
-var interp = function(Ta, Tb, Tc, A, C) {
-	// Zwraca wartość środkowej wartości
-	// Ta & Tc - Timestamps 
-	// Tb - Animation time
-	// A & C - Wartości odpowiadające Ta & Tc
-	return (A * (Tc - Tb) + C * (Tb - Ta)) / (Tc - Ta);
-}
-
 var my_tank = {
 	x: null,
 	y: null,
 	exist: 0,
-	angle: 0 // kąt lufy
-}
-
-function get_my_pos(msg1, msg2, t) {
-	my_tank.x = interp(msg1.date, t, msg2.date, msg1.tank[game.id].x, msg2.tank[game.id].x);
-	my_tank.y = interp(msg1.date, t, msg2.date, msg1.tank[game.id].y, msg2.tank[game.id].y);
+	angle: 0, // kąt lufy
+	pos: function() {
+		my_tank.x = game.interp(game.msg1.tank[game.id].x, game.msg2.tank[game.id].x);
+		my_tank.y = game.interp(game.msg1.tank[game.id].y, game.msg2.tank[game.id].y);
+	}
 }

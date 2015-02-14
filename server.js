@@ -67,6 +67,12 @@ io.on('connection', function(socket) {
 				case 'dirY':
 					tank.list[id].dirY = msg[i];
 					break;
+				case 'sw':
+					players[id].SCREEN_WIDTH = msg[i];
+				break;
+				case 'sh': 
+					players[id].SCREEN_HEIGHT = msg[i];
+				break;
 				default:
 					console.log(i, msg[i]);
 					break;
@@ -81,7 +87,7 @@ setInterval(function() {
 	io.emit('clients', clients);
 }, 1000);
 
-setInterval(gameLoop, 100);
+setInterval(gameLoop, 50);
 
 http.listen(port, function() {
 	console.log(port);
@@ -139,7 +145,7 @@ var tank = {
 	proto: function(id) {
 		this.x = losuj(50, 1950);
 		this.y = losuj(50, 950);
-		this.speed = 10;
+		this.speed = 15;
 		this.dirX = 0;
 		this.dirY = 0;
 		this.radius = 22;
@@ -252,12 +258,11 @@ var tank = {
 	}
 };
 var bullets = {
-	list: [],
+	list: {},
 	move: function() {
-		for (var i = 0; i < bullets.list.length; i++) {
+		for (var i in bullets.list) {
 			if (bullets.list[i] === undefined) {
-				bullets.list.splice(i, 1);
-				i--;
+				delete bullets.list[i];
 				continue;
 			}
 			var b = bullets.list[i];
@@ -266,26 +271,22 @@ var bullets = {
 
 			// Kolizja ze ścianami
 			if (b.x < 0 || b.y < 0 || b.x > board.WIDTH || b.y > board.HEIGHT) {
-				bullets.list.splice(i, 1);
-				i--;
+				delete bullets.list[i];
 				continue;
 			}
 			// Kolizja z boxami
 			for (var j = 0; j < board.list.length; j++) {
 				var e = board.list[j];
 				if (b.x + b.r > e.x1 && b.x - b.r < e.x2 && b.y + b.r > e.y1 && b.y - b.r < e.y2) {
-					bullets.list.splice(i, 1);
-					i--;
-					break;
-
+					delete bullets.list[i];
+					continue;
 				}
 			}
 			for (var id in tank.list) {
 				var t = tank.list[id];
 				if (b.owner == t.id) continue;
 				if ((t.x - b.x) * (t.x - b.x) + (t.y - b.y) * (t.y - b.y) < (t.r + b.r) * (t.r + b.r)) {
-					bullets.list.splice(i, 1);
-					i--;
+					delete bullets.list[i];
 					if (!--t.life) {
 						delete tank.list[id];
 					}
@@ -293,7 +294,7 @@ var bullets = {
 			}
 		}
 	},
-	proto: function(id) {
+	proto: function(id, id2) {
 		var x = tank.list[id].x;
 		var y = tank.list[id].y;
 		var mx = tank.list[id].mx;
@@ -306,13 +307,14 @@ var bullets = {
 
 		this.sx = (mx - x) / size;
 		this.sy = (my - y) / size;
-
+		this.id = id2;
 		this.r = 5;
 		this.owner = id;
-		this.speed = 10;
+		this.speed = 30;
 	},
 	create: function(id) {
-		bullets.list.push(new bullets.proto(id));
+		var id2 = 'id_' + losuj(0, 10000000)
+		bullets.list[id2] = new bullets.proto(id, id2);
 	},
 }
 

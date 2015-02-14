@@ -4,6 +4,7 @@ body {
 	font-family: Arial, Calibri;
 	-webkit-user-select: none;
 	-khtml-user-select: none;
+	overflow: hidden;
 }
 
 canvas#game {
@@ -13,6 +14,10 @@ canvas#game {
 	top: 0;
 	cursor: crosshair;
 	background: #333;
+
+	-webkit-transform: translate3d(0, 0, 0);
+	-webkit-backface-visibility: hidden;
+	-webkit-perspective: 1000;
 }
 
 #chat {
