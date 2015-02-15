@@ -87,7 +87,7 @@ setInterval(function() {
 	io.emit('clients', clients);
 }, 1000);
 
-setInterval(gameLoop, 50);
+setInterval(gameLoop, 20);
 
 http.listen(port, function() {
 	console.log(port);
@@ -145,7 +145,7 @@ var tank = {
 	proto: function(id) {
 		this.x = losuj(50, 1950);
 		this.y = losuj(50, 950);
-		this.speed = 15;
+		this.speed = 5;
 		this.dirX = 0;
 		this.dirY = 0;
 		this.radius = 22;
@@ -310,7 +310,7 @@ var bullets = {
 		this.id = id2;
 		this.r = 5;
 		this.owner = id;
-		this.speed = 30;
+		this.speed = 10;
 	},
 	create: function(id) {
 		var id2 = 'id_' + losuj(0, 10000000)
