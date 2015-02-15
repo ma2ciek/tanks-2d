@@ -87,13 +87,13 @@ setInterval(function() {
 	io.emit('clients', clients);
 }, 1000);
 
-setInterval(gameLoop, 50);
+setInterval(mainLoop, 50);
 
 http.listen(port, function() {
 	console.log(port);
 });
 
-function gameLoop() {
+function mainLoop() {
 	tank.move();
 	bullets.move();
 	send_data();

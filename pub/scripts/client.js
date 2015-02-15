@@ -36,7 +36,10 @@ var packages = [];
 
 var game = {
 	timerId: null,
-	nr: 0,
+	package_nr: 0,
+	delay: 100, // [ms]
+	frame_time: 0,
+	space_shot: 1,
 	ping: {
 		sum: 0,
 		amount: 0,
@@ -48,19 +51,6 @@ var game = {
 			this.amount += 1;
 			this.av = this.sum / this.amount;
 		},
-	},
-	delay: 100, // [ms]
-	last_time: Date.now(),
-	frame_time: 0,
-	audio: {
-		shot: (function() {
-			var a = new Audio('audio/gun_shot.wav');
-			a.volume = 0.5;
-			return a;
-		})(),
-		message: (function() {
-			var a = new Audio();
-		})()
 	},
 	context: null,
 	counter: 0,
@@ -77,8 +67,8 @@ var game = {
 
 		game.ping.addState(Date.now() - msg.date);
 
-		if (msg.nr > game.nr) {
-			game.nr = msg.nr;
+		if (msg.nr > game.package_nr) {
+			game.package_nr = msg.nr;
 
 			// Od najstarszych do najnowszych
 			if (packages.length > 20) packages.pop();
@@ -107,7 +97,7 @@ var game = {
 				tank.draw();
 				board.draw();
 				bullets.draw();
-				game.fps_count()
+				game.fps.count()
 			} else {
 				player.exist = 0;
 				board.clear();
@@ -122,22 +112,25 @@ var game = {
 			y: y + player.SCREEN_HEIGHT / 2 - player.y
 		}
 	},
-	times: [],
-	time_sum: 0,
-	fps_count: function() {
-		var d = Date.now() - game.last_time;
-		game.last_time = Date.now();
+	fps: {
+		times: [],
+		time_sum: 0,
+		last_time: Date.now(),
+		count: function() {
+			var d = Date.now() - this.last_time;
+			this.last_time = Date.now();
 
-		game.times.unshift(d);
-		if (game.times.length >= 50) game.time_sum -= game.times.pop();
+			this.times.unshift(d);
+			if (this.times.length >= 50) this.time_sum -= this.times.pop();
 
-		game.time_sum += d;
-		var t = game.time_sum / game.times.length;
+			this.time_sum += d;
+			var t = this.time_sum / this.times.length;
 
-		context.font = "13px Arial";
-		context.fillStyle = 'white'
-		context.fillText('FPS: ' + Math.floor(1000 / t), 15, 15);
-		context.fillText('PING: ' + Math.floor(game.ping.actual), 80, 15);
+			context.font = "13px Arial";
+			context.fillStyle = 'white'
+			context.fillText('FPS: ' + Math.floor(1000 / t), 15, 15);
+			context.fillText('PING: ' + Math.floor(game.ping.actual), 80, 15);
+		}
 	},
 	disconnect: function() {
 		alert("You are disconnected from the server");
@@ -202,7 +195,7 @@ var board = {
 			var wsp = game.rel(x, y);
 			switch (e.type) {
 				case 'box':
-					context.drawImage(resources.list.box, wsp.x, wsp.y, e.x2 - e.x1, e.y2 - e.y1);
+					context.drawImage(resources.img.box, wsp.x, wsp.y, e.x2 - e.x1, e.y2 - e.y1);
 					break;
 				default:
 					break;
@@ -227,7 +220,7 @@ var board = {
 
 var tank = {
 	shot: function() {
-		game.audio.shot.cloneNode().play();
+		resources.audio.shot.cloneNode().play();
 	},
 	draw: function() {
 		for (var i in game.msg1.tank) {
@@ -274,7 +267,7 @@ var tank = {
 				ctx.stroke();
 				ctx.closePath();
 
-				
+
 				var l_x1 = game.interp(game.msg1.tank[i].lufa.x1, game.msg2.tank[i].lufa.x1);
 				var l_x2 = game.interp(game.msg1.tank[i].lufa.x2, game.msg2.tank[i].lufa.x2);
 				var l_y1 = game.interp(game.msg1.tank[i].lufa.y1, game.msg2.tank[i].lufa.y1);
@@ -302,7 +295,16 @@ function game_events() {
 		} else if (chat.isOpen == 1 && evt.which == 27) {
 			chat.close();
 		} else if (player.exist && !chat.isFocus) {
-			switch (evt.which) {
+			switch (evt.which) {				
+				case 13: // Enter - czat
+					chat.show();
+					break;
+				case 32: // SPACE
+					if(game.space_shot == 1) {
+						$('#game').trigger('click');
+						game.space_shot = 0;
+					}
+					break;
 				case 37: // LEFT
 				case 65: // A
 					socket.emit('client-event', {
@@ -327,12 +329,6 @@ function game_events() {
 						dirY: 1,
 					});
 					break;
-				case 13: // Enter - czat
-					chat.show();
-					break;
-				case 32: // SPACE
-					$('#game').trigger('click');
-					break;
 				default:
 					break;
 			}
@@ -341,6 +337,9 @@ function game_events() {
 	window.addEventListener('keyup', function(evt) {
 		if (player.exist) {
 			switch (evt.which) {
+				case 32: 
+					game.space_shot = 1;
+				break;
 				case 37: // LEFT
 				case 65: // A
 				case 39: // RIGHT
@@ -408,7 +407,7 @@ var bullets = {
 }
 
 var resources = {
-	list: {
+	img: {
 		bg: (function() {
 			var img = new Image();
 			// img.src = './img/bg.jpg';
@@ -418,6 +417,13 @@ var resources = {
 			var img = new Image();
 			img.src = './img/box.jpg';
 			return img;
+		})()
+	},
+	audio: {
+		shot: (function() {
+			var a = new Audio('audio/gun_shot.wav');
+			a.volume = 0.5;
+			return a;
 		})()
 	}
 };
