@@ -51,27 +51,26 @@ ul#messages {
 ul li {
 	margin: 5px 10px;
 }
-ul span {
+#chat span {
 	display: inline-block;
 	border-radius: 10px;
 	padding: 4px 10px;
 	background: #EEE;
 }
-ul li.my {
+#chat li.my {
 	text-align: right;
 }
-ul li.my span {
+#chat li.my span {
 	background: #09f;
 	color: white;
 	max-width: 200px;
 }
-ul li.neutral span {
+#chat li.neutral span {
 	text-align: center;
 	background: inherit;
 	display: block;
 }
-
-input#m {
+#chat input#m {
 	position: absolute;
 	bottom: 0;
 	box-sizing: border-box;

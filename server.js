@@ -22,6 +22,7 @@ app.use(methodOverride())
 app.use(express.static(__dirname + '/pub'));
 
 app.get('/', routes.index);
+app.get('/settings', routes.settings);
 
 var port = process.env.PORT || 8080;
 
@@ -69,10 +70,10 @@ io.on('connection', function(socket) {
 					break;
 				case 'sw':
 					players[id].SCREEN_WIDTH = msg[i];
-				break;
-				case 'sh': 
+					break;
+				case 'sh':
 					players[id].SCREEN_HEIGHT = msg[i];
-				break;
+					break;
 				default:
 					console.log(i, msg[i]);
 					break;
@@ -150,20 +151,24 @@ var tank = {
 		this.radius = 22;
 		this.r = 22;
 		this.lufa = {
-			x1: 0,
-			y1: 0,
-			x2: 0,
-			y2: 0
+			x1: this.x + 5,
+			y1: this.y,
+			x2: this.x + 15,
+			y2: this.y
 		};
 		this.id = id;
 		this.life = 10;
-		this.mx = 0,
-			this.my = 0,
-			this.posX = 0,
-			this.posY = 0
+		this.mx = 0;
+		this.my = 0;
+		this.posX = 0;
+		this.posY = 0;
+		this.bullets = 50;
 	},
 	shot: function(id) {
-		bullets.create(id);
+		if(tank.list[id].bullets > 0) {
+			bullets.create(id);
+			tank.list[id].bullets--;
+		}	
 	},
 	create: function(id) {
 		tank.list[id] = new tank.proto(id);

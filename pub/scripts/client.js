@@ -97,7 +97,8 @@ var game = {
 				tank.draw();
 				board.draw();
 				bullets.draw();
-				game.fps.count()
+				board.draw_bullets();
+				game.fps.count();
 			} else {
 				player.exist = 0;
 				board.clear();
@@ -167,11 +168,27 @@ var board = {
 			x2 = Math.min(wsp.x + board.WIDTH, player.SCREEN_WIDTH),
 			y1 = Math.max(wsp.y, 0),
 			y2 = Math.min(wsp.y + board.HEIGHT, player.SCREEN_HEIGHT);
-
+		context.beginPath();
 		context.clearRect(0, 0, player.SCREEN_WIDTH, player.SCREEN_HEIGHT);
 		context.fillStyle = '#060'
-		context.rect(x1, y1, x2, y2);
+		context.fillRect(x1, y1, x2, y2);
 		context.fill();
+		context.closePath();
+	},
+	draw_bullets: function() {
+		context.beginPath();
+		context.strokeStyle = '#AA0';
+		context.lineWidth = 2;
+		context.roundRect(70, player.SCREEN_HEIGHT - 70, 60, 60, 15);
+		context.stroke();
+		context.closePath();
+		
+		context.drawImage(resources.img.bullet, 0, 0, 199, 199, 65, player.SCREEN_HEIGHT - 65, 50, 50);
+		context.fillStyle = 'white';
+		context.font = "10px Arial";
+		context.fillText('LPM' , 90, player.SCREEN_HEIGHT - 74);
+		context.font = "13px Arial";
+		context.fillText('x' + game.msg1.tank[player.id].bullets, 100, player.SCREEN_HEIGHT - 30);
 	},
 	adjust: function() {
 		player.SCREEN_WIDTH = $(window).outerWidth()
@@ -220,7 +237,12 @@ var board = {
 
 var tank = {
 	shot: function() {
-		resources.audio.shot.cloneNode().play();
+		if(game.msg1.tank[player.id].bullets > 0) {
+			var a = resources.audio.shot;
+			var x = a.cloneNode();
+			x.volume = a.volume;
+			x.play();
+		}
 	},
 	draw: function() {
 		for (var i in game.msg1.tank) {
@@ -294,13 +316,15 @@ function game_events() {
 			chat.submit();
 		} else if (chat.isOpen == 1 && evt.which == 27) {
 			chat.close();
+		} else if (evt.which == 27) {
+			settings.toggle();
 		} else if (player.exist && !chat.isFocus) {
-			switch (evt.which) {				
+			switch (evt.which) {
 				case 13: // Enter - czat
 					chat.show();
 					break;
 				case 32: // SPACE
-					if(game.space_shot == 1) {
+					if (game.space_shot == 1) {
 						$('#game').trigger('click');
 						game.space_shot = 0;
 					}
@@ -337,9 +361,9 @@ function game_events() {
 	window.addEventListener('keyup', function(evt) {
 		if (player.exist) {
 			switch (evt.which) {
-				case 32: 
+				case 32:
 					game.space_shot = 1;
-				break;
+					break;
 				case 37: // LEFT
 				case 65: // A
 				case 39: // RIGHT
@@ -417,7 +441,12 @@ var resources = {
 			var img = new Image();
 			img.src = './img/box.jpg';
 			return img;
-		})()
+		})(),
+		bullet: (function() {
+			var img = new Image();
+			img.src = './img/bullet.png';
+			return img;
+		})(),
 	},
 	audio: {
 		shot: (function() {
@@ -438,3 +467,35 @@ var vector = function(x, y) {
 		y: this.y / this.size
 	};
 };
+
+
+
+var settings = {
+	isOpen: 0,
+	toggle: function() {
+		(settings.isOpen == 1) ? settings.close() : settings.open()
+	},
+	open: function() {
+		settings.isOpen = 1;
+		$('body').append('<div id="settings"></div>');
+		$('div#settings').load('/settings');
+	},
+	close: function() {
+		settings.isOpen = 0;
+		$('#settings').remove();
+	}
+
+}
+
+CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+  if (w < 2 * r) r = w / 2;
+  if (h < 2 * r) r = h / 2;
+  this.beginPath();
+  this.moveTo(x+r, y);
+  this.arcTo(x+w, y,   x+w, y+h, r);
+  this.arcTo(x+w, y+h, x,   y+h, r);
+  this.arcTo(x,   y+h, x,   y,   r);
+  this.arcTo(x,   y,   x+w, y,   r);
+  this.closePath();
+  return this;
+}
