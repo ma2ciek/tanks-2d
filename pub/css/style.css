@@ -12,14 +12,23 @@ canvas#game {
 	position: absolute;
 	left: 0;
 	top: 0;
-	cursor: crosshair;
 	background: #333;
 
 	-webkit-transform: translate3d(0, 0, 0);
 	-webkit-backface-visibility: hidden;
 	-webkit-perspective: 1000;
 }
+canvas#active {
+	z-index: 2;
+	position: absolute;
+	left: 0;
+	top: 0;
+	cursor: crosshair;
 
+	-webkit-transform: translate3d(0, 0, 0);
+	-webkit-backface-visibility: hidden;
+	-webkit-perspective: 1000;
+}
 #chat {
 	display: none;
 	position: absolute;

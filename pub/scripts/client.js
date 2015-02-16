@@ -1,12 +1,7 @@
 "use strict";
 
-if (!Date.now) {
-	Date.now = function() {
-		return new Date().getTime();
-	}
-}
-
-var canvas, context;
+var ctx, canvas;
+var act_ctx, act_canvas;
 var PI = Math.PI;
 var socket = io();
 
@@ -21,8 +16,9 @@ function socket_handlers() {
 
 window.addEventListener('load', function load() {
 	canvas = $('#game')[0];
-	context = canvas.getContext('2d');
-
+	ctx = canvas.getContext('2d');
+	act_canvas = $('#active')[0];
+	act_ctx = act_canvas.getContext('2d');
 	socket_handlers();
 	game_events();
 
@@ -52,7 +48,7 @@ var game = {
 			this.av = this.sum / this.amount;
 		},
 	},
-	context: null,
+	ctx: null,
 	counter: 0,
 	play: function() {
 		if (!player.exist) {
@@ -97,7 +93,22 @@ var game = {
 				tank.draw();
 				board.draw();
 				bullets.draw();
-				board.draw_icons();
+
+				var draw  = 0;
+				if(game.msg1.tank[player.id].life != player.life) {
+					player.life = game.msg1.tank[player.id].life;
+					draw++;
+				}
+				if(game.msg1.tank[player.id].nuke != player.nuke) {
+					player.nuke = game.msg1.tank[player.id].nuke
+					draw++;
+				} 
+				if(game.msg1.tank[player.id].bullets != player.bullets) {
+					player.bullets = game.msg1.tank[player.id].bullets;
+					draw++;				
+				}
+				if(draw != 0) board.draw_icons();
+
 				game.fps.count();
 			} else {
 				player.exist = 0;
@@ -127,11 +138,11 @@ var game = {
 			this.time_sum += d;
 			var t = this.time_sum / this.times.length;
 
-			context.font = "13px Arial";
-			context.textAlign = "left";
-			context.fillStyle = 'white'
-			context.fillText('FPS: ' + Math.floor(1000 / t), 15, 15);
-			context.fillText('PING: ' + Math.floor(game.ping.actual), 80, 15);
+			ctx.font = "13px Arial";
+			ctx.textAlign = "left";
+			ctx.fillStyle = 'white'
+			ctx.fillText('FPS: ' + Math.floor(1000 / t), 15, 15);
+			ctx.fillText('PING: ' + Math.floor(game.ping.actual), 80, 15);
 		}
 	},
 	disconnect: function() {
@@ -169,69 +180,74 @@ var board = {
 			x2 = Math.min(wsp.x + board.WIDTH, player.SCREEN_WIDTH),
 			y1 = Math.max(wsp.y, 0),
 			y2 = Math.min(wsp.y + board.HEIGHT, player.SCREEN_HEIGHT);
-		context.beginPath();
-		context.clearRect(0, 0, player.SCREEN_WIDTH, player.SCREEN_HEIGHT);
-		context.fillStyle = '#060'
-		context.fillRect(x1, y1, x2, y2);
-		context.fill();
-		context.closePath();
+		ctx.beginPath();
+		ctx.clearRect(0, 0, player.SCREEN_WIDTH, player.SCREEN_HEIGHT);
+		ctx.fillStyle = '#060'
+		ctx.fillRect(x1, y1, x2, y2);
+		ctx.fill();
+		ctx.closePath();
 	},
 	draw_icons: function() {
-		
+
+		act_ctx.clearRect(0, player.SCREEN_HEIGHT - 100, 400, 100);
 		// LIFE
-		context.beginPath();
-		var ctx = context;
-		ctx.save();
-		ctx.arc(60, player.SCREEN_HEIGHT - 50, 40, 0, 2*Math.PI );
-		ctx.clip();
+		act_ctx.beginPath();
+		act_ctx.save();
+		act_ctx.arc(60, player.SCREEN_HEIGHT - 50, 40, 0, 2 * Math.PI);
+		act_ctx.clip();
 
-		ctx.fillStyle = "red";
-		ctx.fillRect(20, player.SCREEN_HEIGHT - game.msg1.tank[player.id].life * 0.8 - 10, 100, 100);
-		ctx.restore();
+		act_ctx.fillStyle = "red";
+		act_ctx.fillRect(20, player.SCREEN_HEIGHT - game.msg1.tank[player.id].life * 0.8 - 10, 100, 100);
+		act_ctx.restore();
 
-		context.strokeStyle = '#000';
-		context.lineWidth = 2;
-		ctx.arc(60, player.SCREEN_HEIGHT - 50, 40, 0, 2*Math.PI );
-		ctx.stroke();
-		context.closePath();
+		act_ctx.strokeStyle = '#000';
+		act_ctx.lineWidth = 2;
+		act_ctx.arc(60, player.SCREEN_HEIGHT - 50, 40, 0, 2 * Math.PI);
+		act_ctx.stroke();
+		act_ctx.closePath();
+
+		act_ctx.fillStyle = 'white';
+		act_ctx.textAlign = "center";
+		act_ctx.font = "10px Arial";
+		act_ctx.fillText(game.msg1.tank[player.id].life +' / 100', 60, player.SCREEN_HEIGHT - 50);
 
 		// BULLETS
-		context.beginPath();
-		context.strokeStyle = '#AA0';
-		context.lineWidth = 2;
-		context.roundRect(120, player.SCREEN_HEIGHT - 70, 60, 60, 10);
-		context.stroke();
-		context.closePath();
+		act_ctx.beginPath();
+		act_ctx.strokeStyle = '#AA0';
+		act_ctx.lineWidth = 2;
+		act_ctx.roundRect(120, player.SCREEN_HEIGHT - 70, 60, 60, 10);
+		act_ctx.stroke();
+		act_ctx.closePath();
 
-		context.drawImage(resources.img.bullet, 0, 0, 199, 100, 95, player.SCREEN_HEIGHT - 65, 100, 50);
-		context.fillStyle = 'white';
-		context.font = "10px Arial";
-		context.textAlign = "center";
-		context.fillText('LPM', 150, player.SCREEN_HEIGHT - 74);
-		context.font = "13px Arial";
-		context.textAlign = "right";
-		context.fillText(game.msg1.tank[player.id].bullets, 175, player.SCREEN_HEIGHT - 15);
+		act_ctx.drawImage(resources.img.bullet, 0, 0, 199, 100, 95, player.SCREEN_HEIGHT - 65, 100, 50);
+		act_ctx.fillStyle = 'white';
+		act_ctx.font = "10px Arial";
+		act_ctx.textAlign = "center";
+		act_ctx.fillText('LPM', 150, player.SCREEN_HEIGHT - 74);
+		act_ctx.font = "13px Arial";
+		act_ctx.textAlign = "right";
+		act_ctx.fillText(game.msg1.tank[player.id].bullets, 175, player.SCREEN_HEIGHT - 15);
 
 		//NUKE 
-		context.beginPath();
-		context.strokeStyle = '#AA0';
-		context.lineWidth = 2;
-		context.roundRect(200, player.SCREEN_HEIGHT - 70, 60, 60, 10);
-		context.stroke();
-		context.closePath();
+		act_ctx.beginPath();
+		act_ctx.strokeStyle = '#AA0';
+		act_ctx.lineWidth = 2;
+		act_ctx.roundRect(200, player.SCREEN_HEIGHT - 70, 60, 60, 10);
+		act_ctx.stroke();
+		act_ctx.closePath();
 
-		context.drawImage(resources.img.nuke, 0, 0, 111, 134, 205, player.SCREEN_HEIGHT - 65, 45, 50);
-		context.fillStyle = 'white';
-		context.font = "10px Arial";
-		context.textAlign = "center";
-		context.fillText('PPM', 230, player.SCREEN_HEIGHT - 74);
-		context.font = "13px Arial";
-		context.textAlign = "right";
-		context.fillText(game.msg1.tank[player.id].nuke, 255, player.SCREEN_HEIGHT - 15);
+		act_ctx.drawImage(resources.img.nuke, 0, 0, 111, 134, 205, player.SCREEN_HEIGHT - 65, 45, 50);
+		act_ctx.fillStyle = 'white';
+		act_ctx.font = "10px Arial";
+		act_ctx.textAlign = "center";
+		act_ctx.fillText('PPM', 230, player.SCREEN_HEIGHT - 74);
+		act_ctx.font = "13px Arial";
+		act_ctx.textAlign = "right";
+		act_ctx.fillText(game.msg1.tank[player.id].nuke, 255, player.SCREEN_HEIGHT - 15);
 	},
 	adjust: function() {
-		player.SCREEN_WIDTH = $(window).outerWidth()
-		player.SCREEN_HEIGHT = $(window).outerHeight();
+		player.SCREEN_WIDTH = Math.min($(window).outerWidth(), 1200);
+		player.SCREEN_HEIGHT = Math.min($(window).outerHeight(), 600);
 		$('canvas').attr({
 			width: player.SCREEN_WIDTH,
 			height: player.SCREEN_HEIGHT
@@ -251,7 +267,7 @@ var board = {
 			var wsp = game.rel(x, y);
 			switch (e.type) {
 				case 'box':
-					context.drawImage(resources.img.box, wsp.x, wsp.y, e.x2 - e.x1, e.y2 - e.y1);
+					ctx.drawImage(resources.img.box, wsp.x, wsp.y, e.x2 - e.x1, e.y2 - e.y1);
 					break;
 				default:
 					break;
@@ -259,10 +275,9 @@ var board = {
 		}
 	},
 	clear: function() {
-		context.clearRect(0, 0, player.SCREEN_WIDTH, player.SCREEN_HEIGHT);
+		ctx.clearRect(0, 0, player.SCREEN_WIDTH, player.SCREEN_HEIGHT);
 	},
 	draw_play_button: function() {
-		var ctx = context;
 		var gradient = ctx.createLinearGradient(0, 0, player.SCREEN_WIDTH, 0);
 		gradient.addColorStop("0", "magenta");
 		gradient.addColorStop("0.5", "blue");
@@ -290,8 +305,6 @@ var tank = {
 				var x = game.interp(game.msg1.tank[i].x, game.msg2.tank[i].x);
 				var y = game.interp(game.msg1.tank[i].y, game.msg2.tank[i].y);
 				var life = game.msg1.tank[i].life; // msg1 jest starsze
-
-				var ctx = context;
 
 				var wsp = game.rel(x, y);
 
@@ -424,9 +437,9 @@ function game_events() {
 		}
 	});
 	window.addEventListener('resize', board.adjust);
-	canvas.addEventListener('mousemove', function(evt) {
+	act_canvas.addEventListener('mousemove', function(evt) {
 		if (player.exist) {
-			var rect = canvas.getBoundingClientRect();
+			var rect = act_canvas.getBoundingClientRect();
 			socket.emit('client-event', {
 				mx: evt.clientX - rect.left,
 				my: evt.clientY - rect.top
@@ -436,7 +449,7 @@ function game_events() {
 	window.addEventListener('contextmenu', function(evt) {
 		evt.preventDefault();
 	})
-	canvas.addEventListener('click', function(evt) {
+	act_canvas.addEventListener('click', function(evt) {
 		if (!player.exist || player.id === null)
 			game.play();
 		else {
@@ -462,11 +475,11 @@ var bullets = {
 				var r = 5;
 				var wsp = game.rel(x, y);
 
-				context.beginPath();
-				context.fillStyle = '#333';
-				context.arc(wsp.x, wsp.y, r, 0, 2 * PI, false);
-				context.fill();
-				context.closePath();
+				ctx.beginPath();
+				ctx.fillStyle = '#333';
+				ctx.arc(wsp.x, wsp.y, r, 0, 2 * PI, false);
+				ctx.fill();
+				ctx.closePath();
 			}
 		}
 	}
@@ -565,4 +578,9 @@ CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
 	this.arcTo(x, y, x + w, y, r);
 	this.closePath();
 	return this;
+}
+if (!Date.now) {
+	Date.now = function() {
+		return new Date().getTime();
+	}
 }
