@@ -97,7 +97,7 @@ var game = {
 				tank.draw();
 				board.draw();
 				bullets.draw();
-				board.draw_bullets();
+				board.draw_icons();
 				game.fps.count();
 			} else {
 				player.exist = 0;
@@ -128,6 +128,7 @@ var game = {
 			var t = this.time_sum / this.times.length;
 
 			context.font = "13px Arial";
+			context.textAlign = "left";
 			context.fillStyle = 'white'
 			context.fillText('FPS: ' + Math.floor(1000 / t), 15, 15);
 			context.fillText('PING: ' + Math.floor(game.ping.actual), 80, 15);
@@ -175,20 +176,58 @@ var board = {
 		context.fill();
 		context.closePath();
 	},
-	draw_bullets: function() {
+	draw_icons: function() {
+		
+		// LIFE
+		context.beginPath();
+		var ctx = context;
+		ctx.save();
+		ctx.arc(60, player.SCREEN_HEIGHT - 50, 40, 0, 2*Math.PI );
+		ctx.clip();
+
+		ctx.fillStyle = "red";
+		ctx.fillRect(20, player.SCREEN_HEIGHT - game.msg1.tank[player.id].life * 0.8 - 10, 100, 100);
+		ctx.restore();
+
+		context.strokeStyle = '#000';
+		context.lineWidth = 2;
+		ctx.arc(60, player.SCREEN_HEIGHT - 50, 40, 0, 2*Math.PI );
+		ctx.stroke();
+		context.closePath();
+
+		// BULLETS
 		context.beginPath();
 		context.strokeStyle = '#AA0';
 		context.lineWidth = 2;
-		context.roundRect(70, player.SCREEN_HEIGHT - 70, 60, 60, 15);
+		context.roundRect(120, player.SCREEN_HEIGHT - 70, 60, 60, 10);
 		context.stroke();
 		context.closePath();
-		
-		context.drawImage(resources.img.bullet, 0, 0, 199, 199, 65, player.SCREEN_HEIGHT - 65, 50, 50);
+
+		context.drawImage(resources.img.bullet, 0, 0, 199, 100, 95, player.SCREEN_HEIGHT - 65, 100, 50);
 		context.fillStyle = 'white';
 		context.font = "10px Arial";
-		context.fillText('LPM' , 90, player.SCREEN_HEIGHT - 74);
+		context.textAlign = "center";
+		context.fillText('LPM', 150, player.SCREEN_HEIGHT - 74);
 		context.font = "13px Arial";
-		context.fillText('x' + game.msg1.tank[player.id].bullets, 100, player.SCREEN_HEIGHT - 30);
+		context.textAlign = "right";
+		context.fillText(game.msg1.tank[player.id].bullets, 175, player.SCREEN_HEIGHT - 15);
+
+		//NUKE 
+		context.beginPath();
+		context.strokeStyle = '#AA0';
+		context.lineWidth = 2;
+		context.roundRect(200, player.SCREEN_HEIGHT - 70, 60, 60, 10);
+		context.stroke();
+		context.closePath();
+
+		context.drawImage(resources.img.nuke, 0, 0, 111, 134, 205, player.SCREEN_HEIGHT - 65, 45, 50);
+		context.fillStyle = 'white';
+		context.font = "10px Arial";
+		context.textAlign = "center";
+		context.fillText('PPM', 230, player.SCREEN_HEIGHT - 74);
+		context.font = "13px Arial";
+		context.textAlign = "right";
+		context.fillText(game.msg1.tank[player.id].nuke, 255, player.SCREEN_HEIGHT - 15);
 	},
 	adjust: function() {
 		player.SCREEN_WIDTH = $(window).outerWidth()
@@ -237,7 +276,7 @@ var board = {
 
 var tank = {
 	shot: function() {
-		if(game.msg1.tank[player.id].bullets > 0) {
+		if (game.msg1.tank[player.id].bullets > 0) {
 			var a = resources.audio.shot;
 			var x = a.cloneNode();
 			x.volume = a.volume;
@@ -279,13 +318,13 @@ var tank = {
 				ctx.beginPath();
 				ctx.lineWidth = 9;
 				ctx.strokeStyle = '#fc0';
-				ctx.arc(wsp.x, wsp.y, 14, 0, PI * life / 5, false);
+				ctx.arc(wsp.x, wsp.y, 14, 0, PI * life / 50, false);
 				ctx.stroke();
 				ctx.closePath();
 
 				ctx.beginPath();
 				ctx.strokeStyle = '#f00';
-				ctx.arc(wsp.x, wsp.y, 14, PI * life / 5, 2 * PI, false);
+				ctx.arc(wsp.x, wsp.y, 14, PI * life / 50, 2 * PI, false);
 				ctx.stroke();
 				ctx.closePath();
 
@@ -394,6 +433,9 @@ function game_events() {
 			});
 		}
 	});
+	window.addEventListener('contextmenu', function(evt) {
+		evt.preventDefault();
+	})
 	canvas.addEventListener('click', function(evt) {
 		if (!player.exist || player.id === null)
 			game.play();
@@ -447,6 +489,11 @@ var resources = {
 			img.src = './img/bullet.png';
 			return img;
 		})(),
+		nuke: (function() {
+			var img = new Image();
+			img.src = './img/nuke.png';
+			return img;
+		})(),
 	},
 	audio: {
 		shot: (function() {
@@ -456,6 +503,26 @@ var resources = {
 		})()
 	}
 };
+
+
+
+// DO ZROBIENIA!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+var abilities = {
+	nuke: {
+		img: (function() {
+			var img = new Image();
+			img.src = './img/nuke.png';
+			return img;
+		})()
+	},
+	shot: {
+		img: (function() {
+			var img = new Image();
+			img.src = './img/bullet.png';
+			return img;
+		})()
+	}
+}
 
 // prototyp wektora
 var vector = function(x, y) {
@@ -473,7 +540,7 @@ var vector = function(x, y) {
 var settings = {
 	isOpen: 0,
 	toggle: function() {
-		(settings.isOpen == 1) ? settings.close() : settings.open()
+		(settings.isOpen == 1) ? settings.close(): settings.open()
 	},
 	open: function() {
 		settings.isOpen = 1;
@@ -487,15 +554,15 @@ var settings = {
 
 }
 
-CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
-  if (w < 2 * r) r = w / 2;
-  if (h < 2 * r) r = h / 2;
-  this.beginPath();
-  this.moveTo(x+r, y);
-  this.arcTo(x+w, y,   x+w, y+h, r);
-  this.arcTo(x+w, y+h, x,   y+h, r);
-  this.arcTo(x,   y+h, x,   y,   r);
-  this.arcTo(x,   y,   x+w, y,   r);
-  this.closePath();
-  return this;
+CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+	if (w < 2 * r) r = w / 2;
+	if (h < 2 * r) r = h / 2;
+	this.beginPath();
+	this.moveTo(x + r, y);
+	this.arcTo(x + w, y, x + w, y + h, r);
+	this.arcTo(x + w, y + h, x, y + h, r);
+	this.arcTo(x, y + h, x, y, r);
+	this.arcTo(x, y, x + w, y, r);
+	this.closePath();
+	return this;
 }

@@ -157,12 +157,13 @@ var tank = {
 			y2: this.y
 		};
 		this.id = id;
-		this.life = 10;
+		this.life = 100;
 		this.mx = 0;
 		this.my = 0;
 		this.posX = 0;
 		this.posY = 0;
 		this.bullets = 50;
+		this.nuke = 3;
 	},
 	shot: function(id) {
 		if(tank.list[id].bullets > 0) {
@@ -291,7 +292,7 @@ var bullets = {
 				if (b.owner == t.id) continue;
 				if ((t.x - b.x) * (t.x - b.x) + (t.y - b.y) * (t.y - b.y) < (t.r + b.r) * (t.r + b.r)) {
 					delete bullets.list[i];
-					if (!--t.life) {
+					if (!(t.life-=10)) {
 						delete tank.list[id];
 					}
 				}
