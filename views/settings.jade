@@ -1,0 +1,70 @@
+style(type="text/css").
+	#settings {
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		background: rgba(0,0,0,0.6);
+		z-index: 100;
+		color: white;
+	}
+	#settings h1 {
+		text-align: center;
+	}
+	#settings div {
+		width: 300px;
+		margin: 0 auto;
+	}
+	#settings h2 {
+		margin-top: 30px;
+		margin-bottom: 10px;
+	}
+	#settings ul {
+		list-style-type: none;
+		margin: 0;
+		padding: 0;
+	}
+	#settings span {
+		display: inline-block;
+		width: 140px;
+	}
+	#settings input {
+		width: 100px;
+	}
+	#settings button {
+		width: 100px;
+	}
+	#exit_settings {
+		text-align: center;
+		margin: 50px auto 0;
+		display: block;
+	}
+H1 Settings
+div.basic
+	h2 Basic
+	ul
+		li 
+			span Sound volume:
+			input#sound_volume(type="range", min="0", max="1", step="0.1", value="0.5")
+div.advanced
+	h2 Advanced
+	ul
+		li 
+			span Game delay:
+			input#game_delay(type="text", value="100")
+div.sterowanie
+	h2 Controls
+	ul
+		li
+			span Move:
+			span [WSAD], Arrows
+		li
+			span First skill:
+			span [Space], LMB
+		li
+			span Second skill:
+			span RMB
+		li
+			span Chat:
+			span [ENTER]
+button#exit_settings EXIT
+script(src="scripts/settings.js")

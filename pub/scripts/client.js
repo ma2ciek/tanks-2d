@@ -1,12 +1,7 @@
 "use strict";
 
-if (!Date.now) {
-	Date.now = function() {
-		return new Date().getTime();
-	}
-}
-
-var canvas, context;
+var ctx, canvas;
+var act_ctx, act_canvas;
 var PI = Math.PI;
 var socket = io();
 
@@ -17,12 +12,14 @@ function socket_handlers() {
 	socket.on('clients', chat.clients);
 	socket.on('disconnect', game.disconnect);
 	socket.on('game-update', game.update);
+	socket.on('join', game.join);
 }
 
 window.addEventListener('load', function load() {
 	canvas = $('#game')[0];
-	context = canvas.getContext('2d');
-
+	ctx = canvas.getContext('2d');
+	act_canvas = $('#active')[0];
+	act_ctx = act_canvas.getContext('2d');
 	socket_handlers();
 	game_events();
 
@@ -31,30 +28,32 @@ window.addEventListener('load', function load() {
 });
 
 
-var timestamps = [];
+var packages = [];
 
 
 var game = {
 	timerId: null,
-	nr: 0,
-	ping: 0,
+	package_nr: 0,
 	delay: 100, // [ms]
-	last_time: Date.now(),
 	frame_time: 0,
-	audio: {
-		shot: (function() {
-			var a = new Audio('audio/gun_shot.wav');
-			a.volume = 0.5;
-			return a;
-		})(),
-		message: (function() {
-			var a = new Audio();
-		})()
+	space_shot: 1,
+	ping: {
+		sum: 0,
+		amount: 0,
+		av: 0,
+		actual: 0,
+		addState: function(x) {
+			this.actual = x;
+			this.sum += x;
+			this.amount += 1;
+			this.av = this.sum / this.amount;
+		},
 	},
-	context: null,
+	ctx: null,
 	counter: 0,
 	play: function() {
-		if (!game.timerId) {
+		if (!player.exist) {
+			cancelAnimationFrame(game.timerId);
 			var msg = JSON.stringify(player);
 			socket.emit('join-game', msg);
 			game.draw();
@@ -63,34 +62,31 @@ var game = {
 	update: function(msg) {
 		var msg = JSON.parse(msg);
 
-		game.ping = Date.now() - msg.date;
+		game.ping.addState(Date.now() - msg.date);
 
-		if (msg.nr > game.nr) {
-			game.nr = msg.nr;
+		if (msg.nr > game.package_nr) {
+			game.package_nr = msg.nr;
 
 			// Od najstarszych do najnowszych
-			if (timestamps.length > 20) timestamps.pop();
-			timestamps.unshift(msg);
+			if (packages.length > 20) packages.pop();
+			packages.unshift(msg);
 
-		} else if (!player.exist) {
-			board.clear();
-			board.draw_play_button();
 		}
 	},
 	draw: function() {
 
-		var t = Date.now() - game.delay;
+		var t = Date.now() - game.delay + game.ping.av;
 		game.frame_time = t;
-		for (var i = 0; i < timestamps.length; i++) {
-			if (t > timestamps[i].date) break;
+		for (var i = 0; i < packages.length; i++) {
+			if (t > packages[i].date) break;
 		}
 		game.ts_id = i;
 		// czas t pomiędzy i-1 oraz i
 		if (i < 21 && i >= 1) {
-			if (player.id in timestamps[i].tank && player.id in timestamps[i - 1].tank) {
+			if (player.id in packages[i].tank && player.id in packages[i - 1].tank) {
 				player.exist = 1;
-				game.msg1 = timestamps[i];
-				game.msg2 = timestamps[i - 1];
+				game.msg1 = packages[i];
+				game.msg2 = packages[i - 1];
 
 				player.pos();
 
@@ -98,9 +94,27 @@ var game = {
 				tank.draw();
 				board.draw();
 				bullets.draw();
-				game.fps_count()
+
+				var draw  = 0;
+				if(game.msg1.tank[player.id].life != player.life) {
+					player.life = game.msg1.tank[player.id].life;
+					draw++;
+				}
+				if(game.msg1.tank[player.id].nuke != player.nuke) {
+					player.nuke = game.msg1.tank[player.id].nuke
+					draw++;
+				} 
+				if(game.msg1.tank[player.id].bullets != player.bullets) {
+					player.bullets = game.msg1.tank[player.id].bullets;
+					draw++;				
+				}
+				if(draw != 0) board.draw_icons();
+
+				game.fps.count();
 			} else {
 				player.exist = 0;
+				board.clear();
+				board.draw_play_button();
 			}
 		}
 		game.timerId = requestAnimationFrame(game.draw);
@@ -111,29 +125,40 @@ var game = {
 			y: y + player.SCREEN_HEIGHT / 2 - player.y
 		}
 	},
-	times: [],
-	time_sum: 0,
-	fps_count: function() {
-		var d = Date.now() - game.last_time;
-		game.last_time = Date.now();
+	fps: {
+		times: [],
+		time_sum: 0,
+		last_time: Date.now(),
+		count: function() {
+			var d = Date.now() - this.last_time;
+			this.last_time = Date.now();
 
-		game.times.unshift(d);
-		if (game.times.length >= 50) game.time_sum -= game.times.pop();
+			this.times.unshift(d);
+			if (this.times.length >= 50) this.time_sum -= this.times.pop();
 
-		game.time_sum += d;
-		var t = game.time_sum / game.times.length;
+			this.time_sum += d;
+			var t = this.time_sum / this.times.length;
 
-		context.font = "13px Arial";
-		context.fillStyle = 'white'
-		context.fillText('FPS: ' + Math.floor(1000 / t), 15, 15);
-		context.fillText('PING: ' + Math.floor(game.ping), 80, 15);
+			ctx.font = "13px Arial";
+			ctx.textAlign = "left";
+			ctx.fillStyle = 'white'
+			ctx.fillText('FPS: ' + Math.floor(1000 / t), 15, 15);
+			ctx.fillText('PING: ' + Math.floor(game.ping.actual), 80, 15);
+		}
 	},
 	disconnect: function() {
 		alert("You are disconnected from the server");
 	},
+	join: function(msg) {
+		var m = JSON.parse(msg)
+		board.list = m.board;
+		board.WIDTH = m.width;
+		board.HEIGHT = m.height;
+		window.map = m.map;
+	},
 	interp: function(A, C) {
 		// Zwraca wartość środkowej wartości
-		// Ta & Tc - Timestamps 
+		// Ta & Tc - packages 
 		// Tb - Animation time
 		// A & C - Wartości odpowiadające Ta & Tc
 		return (A * (game.msg2.date - game.frame_time) + C * (game.frame_time - game.msg1.date)) / (game.msg2.date - game.msg1.date);
@@ -155,28 +180,80 @@ var player = {
 }
 
 var board = {
-	WIDTH: 2000,
-	HEIGHT: 1000,
 	draw_background: function() {
-
-		context.clearRect(0, 0, player.SCREEN_WIDTH, player.SCREEN_HEIGHT);
-
 		var wsp = game.rel(0, 0);
-
 		var x1 = Math.max(wsp.x, 0),
 			x2 = Math.min(wsp.x + board.WIDTH, player.SCREEN_WIDTH),
 			y1 = Math.max(wsp.y, 0),
 			y2 = Math.min(wsp.y + board.HEIGHT, player.SCREEN_HEIGHT);
+		ctx.beginPath();
+		ctx.clearRect(0, 0, player.SCREEN_WIDTH, player.SCREEN_HEIGHT);
+		ctx.fillStyle = '#060'
+		ctx.fillRect(x1, y1, x2, y2);
+		ctx.fill();
+		ctx.closePath();
+	},
+	draw_icons: function() {
 
-		context.beginPath();
-		context.fillStyle = '#060'
-		context.rect(x1, y1, x2, y2);
-		context.fill();
-		context.closePath()
+		act_ctx.clearRect(0, player.SCREEN_HEIGHT - 100, 400, 100);
+		// LIFE
+		act_ctx.beginPath();
+		act_ctx.save();
+		act_ctx.arc(60, player.SCREEN_HEIGHT - 50, 40, 0, 2 * Math.PI);
+		act_ctx.clip();
+
+		act_ctx.fillStyle = "red";
+		act_ctx.fillRect(20, player.SCREEN_HEIGHT - game.msg1.tank[player.id].life * 0.8 - 10, 100, 100);
+		act_ctx.restore();
+
+		act_ctx.strokeStyle = '#000';
+		act_ctx.lineWidth = 2;
+		act_ctx.arc(60, player.SCREEN_HEIGHT - 50, 40, 0, 2 * Math.PI);
+		act_ctx.stroke();
+		act_ctx.closePath();
+
+		act_ctx.fillStyle = 'white';
+		act_ctx.textAlign = "center";
+		act_ctx.font = "15px Arial";
+		act_ctx.fillText(game.msg1.tank[player.id].life +' / 100', 60, player.SCREEN_HEIGHT - 45);
+
+		// BULLETS
+		act_ctx.beginPath();
+		act_ctx.strokeStyle = '#AA0';
+		act_ctx.lineWidth = 2;
+		act_ctx.roundRect(120, player.SCREEN_HEIGHT - 70, 60, 60, 10);
+		act_ctx.stroke();
+		act_ctx.closePath();
+
+		act_ctx.drawImage(resources.img.bullet, 0, 0, 199, 100, 95, player.SCREEN_HEIGHT - 65, 100, 50);
+		act_ctx.fillStyle = 'white';
+		act_ctx.font = "10px Arial";
+		act_ctx.textAlign = "center";
+		act_ctx.fillText('LPM', 150, player.SCREEN_HEIGHT - 74);
+		act_ctx.font = "13px Arial";
+		act_ctx.textAlign = "right";
+		act_ctx.fillText(game.msg1.tank[player.id].bullets, 175, player.SCREEN_HEIGHT - 15);
+
+		//NUKE 
+		act_ctx.beginPath();
+		act_ctx.strokeStyle = '#AA0';
+		act_ctx.lineWidth = 2;
+		act_ctx.roundRect(200, player.SCREEN_HEIGHT - 70, 60, 60, 10);
+		act_ctx.stroke();
+		act_ctx.closePath();
+
+		act_ctx.drawImage(resources.img.nuke, 0, 0, 111, 134, 205, player.SCREEN_HEIGHT - 65, 45, 50);
+		act_ctx.fillStyle = 'white';
+		act_ctx.font = "10px Arial";
+		act_ctx.textAlign = "center";
+		act_ctx.fillText('PPM', 230, player.SCREEN_HEIGHT - 74);
+		act_ctx.font = "13px Arial";
+		act_ctx.textAlign = "right";
+		act_ctx.fillText(game.msg1.tank[player.id].nuke, 255, player.SCREEN_HEIGHT - 15);
 	},
 	adjust: function() {
-		player.SCREEN_WIDTH = $(window).outerWidth()
-		player.SCREEN_HEIGHT = $(window).outerHeight();
+		player.SCREEN_WIDTH = Math.min($(window).outerWidth(), 1200);
+		player.SCREEN_HEIGHT = Math.min($(window).outerHeight(), 600);
 		$('canvas').attr({
 			width: player.SCREEN_WIDTH,
 			height: player.SCREEN_HEIGHT
@@ -185,29 +262,36 @@ var board = {
 			sw: player.SCREEN_WIDTH,
 			sh: player.SCREEN_HEIGHT
 		})
+		if(game.msg1) board.draw_icons();
 	},
 	draw: function() {
-		for (var i = 0; i < game.msg1.board.length; i++) {
+		for (var i = 0; i < map.layers[0].data.length; i++) {
+			var tc = map.layers[0].data[i] // tile content
+			if(tc == 0) continue;
+			
+			var bw = board.WIDTH/64;
+			var x = i % bw;
+			var y = (i - x) / bw;
 
-			var x = game.interp(game.msg1.board[i].x1, game.msg2.board[i].x1);
-			var y = game.interp(game.msg1.board[i].y1, game.msg2.board[i].y1);
 
-			var e = game.msg1.board[i];
-			var wsp = game.rel(x, y);
-			switch (e.type) {
-				case 'box':
-					context.drawImage(resources.list.box, wsp.x, wsp.y, e.x2 - e.x1, e.y2 - e.y1);
-					break;
-				default:
-					break;
+			var wsp = game.rel(x*64, y*64);
+
+			if(wsp.x > -64 && wsp.y > -64 && wsp.x < player.SCREEN_WIDTH +64 && wsp.y < player.SCREEN_HEIGHT + 64) {
+
+			//switch (e.type) {
+			//	case 'box':
+					ctx.drawImage(resources.img.box, wsp.x, wsp.y, 64, 64);
+			//		break;
+			//	default:
+			//		break;
+			//}
 			}
 		}
 	},
 	clear: function() {
-		context.clearRect(0, 0, player.SCREEN_WIDTH, player.SCREEN_HEIGHT);
+		ctx.clearRect(0, 0, player.SCREEN_WIDTH, player.SCREEN_HEIGHT);
 	},
 	draw_play_button: function() {
-		var ctx = context;
 		var gradient = ctx.createLinearGradient(0, 0, player.SCREEN_WIDTH, 0);
 		gradient.addColorStop("0", "magenta");
 		gradient.addColorStop("0.5", "blue");
@@ -221,7 +305,12 @@ var board = {
 
 var tank = {
 	shot: function() {
-		game.audio.shot.cloneNode().play();
+		if (game.msg1.tank[player.id].bullets > 0) {
+			var a = resources.audio.shot;
+			var x = a.cloneNode();
+			x.volume = a.volume;
+			x.play();
+		}
 	},
 	draw: function() {
 		for (var i in game.msg1.tank) {
@@ -231,16 +320,14 @@ var tank = {
 				var y = game.interp(game.msg1.tank[i].y, game.msg2.tank[i].y);
 				var life = game.msg1.tank[i].life; // msg1 jest starsze
 
-				var ctx = context;
-
 				var wsp = game.rel(x, y);
 
 				if (player.id == i) {
 					ctx.strokeStyle = '#333';
 					ctx.fillStyle = '#333';
 				} else {
-					ctx.strokeStyle = '#0a4';
-					ctx.fillStyle = '#0a4';
+					ctx.strokeStyle = '#c60';
+					ctx.fillStyle = '#c60';
 				}
 
 				ctx.beginPath();
@@ -258,17 +345,17 @@ var tank = {
 				ctx.beginPath();
 				ctx.lineWidth = 9;
 				ctx.strokeStyle = '#fc0';
-				ctx.arc(wsp.x, wsp.y, 14, 0, PI * life / 5, false);
+				ctx.arc(wsp.x, wsp.y, 14, 0, PI * life / 50, false);
 				ctx.stroke();
 				ctx.closePath();
 
 				ctx.beginPath();
 				ctx.strokeStyle = '#f00';
-				ctx.arc(wsp.x, wsp.y, 14, PI * life / 5, 2 * PI, false);
+				ctx.arc(wsp.x, wsp.y, 14, PI * life / 50, 2 * PI, false);
 				ctx.stroke();
 				ctx.closePath();
 
-				
+
 				var l_x1 = game.interp(game.msg1.tank[i].lufa.x1, game.msg2.tank[i].lufa.x1);
 				var l_x2 = game.interp(game.msg1.tank[i].lufa.x2, game.msg2.tank[i].lufa.x2);
 				var l_y1 = game.interp(game.msg1.tank[i].lufa.y1, game.msg2.tank[i].lufa.y1);
@@ -277,7 +364,7 @@ var tank = {
 				var wsp1 = game.rel(l_x1, l_y1);
 				var wsp2 = game.rel(l_x2, l_y2);
 
-				(player.id == i) ? ctx.strokeStyle = '#333': ctx.strokeStyle = '#0a4';
+				(player.id == i) ? ctx.strokeStyle = '#333': ctx.strokeStyle = '#c60';
 				ctx.beginPath();
 				ctx.moveTo(wsp1.x, wsp1.y);
 				ctx.lineWidth = 6;
@@ -295,8 +382,19 @@ function game_events() {
 			chat.submit();
 		} else if (chat.isOpen == 1 && evt.which == 27) {
 			chat.close();
+		} else if (evt.which == 27) {
+			settings.toggle();
 		} else if (player.exist && !chat.isFocus) {
 			switch (evt.which) {
+				case 13: // Enter - czat
+					chat.show();
+					break;
+				case 32: // SPACE
+					if (game.space_shot == 1) {
+						$('#game').trigger('click');
+						game.space_shot = 0;
+					}
+					break;
 				case 37: // LEFT
 				case 65: // A
 					socket.emit('client-event', {
@@ -321,12 +419,6 @@ function game_events() {
 						dirY: 1,
 					});
 					break;
-				case 13: // Enter - czat
-					chat.show();
-					break;
-				case 32: // SPACE
-					$('#game').trigger('click');
-					break;
 				default:
 					break;
 			}
@@ -335,6 +427,9 @@ function game_events() {
 	window.addEventListener('keyup', function(evt) {
 		if (player.exist) {
 			switch (evt.which) {
+				case 32:
+					game.space_shot = 1;
+					break;
 				case 37: // LEFT
 				case 65: // A
 				case 39: // RIGHT
@@ -356,16 +451,19 @@ function game_events() {
 		}
 	});
 	window.addEventListener('resize', board.adjust);
-	canvas.addEventListener('mousemove', function(evt) {
+	act_canvas.addEventListener('mousemove', function(evt) {
 		if (player.exist) {
-			var rect = canvas.getBoundingClientRect();
+			var rect = act_canvas.getBoundingClientRect();
 			socket.emit('client-event', {
 				mx: evt.clientX - rect.left,
 				my: evt.clientY - rect.top
 			});
 		}
 	});
-	canvas.addEventListener('click', function(evt) {
+	window.addEventListener('contextmenu', function(evt) {
+		evt.preventDefault();
+	})
+	act_canvas.addEventListener('click', function(evt) {
 		if (!player.exist || player.id === null)
 			game.play();
 		else {
@@ -391,18 +489,18 @@ var bullets = {
 				var r = 5;
 				var wsp = game.rel(x, y);
 
-				context.beginPath();
-				context.fillStyle = '#333';
-				context.arc(wsp.x, wsp.y, r, 0, 2 * PI, false);
-				context.fill();
-				context.closePath();
+				ctx.beginPath();
+				ctx.fillStyle = '#333';
+				ctx.arc(wsp.x, wsp.y, r, 0, 2 * PI, false);
+				ctx.fill();
+				ctx.closePath();
 			}
 		}
 	}
 }
 
 var resources = {
-	list: {
+	img: {
 		bg: (function() {
 			var img = new Image();
 			// img.src = './img/bg.jpg';
@@ -410,11 +508,48 @@ var resources = {
 		})(),
 		box: (function() {
 			var img = new Image();
-			img.src = './img/box.jpg';
+			img.src = './img/box64.jpg';
 			return img;
+		})(),
+		bullet: (function() {
+			var img = new Image();
+			img.src = './img/bullet.png';
+			return img;
+		})(),
+		nuke: (function() {
+			var img = new Image();
+			img.src = './img/nuke.png';
+			return img;
+		})(),
+	},
+	audio: {
+		shot: (function() {
+			var a = new Audio('audio/gun_shot.wav');
+			a.volume = 0.5;
+			return a;
 		})()
 	}
 };
+
+
+
+// DO ZROBIENIA!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+var abilities = {
+	nuke: {
+		img: (function() {
+			var img = new Image();
+			img.src = './img/nuke.png';
+			return img;
+		})()
+	},
+	shot: {
+		img: (function() {
+			var img = new Image();
+			img.src = './img/bullet.png';
+			return img;
+		})()
+	}
+}
 
 // prototyp wektora
 var vector = function(x, y) {
@@ -426,3 +561,40 @@ var vector = function(x, y) {
 		y: this.y / this.size
 	};
 };
+
+
+
+var settings = {
+	isOpen: 0,
+	toggle: function() {
+		(settings.isOpen == 1) ? settings.close(): settings.open()
+	},
+	open: function() {
+		settings.isOpen = 1;
+		$('body').append('<div id="settings"></div>');
+		$('div#settings').load('/settings');
+	},
+	close: function() {
+		settings.isOpen = 0;
+		$('#settings').remove();
+	}
+
+}
+
+CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+	if (w < 2 * r) r = w / 2;
+	if (h < 2 * r) r = h / 2;
+	this.beginPath();
+	this.moveTo(x + r, y);
+	this.arcTo(x + w, y, x + w, y + h, r);
+	this.arcTo(x + w, y + h, x, y + h, r);
+	this.arcTo(x, y + h, x, y, r);
+	this.arcTo(x, y, x + w, y, r);
+	this.closePath();
+	return this;
+}
+if (!Date.now) {
+	Date.now = function() {
+		return new Date().getTime();
+	}
+}

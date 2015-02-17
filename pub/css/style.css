@@ -6,20 +6,35 @@ body {
 	-khtml-user-select: none;
 	overflow: hidden;
 }
+div#main {
+	max-width: 1200px;
+	max-height: 600px;
+	position: relative;
+	margin: 0 auto 0;
+}
 
 canvas#game {
 	z-index: 1;
 	position: absolute;
 	left: 0;
 	top: 0;
-	cursor: crosshair;
 	background: #333;
 
 	-webkit-transform: translate3d(0, 0, 0);
 	-webkit-backface-visibility: hidden;
 	-webkit-perspective: 1000;
 }
+canvas#active {
+	z-index: 2;
+	position: absolute;
+	left: 0;
+	top: 0;
+	cursor: crosshair;
 
+	-webkit-transform: translate3d(0, 0, 0);
+	-webkit-backface-visibility: hidden;
+	-webkit-perspective: 1000;
+}
 #chat {
 	display: none;
 	position: absolute;
@@ -51,27 +66,26 @@ ul#messages {
 ul li {
 	margin: 5px 10px;
 }
-ul span {
+#chat span {
 	display: inline-block;
 	border-radius: 10px;
 	padding: 4px 10px;
 	background: #EEE;
 }
-ul li.my {
+#chat li.my {
 	text-align: right;
 }
-ul li.my span {
+#chat li.my span {
 	background: #09f;
 	color: white;
 	max-width: 200px;
 }
-ul li.neutral span {
+#chat li.neutral span {
 	text-align: center;
 	background: inherit;
 	display: block;
 }
-
-input#m {
+#chat input#m {
 	position: absolute;
 	bottom: 0;
 	box-sizing: border-box;

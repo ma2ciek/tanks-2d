@@ -7,7 +7,7 @@ var express = require('express');
 var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
-
+var map = require('./maps/map01.json');
 app.set('view engine', 'jade');
 app.set('views', __dirname + '/views');
 app.set('view options', {
@@ -22,6 +22,7 @@ app.use(methodOverride())
 app.use(express.static(__dirname + '/pub'));
 
 app.get('/', routes.index);
+app.get('/settings', routes.settings);
 
 var port = process.env.PORT || 8080;
 
@@ -41,6 +42,12 @@ io.on('connection', function(socket) {
 	socket.on('join-game', function(msg) {
 		tank.create(socket.id);
 		players[socket.id] = JSON.parse(msg);
+		socket.emit('join', JSON.stringify({
+			board: board.list,
+			width: board.WIDTH,
+			height: board.HEIGHT,
+			map: map
+		}));
 	});
 
 	socket.on('message', function(msg) {
@@ -69,10 +76,10 @@ io.on('connection', function(socket) {
 					break;
 				case 'sw':
 					players[id].SCREEN_WIDTH = msg[i];
-				break;
-				case 'sh': 
+					break;
+				case 'sh':
 					players[id].SCREEN_HEIGHT = msg[i];
-				break;
+					break;
 				default:
 					console.log(i, msg[i]);
 					break;
@@ -87,14 +94,15 @@ setInterval(function() {
 	io.emit('clients', clients);
 }, 1000);
 
-setInterval(gameLoop, 20);
+var speed = 30;
+
+setInterval(mainLoop, 1000 / speed);
 
 http.listen(port, function() {
 	console.log(port);
 });
 
-
-function gameLoop() {
+function mainLoop() {
 	tank.move();
 	bullets.move();
 	send_data();
@@ -104,7 +112,6 @@ function send_data() {
 	var res = JSON.stringify({
 		tank: tank.list,
 		bullets: bullets.list,
-		board: board.list,
 		date: Date.now(),
 		nr: ++packages.nr
 	});
@@ -117,27 +124,8 @@ var packages = {
 var players = {};
 
 var board = {
-	WIDTH: 2000,
-	HEIGHT: 1000,
-	list: [{
-		type: 'box',
-		x1: 200,
-		y1: 200,
-		x2: 264,
-		y2: 264
-	}, {
-		type: 'box',
-		x1: 320,
-		y1: 320,
-		x2: 384,
-		y2: 384,
-	}, {
-		type: 'box',
-		x1: 320,
-		y1: 120,
-		x2: 384,
-		y2: 184,
-	}],
+	WIDTH: 64 * 30,
+	HEIGHT: 64 * 15,
 }
 
 var tank = {
@@ -145,45 +133,50 @@ var tank = {
 	proto: function(id) {
 		this.x = losuj(50, 1950);
 		this.y = losuj(50, 950);
-		this.speed = 5;
+		this.speed = Math.floor(300 / speed);
 		this.dirX = 0;
 		this.dirY = 0;
 		this.radius = 22;
 		this.r = 22;
 		this.lufa = {
-			x1: 0,
-			y1: 0,
-			x2: 0,
-			y2: 0
+			x1: this.x + 5,
+			y1: this.y,
+			x2: this.x + 15,
+			y2: this.y
 		};
 		this.id = id;
-		this.life = 10;
-		this.mx = 0,
-			this.my = 0,
-			this.posX = 0,
-			this.posY = 0
+		this.life = 100;
+		this.mx = 0;
+		this.my = 0;
+		this.posX = 0;
+		this.posY = 0;
+		this.bullets = 50;
+		this.nuke = 3;
 	},
 	shot: function(id) {
-		bullets.create(id);
+		if (tank.list[id].bullets > 0) {
+			bullets.create(id);
+			tank.list[id].bullets--;
+		}
 	},
 	create: function(id) {
 		tank.list[id] = new tank.proto(id);
 	},
 	move: function() {
 		for (var id in tank.list) {
+			var t = tank.list[id];
+			var r = t.radius;
+			var x = t.x;
+			var y = t.y;
 
-			var r = tank.list[id]['radius'];
-			var x = tank.list[id]['x'];
-			var y = tank.list[id]['y'];
+			var speed = t.speed;
 
-			var speed = tank.list[id]['speed'];
-
-			var dx = tank.list[id]['dirX'];
-			var dy = tank.list[id]['dirY'];
+			var dx = t.dirX;
+			var dy = t.dirY;
 
 			var old = {
-				x: tank.list[id].x,
-				y: tank.list[id].y
+				x: t.x,
+				y: t.y
 			};
 
 			if (dx != 0 && dy != 0) speed = Math.round(speed / 1.4);
@@ -205,40 +198,70 @@ var tank = {
 
 			// Kolizje z boksami
 
-			for (var i = 0; i < board.list.length; i++) {
-				var b = board.list[i];
-				if (b.type != 'box') continue;
+			var d = map.layers[0].data;
 
-				if (b.x1 < x + r && b.x2 > x - r && b.y1 < y + r && b.y2 > y - r) {
+			var x1 = Math.floor(x / 64);
+			var y1 = Math.floor(y / 64);
 
-					if (dx == -1) {
-						if (Math.abs(b.x2 - (x - r)) <= Math.abs(dx * speed)) { // kolizja z prawym bokiem boxu
-							x = b.x2 + r;
+			var otoczenie = [
+				[x1, y1],
+				[x1, y1-1],
+				[x1, y1+1],
+				[x1+1, y1],
+				[x1+1, y1-1],
+				[x1+1, y1+1],
+				[x1-1, y1],
+				[x1-1, y1-1],
+				[x1-1, y1+1],
+			];
+
+			var b = {};
+			for (var i = 0; i < otoczenie.length; i++) {
+				if( d [ otoczenie[i][0] + otoczenie[i][1] * 30 ] == 1) {
+					b.x = otoczenie[i][0];
+					b.y = otoczenie[i][1];
+					b.x1 = b.x * 64;
+					b.y1 = b.y * 64;
+					b.x2 = b.x * 64 +64;
+					b.y2 = b.y * 64 +64;
+
+					if (b.x1 < x + r && b.x2 > x - r && b.y1 < y + r && b.y2 > y - r) {
+
+						if (dx == -1) {
+							if (Math.abs(b.x2 - (x - r)) <= Math.abs(dx * speed)) { // kolizja z prawym bokiem boxu
+								x = b.x2 + r;
+							}
+						} else if (dx == 1) {
+							if (Math.abs(b.x1 - (x + r)) <= Math.abs(dx * speed)) { // kolizja z lewym bokiem boxu
+								x = b.x1 - r;
+							}
 						}
-					} else if (dx == 1) {
-						if (Math.abs(b.x1 - (x + r)) <= Math.abs(dx * speed)) { // kolizja z lewym bokiem boxu
-							x = b.x1 - r;
+
+						if (dy == -1) {
+							if (Math.abs(b.y2 - (y - r)) <= Math.abs(dy * speed)) { // kolizja z prawym bokiem boxu
+								y = b.y2 + r;
+							}
+						} else if (dy == 1) {
+							if (Math.abs(b.y1 - (y + r)) <= Math.abs(dy * speed)) { // kolizja z lewym bokiem boxu
+								y = b.y1 - r;
+							}
 						}
 					}
-
-					if (dy == -1) {
-						if (Math.abs(b.y2 - (y - r)) <= Math.abs(dy * speed)) { // kolizja z prawym bokiem boxu
-							y = b.y2 + r;
-						}
-					} else if (dy == 1) {
-						if (Math.abs(b.y1 - (y + r)) <= Math.abs(dy * speed)) { // kolizja z lewym bokiem boxu
-							y = b.y1 - r;
-						}
-					}
-
 				}
 			}
 
+
+
+			/* for (var i = 0; i < board.list.length; i++) {
+				var b = board.list[i];
+				if (b.type != 'box') continue;
+
+				
+			}
+			*/
+
 			// Kolizje z innymi czołgami
 			// DO DODANIA!!
-
-
-			var t = tank.list[id];
 
 			t.x = x;
 			t.y = y;
@@ -275,19 +298,17 @@ var bullets = {
 				continue;
 			}
 			// Kolizja z boxami
-			for (var j = 0; j < board.list.length; j++) {
-				var e = board.list[j];
-				if (b.x + b.r > e.x1 && b.x - b.r < e.x2 && b.y + b.r > e.y1 && b.y - b.r < e.y2) {
-					delete bullets.list[i];
-					continue;
-				}
+			if(map.layers[0].data[ Math.floor(b.x/64) + Math.floor(b.y/64)*30 ] == 1) {
+				delete bullets.list[i];
+				continue;
 			}
+
 			for (var id in tank.list) {
 				var t = tank.list[id];
 				if (b.owner == t.id) continue;
 				if ((t.x - b.x) * (t.x - b.x) + (t.y - b.y) * (t.y - b.y) < (t.r + b.r) * (t.r + b.r)) {
 					delete bullets.list[i];
-					if (!--t.life) {
+					if (!(t.life -= 10)) {
 						delete tank.list[id];
 					}
 				}
@@ -310,7 +331,7 @@ var bullets = {
 		this.id = id2;
 		this.r = 5;
 		this.owner = id;
-		this.speed = 10;
+		this.speed = Math.floor(1000 / speed);
 	},
 	create: function(id) {
 		var id2 = 'id_' + losuj(0, 10000000)
