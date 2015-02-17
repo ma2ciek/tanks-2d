@@ -6,6 +6,12 @@ body {
 	-khtml-user-select: none;
 	overflow: hidden;
 }
+div#main {
+	max-width: 1200px;
+	max-height: 600px;
+	position: relative;
+	margin: 0 auto 0;
+}
 
 canvas#game {
 	z-index: 1;

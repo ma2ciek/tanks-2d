@@ -12,6 +12,7 @@ function socket_handlers() {
 	socket.on('clients', chat.clients);
 	socket.on('disconnect', game.disconnect);
 	socket.on('game-update', game.update);
+	socket.on('join', game.join);
 }
 
 window.addEventListener('load', function load() {
@@ -148,6 +149,13 @@ var game = {
 	disconnect: function() {
 		alert("You are disconnected from the server");
 	},
+	join: function(msg) {
+		var m = JSON.parse(msg)
+		board.list = m.board;
+		board.WIDTH = m.width;
+		board.HEIGHT = m.height;
+		window.map = m.map;
+	},
 	interp: function(A, C) {
 		// Zwraca wartość środkowej wartości
 		// Ta & Tc - packages 
@@ -172,8 +180,6 @@ var player = {
 }
 
 var board = {
-	WIDTH: 2000,
-	HEIGHT: 1000,
 	draw_background: function() {
 		var wsp = game.rel(0, 0);
 		var x1 = Math.max(wsp.x, 0),
@@ -208,8 +214,8 @@ var board = {
 
 		act_ctx.fillStyle = 'white';
 		act_ctx.textAlign = "center";
-		act_ctx.font = "10px Arial";
-		act_ctx.fillText(game.msg1.tank[player.id].life +' / 100', 60, player.SCREEN_HEIGHT - 50);
+		act_ctx.font = "15px Arial";
+		act_ctx.fillText(game.msg1.tank[player.id].life +' / 100', 60, player.SCREEN_HEIGHT - 45);
 
 		// BULLETS
 		act_ctx.beginPath();
@@ -256,21 +262,29 @@ var board = {
 			sw: player.SCREEN_WIDTH,
 			sh: player.SCREEN_HEIGHT
 		})
+		if(game.msg1) board.draw_icons();
 	},
 	draw: function() {
-		for (var i = 0; i < game.msg1.board.length; i++) {
+		for (var i = 0; i < map.layers[0].data.length; i++) {
+			var tc = map.layers[0].data[i] // tile content
+			if(tc == 0) continue;
+			
+			var bw = board.WIDTH/64;
+			var x = i % bw;
+			var y = (i - x) / bw;
 
-			var x = game.interp(game.msg1.board[i].x1, game.msg2.board[i].x1);
-			var y = game.interp(game.msg1.board[i].y1, game.msg2.board[i].y1);
 
-			var e = game.msg1.board[i];
-			var wsp = game.rel(x, y);
-			switch (e.type) {
-				case 'box':
-					ctx.drawImage(resources.img.box, wsp.x, wsp.y, e.x2 - e.x1, e.y2 - e.y1);
-					break;
-				default:
-					break;
+			var wsp = game.rel(x*64, y*64);
+
+			if(wsp.x > -64 && wsp.y > -64 && wsp.x < player.SCREEN_WIDTH +64 && wsp.y < player.SCREEN_HEIGHT + 64) {
+
+			//switch (e.type) {
+			//	case 'box':
+					ctx.drawImage(resources.img.box, wsp.x, wsp.y, 64, 64);
+			//		break;
+			//	default:
+			//		break;
+			//}
 			}
 		}
 	},
@@ -494,7 +508,7 @@ var resources = {
 		})(),
 		box: (function() {
 			var img = new Image();
-			img.src = './img/box.jpg';
+			img.src = './img/box64.jpg';
 			return img;
 		})(),
 		bullet: (function() {
