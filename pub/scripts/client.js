@@ -13,6 +13,7 @@ function socket_handlers() {
 	socket.on('disconnect', game.disconnect);
 	socket.on('game-update', game.update);
 	socket.on('join', game.join);
+	socket.on('sound', game.play_sound);
 }
 
 window.addEventListener('load', function load() {
@@ -37,6 +38,7 @@ var game = {
 	delay: 100, // [ms]
 	frame_time: 0,
 	space_shot: 1,
+	volume: 0.5,
 	ping: {
 		sum: 0,
 		amount: 0,
@@ -95,21 +97,22 @@ var game = {
 				board.draw();
 				bullets.draw();
 
-				var draw  = 0;
-				if(game.msg1.tank[player.id].life != player.life) {
+				var draw = 0;
+				if (game.msg1.tank[player.id].life != player.life) {
 					player.life = game.msg1.tank[player.id].life;
 					draw++;
 				}
-				if(game.msg1.tank[player.id].nuke != player.nuke) {
+				if (game.msg1.tank[player.id].nuke != player.nuke) {
 					player.nuke = game.msg1.tank[player.id].nuke
 					draw++;
-				} 
-				if(game.msg1.tank[player.id].bullets != player.bullets) {
-					player.bullets = game.msg1.tank[player.id].bullets;
-					draw++;				
 				}
-				if(draw != 0) board.draw_icons();
+				if (game.msg1.tank[player.id].bullets != player.bullets) {
+					player.bullets = game.msg1.tank[player.id].bullets;
+					draw++;
+				}
+				if (draw != 0) board.draw_icons();
 
+				if (game.msg1.map !== null) map = game.msg1.map;
 				game.fps.count();
 			} else {
 				player.exist = 0;
@@ -121,8 +124,8 @@ var game = {
 	},
 	rel: function(x, y) {
 		return {
-			x: x + player.SCREEN_WIDTH / 2 - player.x,
-			y: y + player.SCREEN_HEIGHT / 2 - player.y
+			x: Math.floor(x + player.SCREEN_WIDTH / 2 - player.x),
+			y: Math.floor(y + player.SCREEN_HEIGHT / 2 - player.y)
 		}
 	},
 	fps: {
@@ -150,6 +153,7 @@ var game = {
 		alert("You are disconnected from the server");
 	},
 	join: function(msg) {
+		player.id = socket.id;
 		var m = JSON.parse(msg)
 		board.list = m.board;
 		board.WIDTH = m.width;
@@ -162,6 +166,12 @@ var game = {
 		// Tb - Animation time
 		// A & C - Wartości odpowiadające Ta & Tc
 		return (A * (game.msg2.date - game.frame_time) + C * (game.frame_time - game.msg1.date)) / (game.msg2.date - game.msg1.date);
+	},
+	play_sound: function(msg) {
+		var a = abilities[msg].audio;
+		var x = a.cloneNode();
+		x.volume = game.volume;
+		x.play();
 	}
 }
 
@@ -215,7 +225,7 @@ var board = {
 		act_ctx.fillStyle = 'white';
 		act_ctx.textAlign = "center";
 		act_ctx.font = "15px Arial";
-		act_ctx.fillText(game.msg1.tank[player.id].life +' / 100', 60, player.SCREEN_HEIGHT - 45);
+		act_ctx.fillText(game.msg1.tank[player.id].life + ' / 100', 60, player.SCREEN_HEIGHT - 45);
 
 		// BULLETS
 		act_ctx.beginPath();
@@ -262,29 +272,24 @@ var board = {
 			sw: player.SCREEN_WIDTH,
 			sh: player.SCREEN_HEIGHT
 		})
-		if(game.msg1) board.draw_icons();
+		if (game.msg1) board.draw_icons();
 	},
 	draw: function() {
 		for (var i = 0; i < map.layers[0].data.length; i++) {
 			var tc = map.layers[0].data[i] // tile content
-			if(tc == 0) continue;
-			
-			var bw = board.WIDTH/64;
+			if (tc == 0) continue;
+
+			var bw = board.WIDTH / 64;
 			var x = i % bw;
 			var y = (i - x) / bw;
 
 
-			var wsp = game.rel(x*64, y*64);
+			var wsp = game.rel(x * 64, y * 64);
 
-			if(wsp.x > -64 && wsp.y > -64 && wsp.x < player.SCREEN_WIDTH +64 && wsp.y < player.SCREEN_HEIGHT + 64) {
+			if (wsp.x > -64 && wsp.y > -64 && wsp.x < player.SCREEN_WIDTH + 64 && wsp.y < player.SCREEN_HEIGHT + 64) {
 
-			//switch (e.type) {
-			//	case 'box':
-					ctx.drawImage(resources.img.box, wsp.x, wsp.y, 64, 64);
-			//		break;
-			//	default:
-			//		break;
-			//}
+				if (map) map.tilesets[0] = ctx.drawImage(resources.img.tileset, tc*64 - 64, 0, 64, 64, wsp.x, wsp.y, 64, 64);
+			
 			}
 		}
 	},
@@ -306,10 +311,28 @@ var board = {
 var tank = {
 	shot: function() {
 		if (game.msg1.tank[player.id].bullets > 0) {
-			var a = resources.audio.shot;
+			socket.emit('client-event', {
+				shot: true
+			});
+		}
+	},
+	nuke: function() {
+		if (game.msg1.tank[player.id].nuke > 0) {
+			socket.emit('client-event', {
+				nuke: true
+			});
+		}
+	},
+	// do ulepszenia i uogólnienia!!!
+	ab: function(ability) {
+		if (game.msg1.tank[player.id][ability.name] > 0) {
+			var a = resources.audio[ability.audio];
 			var x = a.cloneNode();
 			x.volume = a.volume;
 			x.play();
+			socket.emit('client-event', {
+				ability: ability.name
+			});
 		}
 	},
 	draw: function() {
@@ -391,7 +414,7 @@ function game_events() {
 					break;
 				case 32: // SPACE
 					if (game.space_shot == 1) {
-						$('#game').trigger('click');
+						tank.shot();
 						game.space_shot = 0;
 					}
 					break;
@@ -462,15 +485,13 @@ function game_events() {
 	});
 	window.addEventListener('contextmenu', function(evt) {
 		evt.preventDefault();
+		tank.nuke();
 	})
 	act_canvas.addEventListener('click', function(evt) {
 		if (!player.exist || player.id === null)
 			game.play();
 		else {
 			tank.shot();
-			socket.emit('client-event', {
-				shot: true
-			});
 		}
 	});
 	$('#m').focus(function() {
@@ -501,16 +522,6 @@ var bullets = {
 
 var resources = {
 	img: {
-		bg: (function() {
-			var img = new Image();
-			// img.src = './img/bg.jpg';
-			return img;
-		})(),
-		box: (function() {
-			var img = new Image();
-			img.src = './img/box64.jpg';
-			return img;
-		})(),
 		bullet: (function() {
 			var img = new Image();
 			img.src = './img/bullet.png';
@@ -521,11 +532,19 @@ var resources = {
 			img.src = './img/nuke.png';
 			return img;
 		})(),
+		tileset: (function() {
+			var img = new Image();
+			img.src = 'img/tilesets_01.png'
+			return img;
+		})()
 	},
 	audio: {
 		shot: (function() {
 			var a = new Audio('audio/gun_shot.wav');
-			a.volume = 0.5;
+			return a;
+		})(),
+		nuke: (function() {
+			var a = new Audio('audio/explosion.mp3');
 			return a;
 		})()
 	}
@@ -540,6 +559,10 @@ var abilities = {
 			var img = new Image();
 			img.src = './img/nuke.png';
 			return img;
+		})(),
+		audio: (function() {
+			var a = new Audio('audio/explosion.mp3');
+			return a;
 		})()
 	},
 	shot: {
@@ -547,6 +570,10 @@ var abilities = {
 			var img = new Image();
 			img.src = './img/bullet.png';
 			return img;
+		})(),
+		audio: (function() {
+			var a = new Audio('audio/gun_shot.wav');
+			return a;
 		})()
 	}
 }

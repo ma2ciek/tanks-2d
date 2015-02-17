@@ -6,7 +6,7 @@ var options = {
 		format: parseInt
 	},
 	sound_volume: {
-		settings_parent: resources.audio.shot,
+		settings_parent: game,
 		settings_attr: 'volume',
 		def: 0.5,
 		format: parseFloat

@@ -10,7 +10,6 @@ var chat = {
 	},
 	clients: function(msg) {
 		$('#clients').text(msg);
-		player.id = socket.id;
 	},
 	submit: function() {
 		if ($('#m').val() == "" && chat.isOpen == 1) {

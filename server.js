@@ -68,6 +68,9 @@ io.on('connection', function(socket) {
 				case 'shot':
 					tank.shot(id);
 					break;
+				case 'nuke':
+					tank.nuke(id);
+					break;
 				case 'dirX':
 					tank.list[id].dirX = msg[i];
 					break;
@@ -113,8 +116,10 @@ function send_data() {
 		tank: tank.list,
 		bullets: bullets.list,
 		date: Date.now(),
-		nr: ++packages.nr
+		nr: ++packages.nr,
+		map: map.change ? map : null
 	});
+	map.change = 0;
 	io.emit('game-update', res);
 }
 var packages = {
@@ -124,15 +129,15 @@ var packages = {
 var players = {};
 
 var board = {
-	WIDTH: 64 * 30,
-	HEIGHT: 64 * 15,
+	WIDTH: map.width * map.tilewidth,
+	HEIGHT: map.height * map.tileheight,
 }
 
 var tank = {
 	list: {},
 	proto: function(id, pos) {
-		this.x = (pos%30) * 64 + 32;
-		this.y = (pos - pos%30) /30 * 64 + 32;
+		this.x = (pos % map.width) * map.tilewidth + map.tilewidth / 2;
+		this.y = (pos - pos % map.width) / map.width * map.tileheight + map.tileheight / 2;
 		this.speed = Math.floor(300 / speed);
 		this.dirX = 0;
 		this.dirY = 0;
@@ -157,13 +162,25 @@ var tank = {
 		if (tank.list[id].bullets > 0) {
 			bullets.create(id);
 			tank.list[id].bullets--;
+			io.emit('sound', 'shot');
+		}
+	},
+	nuke: function(id) {
+		if (tank.list[id].nuke > 0) {
+			var t = tank.list[id];
+			map.layers[0].data[Math.floor(t.mx / map.tilewidth) + Math.floor(t.my / map.tileheight) * map.width] = 0;
+			tank.list[id].nuke--;
+			io.emit('sound', 'nuke');
+			map.change = 1;
+
+			// Pozostało dodać obrażenie obszarowe
 		}
 	},
 	create: function(id) {
 		var position;
-		do { 
+		do {
 			position = losuj(0, 450);
-		} while(map.layers[0].data[position] != 0)
+		} while (map.layers[0].data[position] != 0)
 		tank.list[id] = new tank.proto(id, position);
 	},
 	move: function() {
@@ -204,51 +221,56 @@ var tank = {
 
 			var d = map.layers[0].data;
 
-			var x1 = Math.floor(x / 64);
-			var y1 = Math.floor(y / 64);
+			// Działa tylko dla dużych boksów
+			var x1 = Math.floor((x + r) / map.tilewidth);
+			var y1 = Math.floor((y + r) / map.tileheight);
+			var x2 = Math.floor((x - r) / map.tilewidth);
+			var y2 = Math.floor((y - r) / map.tileheight);
 
 			var otoczenie = [
 				[x1, y1],
-				[x1, y1-1],
-				[x1, y1+1],
-				[x1+1, y1],
-				[x1+1, y1-1],
-				[x1+1, y1+1],
-				[x1-1, y1],
-				[x1-1, y1-1],
-				[x1-1, y1+1],
+				[x1, y2],
+				[x2, y1],
+				[x2, y2],
 			];
 
 			var b = {};
+
 			for (var i = 0; i < otoczenie.length; i++) {
-				if( d [ otoczenie[i][0] + otoczenie[i][1] * 30 ] == 1) {
+				var tc = d[otoczenie[i][0] + otoczenie[i][1] * map.width]; // tile content
+				if (tc != 0) {
 					b.x = otoczenie[i][0];
 					b.y = otoczenie[i][1];
-					b.x1 = b.x * 64;
-					b.y1 = b.y * 64;
-					b.x2 = b.x * 64 +64;
-					b.y2 = b.y * 64 +64;
+					b.x1 = b.x * map.tilewidth;
+					b.y1 = b.y * map.tileheight;
+					b.x2 = b.x * map.tilewidth + map.tilewidth;
+					b.y2 = b.y * map.tileheight + map.tileheight;
 
 					if (b.x1 < x + r && b.x2 > x - r && b.y1 < y + r && b.y2 > y - r) {
+						if (tc == 1) { // box
+							if (dx == -1) {
+								if (Math.abs(b.x2 - (x - r)) <= Math.abs(dx * speed)) { // kolizja z prawym bokiem boxu
+									x = b.x2 + r;
+								}
+							} else if (dx == 1) {
+								if (Math.abs(b.x1 - (x + r)) <= Math.abs(dx * speed)) { // kolizja z lewym bokiem boxu
+									x = b.x1 - r;
+								}
+							}
 
-						if (dx == -1) {
-							if (Math.abs(b.x2 - (x - r)) <= Math.abs(dx * speed)) { // kolizja z prawym bokiem boxu
-								x = b.x2 + r;
+							if (dy == -1) {
+								if (Math.abs(b.y2 - (y - r)) <= Math.abs(dy * speed)) { // kolizja z prawym bokiem boxu
+									y = b.y2 + r;
+								}
+							} else if (dy == 1) {
+								if (Math.abs(b.y1 - (y + r)) <= Math.abs(dy * speed)) { // kolizja z lewym bokiem boxu
+									y = b.y1 - r;
+								}
 							}
-						} else if (dx == 1) {
-							if (Math.abs(b.x1 - (x + r)) <= Math.abs(dx * speed)) { // kolizja z lewym bokiem boxu
-								x = b.x1 - r;
-							}
-						}
-
-						if (dy == -1) {
-							if (Math.abs(b.y2 - (y - r)) <= Math.abs(dy * speed)) { // kolizja z prawym bokiem boxu
-								y = b.y2 + r;
-							}
-						} else if (dy == 1) {
-							if (Math.abs(b.y1 - (y + r)) <= Math.abs(dy * speed)) { // kolizja z lewym bokiem boxu
-								y = b.y1 - r;
-							}
+						} else if (tc == 2) { //ammo 
+							d[otoczenie[i][0] + otoczenie[i][1] * map.width] = 0;
+							t.bullets += 10;
+							map.change = 1;
 						}
 					}
 				}
@@ -302,7 +324,7 @@ var bullets = {
 				continue;
 			}
 			// Kolizja z boxami
-			if(map.layers[0].data[ Math.floor(b.x/64) + Math.floor(b.y/64)*30 ] == 1) {
+			if (map.layers[0].data[Math.floor(b.x / map.tilewidth) + Math.floor(b.y / map.tileheight) * map.width] == 1) {
 				delete bullets.list[i];
 				continue;
 			}
