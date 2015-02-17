@@ -130,9 +130,9 @@ var board = {
 
 var tank = {
 	list: {},
-	proto: function(id) {
-		this.x = losuj(50, 1950);
-		this.y = losuj(50, 950);
+	proto: function(id, pos) {
+		this.x = (pos%30) * 64 + 32;
+		this.y = (pos - pos%30) /30 * 64 + 32;
 		this.speed = Math.floor(300 / speed);
 		this.dirX = 0;
 		this.dirY = 0;
@@ -160,7 +160,11 @@ var tank = {
 		}
 	},
 	create: function(id) {
-		tank.list[id] = new tank.proto(id);
+		var position;
+		do { 
+			position = losuj(0, 450);
+		} while(map.layers[0].data[position] != 0)
+		tank.list[id] = new tank.proto(id, position);
 	},
 	move: function() {
 		for (var id in tank.list) {
@@ -353,5 +357,5 @@ var vector = function(x, y) {
 function losuj(a, b) {
 	var r = Math.random() * (a - b);
 	r += a + b;
-	return Math.round(r);
+	return Math.floor(r);
 }
