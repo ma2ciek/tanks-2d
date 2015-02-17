@@ -150,7 +150,7 @@ var tank = {
 		this.my = 0;
 		this.posX = 0;
 		this.posY = 0;
-		this.bullets = 50;
+		this.bullets = 100;
 		this.nuke = 3;
 	},
 	shot: function(id) {

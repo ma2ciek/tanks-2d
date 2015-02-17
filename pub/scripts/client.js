@@ -75,7 +75,7 @@ var game = {
 	},
 	draw: function() {
 
-		var t = Date.now() - game.delay + game.ping.av;
+		var t = Date.now() - (game.delay + game.ping.av);
 		game.frame_time = t;
 		for (var i = 0; i < packages.length; i++) {
 			if (t > packages[i].date) break;
