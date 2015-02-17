@@ -146,7 +146,6 @@ var game = {
 			ctx.textAlign = "left";
 			ctx.fillStyle = 'white'
 			ctx.fillText('FPS: ' + Math.floor(1000 / t), 15, 15);
-			ctx.fillText('PING: ' + Math.floor(game.ping.actual), 80, 15);
 		}
 	},
 	disconnect: function() {
