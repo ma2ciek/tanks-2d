@@ -65,11 +65,8 @@ io.on('connection', function(socket) {
 				case 'my':
 					tank.list[id].mPosY = msg[i];
 					break;
-				case 'shot':
-					tank.shot(id);
-					break;
-				case 'nuke':
-					tank.nuke(id);
+				case 'ability':
+					tank.ab(id, msg[i]);
 					break;
 				case 'dirX':
 					tank.list[id].dirX = msg[i];
@@ -99,16 +96,25 @@ setInterval(function() {
 
 var speed = 30;
 
-setInterval(mainLoop, 1000 / speed);
+var mainLoopTimer = setInterval(mainLoop, 1000 / speed);
 
 http.listen(port, function() {
 	console.log(port);
 });
 
+var cli = 0;
+
 function mainLoop() {
-	tank.move();
-	bullets.move();
-	send_data();
+	if (io.engine.clientsCount > 0) {
+		tank.move();
+		bullets.move();
+		send_data();
+		cli = 1;
+	} else if (cli == 1) {
+		delete require.cache['./maps/map01.json'];
+		map = require('./maps/map01.json');
+		cli = 0;
+	}
 }
 
 function send_data() {
@@ -155,25 +161,27 @@ var tank = {
 		this.my = 0;
 		this.posX = 0;
 		this.posY = 0;
-		this.bullets = 100;
+		this.shot = 100;
 		this.nuke = 3;
 	},
-	shot: function(id) {
-		if (tank.list[id].bullets > 0) {
-			bullets.create(id);
-			tank.list[id].bullets--;
-			io.emit('sound', 'shot');
-		}
-	},
-	nuke: function(id) {
-		if (tank.list[id].nuke > 0) {
+	ab: function(id, ability) {
+		if(tank.list[id][ability] > 0) {
 			var t = tank.list[id];
-			map.layers[0].data[Math.floor(t.mx / map.tilewidth) + Math.floor(t.my / map.tileheight) * map.width] = 0;
-			tank.list[id].nuke--;
-			io.emit('sound', 'nuke');
-			map.change = 1;
-
-			// Pozostało dodać obrażenie obszarowe
+			switch (ability) {
+				case 'shot':
+					bullets.create(id);
+					tank.list[id].shot--;
+					break;
+				case 'nuke':
+					setTimeout(function() {
+						map.layers[0].data[Math.floor(t.mx / map.tilewidth) + Math.floor(t.my / map.tileheight) * map.width] = 0;
+						tank.list[id].nuke--;
+						map.change = 1;
+					});
+					// Pozostało dodać obrażenie
+				break;
+			}
+			io.emit('sound', ability);
 		}
 	},
 	create: function(id) {
@@ -269,7 +277,15 @@ var tank = {
 							}
 						} else if (tc == 2) { //ammo 
 							d[otoczenie[i][0] + otoczenie[i][1] * map.width] = 0;
-							t.bullets += 10;
+							t.shot += 10;
+							map.change = 1;
+						} else if (tc == 3) {
+							d[otoczenie[i][0] + otoczenie[i][1] * map.width] = 0;
+							t.nuke += 3;
+							map.change = 1;
+						} else if (tc == 4) {
+							d[otoczenie[i][0] + otoczenie[i][1] * map.width] = 0;
+							t.life = Math.min(100, t.life + 30);
 							map.change = 1;
 						}
 					}

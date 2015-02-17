@@ -39,18 +39,6 @@ var game = {
 	frame_time: 0,
 	space_shot: 1,
 	volume: 0.5,
-	ping: {
-		sum: 0,
-		amount: 0,
-		av: 0,
-		actual: 0,
-		addState: function(x) {
-			this.actual = x;
-			this.sum += x;
-			this.amount += 1;
-			this.av = this.sum / this.amount;
-		},
-	},
 	ctx: null,
 	counter: 0,
 	play: function() {
@@ -106,8 +94,8 @@ var game = {
 					player.nuke = game.msg1.tank[player.id].nuke
 					draw++;
 				}
-				if (game.msg1.tank[player.id].bullets != player.bullets) {
-					player.bullets = game.msg1.tank[player.id].bullets;
+				if (game.msg1.tank[player.id].shot != player.shot) {
+					player.shot = game.msg1.tank[player.id].shot;
 					draw++;
 				}
 				if (draw != 0) board.draw_icons();
@@ -124,9 +112,21 @@ var game = {
 	},
 	rel: function(x, y) {
 		return {
-			x: Math.floor(x + player.SCREEN_WIDTH / 2 - player.x),
-			y: Math.floor(y + player.SCREEN_HEIGHT / 2 - player.y)
+			x: x + player.SCREEN_WIDTH / 2 - player.x,
+			y: y + player.SCREEN_HEIGHT / 2 - player.y
 		}
+	},
+	ping: {
+		sum: 0,
+		amount: 0,
+		av: 0,
+		actual: 0,
+		addState: function(x) {
+			this.actual = x;
+			this.sum += x;
+			this.amount += 1;
+			this.av = this.sum / this.amount;
+		},
 	},
 	fps: {
 		times: [],
@@ -241,7 +241,7 @@ var board = {
 		act_ctx.fillText('LPM', 150, player.SCREEN_HEIGHT - 74);
 		act_ctx.font = "13px Arial";
 		act_ctx.textAlign = "right";
-		act_ctx.fillText(game.msg1.tank[player.id].bullets, 175, player.SCREEN_HEIGHT - 15);
+		act_ctx.fillText(game.msg1.tank[player.id].shot, 175, player.SCREEN_HEIGHT - 15);
 
 		//NUKE 
 		act_ctx.beginPath();
@@ -287,8 +287,8 @@ var board = {
 
 			if (wsp.x > -64 && wsp.y > -64 && wsp.x < player.SCREEN_WIDTH + 64 && wsp.y < player.SCREEN_HEIGHT + 64) {
 
-				if (map) map.tilesets[0] = ctx.drawImage(resources.img.tileset, tc*64 - 64, 0, 64, 64, wsp.x, wsp.y, 64, 64);
-			
+				if (map) map.tilesets[0] = ctx.drawImage(resources.img.tileset, tc * 64 - 64, 0, 64, 64, wsp.x, wsp.y, 64, 64);
+
 			}
 		}
 	},
@@ -308,29 +308,10 @@ var board = {
 
 
 var tank = {
-	shot: function() {
-		if (game.msg1.tank[player.id].bullets > 0) {
-			socket.emit('client-event', {
-				shot: true
-			});
-		}
-	},
-	nuke: function() {
-		if (game.msg1.tank[player.id].nuke > 0) {
-			socket.emit('client-event', {
-				nuke: true
-			});
-		}
-	},
-	// do ulepszenia i uogólnienia!!!
 	ab: function(ability) {
-		if (game.msg1.tank[player.id][ability.name] > 0) {
-			var a = resources.audio[ability.audio];
-			var x = a.cloneNode();
-			x.volume = a.volume;
-			x.play();
+		if (game.msg1.tank[player.id][ability] > 0) {
 			socket.emit('client-event', {
-				ability: ability.name
+				ability: ability
 			});
 		}
 	},
@@ -408,12 +389,15 @@ function game_events() {
 			settings.toggle();
 		} else if (player.exist && !chat.isFocus) {
 			switch (evt.which) {
+				case 9:
+					evt.preventDefault();
+					break;
 				case 13: // Enter - czat
 					chat.show();
 					break;
 				case 32: // SPACE
 					if (game.space_shot == 1) {
-						tank.shot();
+						tank.ab('shot');
 						game.space_shot = 0;
 					}
 					break;
@@ -482,15 +466,17 @@ function game_events() {
 			});
 		}
 	});
+
 	window.addEventListener('contextmenu', function(evt) {
 		evt.preventDefault();
-		tank.nuke();
+		if (evt.target.nodeName == 'CANVAS')
+			tank.ab('nuke');
 	})
 	act_canvas.addEventListener('click', function(evt) {
 		if (!player.exist || player.id === null)
 			game.play();
 		else {
-			tank.shot();
+			tank.ab('shot');
 		}
 	});
 	$('#m').focus(function() {
