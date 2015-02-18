@@ -7,7 +7,6 @@ var express = require('express');
 var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
-var map = require('./maps/map01.json');
 app.set('view engine', 'jade');
 app.set('views', __dirname + '/views');
 app.set('view options', {
@@ -87,6 +86,16 @@ io.on('connection', function(socket) {
 		}
 	})
 });
+
+var map = require('./maps/map02.json');
+map.get_id = function(x, y) {
+	return Math.floor(x / map.tilewidth) + Math.floor(y / map.tileheight) * map.width;
+};
+map.get_pos = function(id) {
+
+};
+
+
 setInterval(function() {
 	var clients = io.engine.clientsCount
 	if (clients == 1) clients += ' person connected';
@@ -111,8 +120,8 @@ function mainLoop() {
 		send_data();
 		cli = 1;
 	} else if (cli == 1) {
-		delete require.cache['./maps/map01.json'];
-		map = require('./maps/map01.json');
+		delete require.cache['./maps/map02.json']; // nie działa
+		map = require('./maps/map02.json');
 		cli = 0;
 	}
 }
@@ -165,30 +174,48 @@ var tank = {
 		this.nuke = 3;
 	},
 	ab: function(id, ability) {
-		if(tank.list[id][ability] > 0) {
+		if (tank.list[id][ability] > 0) {
 			var t = tank.list[id];
 			switch (ability) {
 				case 'shot':
 					bullets.create(id);
 					tank.list[id].shot--;
+					io.emit('sound', ability);
 					break;
 				case 'nuke':
-					setTimeout(function() {
-						map.layers[0].data[Math.floor(t.mx / map.tilewidth) + Math.floor(t.my / map.tileheight) * map.width] = 0;
-						tank.list[id].nuke--;
-						map.change = 1;
-					});
+					setTimeout(function(t, mx, my) {
+						t.nuke--;
+						var tile = map.get_id(mx, my);
+						if (map.layers[1].data[tile] == 1) {
+							map.layers[1].data[tile] = 0; // usuwa box
+							map.change = 1;
+						}
+						for (var i in tank.list) {
+							var t2 = tank.list[i];
+							if (col.circle(t2.x - mx, t2.y - my, 64)) { // 64 - AoE radius
+								t2.life -= 25;
+								if (t2.life <= 0)
+									delete tank.list[i];
+							}
+						}
+						io.emit('sound', ability);
+						io.emit('animation', JSON.stringify({
+							ab: ability,
+							x: mx,
+							y: my
+						}));
+					}, 500, t, t.mx, t.my);
 					// Pozostało dodać obrażenie
-				break;
+					break;
 			}
-			io.emit('sound', ability);
+
 		}
 	},
 	create: function(id) {
 		var position;
 		do {
-			position = losuj(0, 450);
-		} while (map.layers[0].data[position] != 0)
+			position = losuj(0, map.width * map.height);
+		} while (map.layers[1].data[position] != 0)
 		tank.list[id] = new tank.proto(id, position);
 	},
 	move: function() {
@@ -227,7 +254,7 @@ var tank = {
 
 			// Kolizje z boksami
 
-			var d = map.layers[0].data;
+			var d = map.layers[1].data;
 
 			// Działa tylko dla dużych boksów
 			var x1 = Math.floor((x + r) / map.tilewidth);
@@ -275,35 +302,24 @@ var tank = {
 									y = b.y1 - r;
 								}
 							}
-						} else if (tc == 2) { //ammo 
+						} else if (tc == 2) { // ammo 
 							d[otoczenie[i][0] + otoczenie[i][1] * map.width] = 0;
 							t.shot += 10;
 							map.change = 1;
-						} else if (tc == 3) {
+						} else if (tc == 3) { // nuke
 							d[otoczenie[i][0] + otoczenie[i][1] * map.width] = 0;
 							t.nuke += 3;
 							map.change = 1;
-						} else if (tc == 4) {
-							d[otoczenie[i][0] + otoczenie[i][1] * map.width] = 0;
-							t.life = Math.min(100, t.life + 30);
-							map.change = 1;
+						} else if (tc == 4) { // hp
+							if (t.life < 100) {
+								t.life = Math.min(100, t.life + 30);
+								d[otoczenie[i][0] + otoczenie[i][1] * map.width] = 0;
+								map.change = 1;
+							}
 						}
 					}
 				}
 			}
-
-
-
-			/* for (var i = 0; i < board.list.length; i++) {
-				var b = board.list[i];
-				if (b.type != 'box') continue;
-
-				
-			}
-			*/
-
-			// Kolizje z innymi czołgami
-			// DO DODANIA!!
 
 			t.x = x;
 			t.y = y;
@@ -323,6 +339,7 @@ var tank = {
 	}
 };
 var bullets = {
+	max_id: 0,
 	list: {},
 	move: function() {
 		for (var i in bullets.list) {
@@ -340,7 +357,7 @@ var bullets = {
 				continue;
 			}
 			// Kolizja z boxami
-			if (map.layers[0].data[Math.floor(b.x / map.tilewidth) + Math.floor(b.y / map.tileheight) * map.width] == 1) {
+			if (map.layers[1].data[map.get_id(b.x, b.y)] == 1) {
 				delete bullets.list[i];
 				continue;
 			}
@@ -348,11 +365,11 @@ var bullets = {
 			for (var id in tank.list) {
 				var t = tank.list[id];
 				if (b.owner == t.id) continue;
-				if ((t.x - b.x) * (t.x - b.x) + (t.y - b.y) * (t.y - b.y) < (t.r + b.r) * (t.r + b.r)) {
+				if (col.circle(t.x - b.x, t.y - b.y, t.r + b.r)) {
 					delete bullets.list[i];
-					if (!(t.life -= 10)) {
+					t.life -= 10;
+					if (t.life <= 0)
 						delete tank.list[id];
-					}
 				}
 			}
 		}
@@ -376,7 +393,7 @@ var bullets = {
 		this.speed = Math.floor(1000 / speed);
 	},
 	create: function(id) {
-		var id2 = 'id_' + losuj(0, 10000000)
+		var id2 = 'id_' + (++bullets.max_id);
 		bullets.list[id2] = new bullets.proto(id, id2);
 	},
 }
@@ -396,4 +413,13 @@ function losuj(a, b) {
 	var r = Math.random() * (a - b);
 	r += a + b;
 	return Math.floor(r);
+}
+
+var col = { // kolizje
+	circle: function(x, y, r) {
+		return x * x + y * y < r * r ? 1 : 0;
+	},
+	square: function(x1, x2, y1, y2) {
+		// to be continued
+	}
 }

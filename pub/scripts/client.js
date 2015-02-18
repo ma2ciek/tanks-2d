@@ -14,6 +14,7 @@ function socket_handlers() {
 	socket.on('game-update', game.update);
 	socket.on('join', game.join);
 	socket.on('sound', game.play_sound);
+	socket.on('animation', game.animate);
 }
 
 window.addEventListener('load', function load() {
@@ -171,6 +172,17 @@ var game = {
 		var x = a.cloneNode();
 		x.volume = game.volume;
 		x.play();
+	},
+	animate: function(msg) {
+		msg = JSON.parse(msg);
+		switch (msg.ab) {
+			case 'nuke':
+				new Sprite('/img/explosion.png', msg.x, msg.y, 13, 30)
+				break;
+			case '0':
+
+				break;
+		}
 	}
 }
 
@@ -234,7 +246,7 @@ var board = {
 		act_ctx.stroke();
 		act_ctx.closePath();
 
-		act_ctx.drawImage(resources.img.bullet, 0, 0, 199, 100, 95, player.SCREEN_HEIGHT - 65, 100, 50);
+		act_ctx.drawImage(abilities.shot.img, 0, 0, 199, 100, 95, player.SCREEN_HEIGHT - 65, 100, 50);
 		act_ctx.fillStyle = 'white';
 		act_ctx.font = "10px Arial";
 		act_ctx.textAlign = "center";
@@ -251,7 +263,7 @@ var board = {
 		act_ctx.stroke();
 		act_ctx.closePath();
 
-		act_ctx.drawImage(resources.img.nuke, 0, 0, 111, 134, 205, player.SCREEN_HEIGHT - 65, 45, 50);
+		act_ctx.drawImage(abilities.nuke.img, 0, 0, 111, 134, 205, player.SCREEN_HEIGHT - 65, 45, 50);
 		act_ctx.fillStyle = 'white';
 		act_ctx.font = "10px Arial";
 		act_ctx.textAlign = "center";
@@ -274,8 +286,8 @@ var board = {
 		if (game.msg1) board.draw_icons();
 	},
 	draw: function() {
-		for (var i = 0; i < map.layers[0].data.length; i++) {
-			var tc = map.layers[0].data[i] // tile content
+		for (var i = 0; i < map.layers[1].data.length; i++) {
+			var tc = map.layers[1].data[i] // tile content
 			if (tc == 0) continue;
 
 			var bw = board.WIDTH / 64;
@@ -507,32 +519,17 @@ var bullets = {
 
 var resources = {
 	img: {
-		bullet: (function() {
-			var img = new Image();
-			img.src = './img/bullet.png';
-			return img;
-		})(),
-		nuke: (function() {
-			var img = new Image();
-			img.src = './img/nuke.png';
-			return img;
-		})(),
 		tileset: (function() {
 			var img = new Image();
-			img.src = 'img/tilesets_01.png'
+			img.src = 'img/tileset_01.png'
+			return img;
+		})(),
+		grass: (function() {
+			var img = new Image();
+			img.src = 'img/grass_64.png'
 			return img;
 		})()
 	},
-	audio: {
-		shot: (function() {
-			var a = new Audio('audio/gun_shot.wav');
-			return a;
-		})(),
-		nuke: (function() {
-			var a = new Audio('audio/explosion.mp3');
-			return a;
-		})()
-	}
 };
 
 
@@ -593,6 +590,9 @@ var settings = {
 
 }
 
+
+/************************** Prototypes ********************************/
+
 CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
 	if (w < 2 * r) r = w / 2;
 	if (h < 2 * r) r = h / 2;
@@ -609,4 +609,59 @@ if (!Date.now) {
 	Date.now = function() {
 		return new Date().getTime();
 	}
+}
+
+
+/*************************** SPRITES *******************************/
+
+var Sprite = function(url, dx, dy, size, sp, w, h, frames, index, loop, fromCenter) {
+	this.img = new Image();
+	this.img.src = url;
+	this.frames = frames || Array.apply(null, {
+		length: size
+	}).map(Number.call, Number); // np. [1,2,3,2,1]
+	this.size = size; // długość sprite'a
+	this.loop = loop || false;
+	this.index = index || 0;
+	this.speed = 1000 / sp;
+	this.dx = dx;
+	this.dy = dy;
+	this.fromCenter = fromCenter === false ? false : true;
+
+
+	var that = this;
+	this.img.onload = function() {
+		that.width = w || that.img.width / size;
+		that.height = h || that.img.height;
+
+		if (that.fromCenter) {
+			that.dx -= that.width / 2;
+			that.dy -= that.height / 2;
+		}
+
+		that.render();
+		setTimeout(that.next, that.speed, that);
+	}
+}
+
+Sprite.prototype.next = function(that) {
+
+	var wsp = game.rel(that.dx, that.dy);
+	if (!that.loop && that.index + 1 >= that.frames.length) {
+		act_ctx.clearRect(wsp.x, wsp.y, that.width, that.height);
+	} else {
+		that.index = (++that.index) % that.frames.length;
+		that.render();
+		setTimeout(that.next, that.speed, that);
+	}
+}
+Sprite.prototype.render = function() {
+	var wsp = game.rel(this.dx, this.dy);
+	act_ctx.clearRect(wsp.x, wsp.y, this.width, this.height);
+	act_ctx.drawImage(this.img,
+		this.width * this.frames[this.index], 0, // sx, sy
+		this.width, this.height, //source width and height
+		wsp.x, wsp.y, // destination x and y
+		this.width, this.height
+	)
 }
