@@ -324,10 +324,9 @@ var board = {
 	},
 	draw_animations: function() {
 		for (var i = 0; i < game.animations.length; i++) {
-			if (game.animations[i].index +1 < game.animations[i].frames.length) {
+			if (game.animations[i].index + 1 < game.animations[i].frames.length) {
 				game.animations[i].render();
-			}
-			else {
+			} else {
 				game.animations.splice(i, 1);
 				i--;
 			}
@@ -709,4 +708,18 @@ Sprite.prototype.render = function() {
 		wsp.x, wsp.y, // destination x and y
 		this.width, this.height
 	)
+}
+
+
+var matrix = {
+	id: null,
+	speed: 60,
+	init: function() {
+		this.id = setInterval(function() {
+			console.log(game.mid_times.join(' '))
+		}, 1000 / this.speed);
+	},
+	end: function() {
+		clearInterval(this.id);
+	}
 }
