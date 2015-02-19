@@ -1,0 +1,19 @@
+doctype
+html(lang='pl')
+	head
+		title Tanks 2D
+		meta(http-equiv='PRAGMA', content='NO-CACHE')
+		meta(http-equiv='CACHE-CONTROL', content='NO-CACHE')
+		link(rel='stylesheet', href='css/game.css', type='text/css')
+		script(src='/socket.io/socket.io.js')
+		script(src='scripts/jquery-2.1.0.min.js')
+		script(src='scripts/client.js')
+		script(src='scripts/chat.js')
+	body
+		div#main
+			canvas(id='game')
+			canvas(id='active')
+		div#chat
+			div#clients
+			ul#messages
+			input#m(autocomplete="off") 

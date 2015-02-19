@@ -4,16 +4,16 @@ html(lang='pl')
 		title Tanks 2D
 		meta(http-equiv='PRAGMA', content='NO-CACHE')
 		meta(http-equiv='CACHE-CONTROL', content='NO-CACHE')
-		link(rel='stylesheet', href='css/style.css', type='text/css')
+		link(rel='stylesheet', href='css/main.css', type='text/css')
+		link(rel='stylesheet', href='css/buttons/buttons.css', type='text/css')
 		script(src='/socket.io/socket.io.js')
 		script(src='scripts/jquery-2.1.0.min.js')
-		script(src='scripts/client.js')
-		script(src='scripts/chat.js')
+		script(src='scripts/main.js')
 	body
+		header
+			h1 Tanks 2D 
+				span v 1.0
 		div#main
-			canvas(id='game')
-			canvas(id='active')
-		div#chat
-			div#clients
-			ul#messages
-			input#m(autocomplete="off") 
+			button#play.big.positive Play
+			button#inst.big Instructions
+			button#settings.big Settings

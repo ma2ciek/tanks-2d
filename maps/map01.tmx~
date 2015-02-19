@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.0" orientation="orthogonal" width="30" height="15" tilewidth="64" tileheight="64" backgroundcolor="#165802">
  <tileset firstgid="1" name="tilesets_01" tilewidth="64" tileheight="64">
-  <image source="../pub/img/tilesets_01.png" width="256" height="64"/>
+  <image source="../pub/img/tileset_01.png" width="256" height="64"/>
  </tileset>
  <tileset firstgid="5" name="grass_64" tilewidth="64" tileheight="64">
   <image source="../pub/img/grass_64.png" width="320" height="64"/>
  </tileset>
  <tileset firstgid="10" name="grass_3030_norm" tilewidth="64" tileheight="64">
-  <image source="../../../../../Downloads/grass_3030_norm.jpg" width="2400" height="1600"/>
+  <image source="../pub/img/grass.jpg" width="2400" height="1600"/>
  </tileset>
  <layer name="bg" width="30" height="15">
   <data encoding="base64" compression="zlib">
-   eJxNlGlyo0AMhbu5R/AWLsLEC1zENg7JRWKwHe4xmSRH8YbnIoPt2CNVfxT8UAm6WnpPT1JPPWNysVDsl1hf7E0sE/PFjNirWCGWii3ESmtMIv4ofi0+5lvjb+K74udij2IDvOYdk6sndrAuz0VsKv8TYvRs5Lkzxb9aF/tjXewAnhlniqf+t1jkuVi988c6PAO3lfh3sK9gjKir5rWT86H4u/g9eMpPYzT/Azz75NT7ilXnTjGNNfA7g7VBpxexwHM4Y+o4WRe/9Jx2Efc0fwWXEK4H6t2h/RKOfWJ8ainRQ2s5waEdq/kSeOzA0L4r30dy3emRoa8vXqOparFGzwItc74ruNXz4FNjgFaqfwr3B3wFtws4P8yYcjtS3xC8GG4FZ3vy6fm/Vm878Jkx04o7QZ8cbp9oHFLXAC7f1t3fkOvO95R5LuF75F6nNetbdiBo9ebOLNzAKtmXkBpTcJOWnl1y+eiRMmc62/Ue5vREz+fMZoimQ+re2gZD+cRolsHxyzZafdDzOXeWaPUKnzE96FPrJ7m/2ZMPfMB8LLiTwXHCjGrfU2Y9AasH35zaDnC+UW/V4pnQ7x66f6HTG9zmnC/hUjLfG/T2ybdlP9LWvSt9LZihNbwXcHuCU72fFTsy8ppdiuEXMfNHdM3IWdcVtGq58F/BYcf/lnwrapvShzU6PsGr4zVvYElt72ijeAfbxETEGPpxs80eaZ4TfJ/hFXGmM3Vtzfwz+MpzhkYGvfbUUL/rC2ZSZ0n3YUYuxT/b5k2t34SY8xichL52wPnLDq7o6wTtYnagfgcLOJ3J3+XuFX317D+pPuvN
+   eJxjYBgFo2AUjIJRMApGLgAABwgAAQ==
   </data>
  </layer>
- <layer name="game" width="30" height="15">
+ <layer name="game" width="30" height="15" visible="0">
   <data encoding="base64" compression="zlib">
    eJy9VIsOgCAIRPT/v7m15XLsgMMetzEETw6L6pKjmVgvizjRXgMmgUdnbD7Tq4DhIw66V0V7R3dqDLnfCdsbqsms11x3evKwo8vMDzMHX0GN/p+6K6rzEz3HzNj6ld4qeDrPb/UQxVEPrLdQsMfozrMnRhLbGtn35f3HLYfxDFauOvkqDjXqAJ0=
   </data>

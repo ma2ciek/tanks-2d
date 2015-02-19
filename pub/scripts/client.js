@@ -13,8 +13,6 @@ function socket_handlers() {
 	socket.on('disconnect', game.disconnect);
 	socket.on('game-update', game.update);
 	socket.on('join', game.join);
-	socket.on('sound', game.play_sound);
-	socket.on('animation', game.animate);
 }
 
 window.addEventListener('load', function load() {
@@ -26,14 +24,14 @@ window.addEventListener('load', function load() {
 	game_events();
 
 	board.adjust();
-	board.draw_play_button();
+	game.play();
 });
-
 
 var packages = [];
 
 
 var game = {
+	mid_times: [],
 	timerId: null,
 	package_nr: 0,
 	delay: 100, // [ms]
@@ -42,13 +40,15 @@ var game = {
 	volume: 0.5,
 	ctx: null,
 	counter: 0,
+	animations: [],
 	play: function() {
-		if (!player.exist) {
-			cancelAnimationFrame(game.timerId);
-			var msg = JSON.stringify(player);
-			socket.emit('join-game', msg);
-			game.draw();
-		}
+		cancelAnimationFrame(game.timerId);
+		var msg = JSON.stringify({
+			SCREEN_HEIGHT: player.SCREEN_HEIGHT,
+			SCREEN_WIDTH: player.SCREEN_WIDTH
+		});
+		socket.emit('join-game', msg);
+		setTimeout(game.draw, 400);
 	},
 	update: function(msg) {
 		var msg = JSON.parse(msg);
@@ -68,6 +68,7 @@ var game = {
 
 		var t = Date.now() - (game.delay + game.ping.av);
 		game.frame_time = t;
+
 		for (var i = 0; i < packages.length; i++) {
 			if (t > packages[i].date) break;
 		}
@@ -76,39 +77,76 @@ var game = {
 		if (i < 21 && i >= 1) {
 			if (player.id in packages[i].tank && player.id in packages[i - 1].tank) {
 				player.exist = 1;
-				game.msg1 = packages[i];
+				var m = game.msg1 = packages[i];
 				game.msg2 = packages[i - 1];
 
-				player.pos();
+				game.log.init();
+				game.mid_times.length = 0;
 
+				player.pos();
 				board.draw_background();
-				tank.draw();
+				game.log.addState(); // 0
+
 				board.draw();
+				game.log.addState() // 1
+
+				tank.draw();
+				game.log.addState(); // 2
+
 				bullets.draw();
+				game.log.addState(); // 3
+
+				board.draw_animations();
 
 				var draw = 0;
-				if (game.msg1.tank[player.id].life != player.life) {
-					player.life = game.msg1.tank[player.id].life;
+				if (m.tank[player.id].life != player.life) {
+					player.life = m.tank[player.id].life;
 					draw++;
 				}
-				if (game.msg1.tank[player.id].nuke != player.nuke) {
-					player.nuke = game.msg1.tank[player.id].nuke
+				if (m.tank[player.id].nuke != player.nuke) {
+					player.nuke = m.tank[player.id].nuke
 					draw++;
 				}
-				if (game.msg1.tank[player.id].shot != player.shot) {
-					player.shot = game.msg1.tank[player.id].shot;
+				if (m.tank[player.id].shot != player.shot) {
+					player.shot = m.tank[player.id].shot;
 					draw++;
 				}
 				if (draw != 0) board.draw_icons();
+				game.log.addState(); // 4
 
-				if (game.msg1.map !== null) map = game.msg1.map;
+				if (m.map_changes.length !== 0) {
+					for(var j=0; j<m.map_changes.length; j++) {
+						map.layers[1].data[m.map_changes[j][0]] = m.map_changes[j][1];
+					}
+				}
+
+				if(m.sounds.length !== 0) {
+					for(var j=0; j<m.sounds.length; j++) {
+						game.play_sound(m.sounds[j]);
+					}
+				}
+
+				if(m.animations.length !== 0) {
+					for(var j=0; j<m.animations.length; j++) {
+						game.animate(m.animations[j]);
+					}
+				}
+
+				game.log.addState(); // 5
+
+
 				game.fps.count();
+
+				game.log.addState(); // 6
+
+				for(var j=0; j<game.mid_times.length; j++) {
+					if(game.mid_times[j] > 15) console.error("LAG ",j, game.mid_times[j], new Date());
+				}
 			} else {
-				player.exist = 0;
-				board.clear();
-				board.draw_play_button();
+				location.href = "/";
 			}
 		}
+		else console.error("Nie otrzymano pakietu danych", new Date());
 		game.timerId = requestAnimationFrame(game.draw);
 	},
 	rel: function(x, y) {
@@ -133,6 +171,7 @@ var game = {
 		times: [],
 		time_sum: 0,
 		last_time: Date.now(),
+
 		count: function() {
 			var d = Date.now() - this.last_time;
 			this.last_time = Date.now();
@@ -147,6 +186,8 @@ var game = {
 			ctx.textAlign = "left";
 			ctx.fillStyle = 'white'
 			ctx.fillText('FPS: ' + Math.floor(1000 / t), 15, 15);
+			ctx.fillText('KILLS: ' + game.msg1.tank[player.id].kills, 90, 15);
+			ctx.fillText('DEATHS: ' + game.msg1.tank[player.id].deaths, 170, 15);
 		}
 	},
 	disconnect: function() {
@@ -160,7 +201,7 @@ var game = {
 		board.HEIGHT = m.height;
 		window.map = m.map;
 	},
-	interp: function(A, C) {
+	interp: function(A, C) { // Interpolacja
 		// Zwraca wartość środkowej wartości
 		// Ta & Tc - packages 
 		// Tb - Animation time
@@ -174,7 +215,6 @@ var game = {
 		x.play();
 	},
 	animate: function(msg) {
-		msg = JSON.parse(msg);
 		switch (msg.ab) {
 			case 'nuke':
 				new Sprite('/img/explosion.png', msg.x, msg.y, 13, 30)
@@ -182,6 +222,16 @@ var game = {
 			case '0':
 
 				break;
+		}
+	},
+	log: {
+		time: 0,
+		addState: function() {
+			game.mid_times.push(Date.now() - game.log.time);
+			game.log.time = Date.now()
+		},
+		init: function() {
+			game.log.time = Date.now()
 		}
 	}
 }
@@ -272,6 +322,11 @@ var board = {
 		act_ctx.textAlign = "right";
 		act_ctx.fillText(game.msg1.tank[player.id].nuke, 255, player.SCREEN_HEIGHT - 15);
 	},
+	draw_animations: function() {
+		for(var i =0; i<game.animations.length; i++) {
+			game.animations[i].render();
+		}
+	},
 	adjust: function() {
 		player.SCREEN_WIDTH = Math.min($(window).outerWidth(), 1200);
 		player.SCREEN_HEIGHT = Math.min($(window).outerHeight(), 600);
@@ -286,38 +341,33 @@ var board = {
 		if (game.msg1) board.draw_icons();
 	},
 	draw: function() {
-		for (var i = 0; i < map.layers[1].data.length; i++) {
-			var tc = map.layers[1].data[i] // tile content
-			if (tc == 0) continue;
+		if(map) {
+			for (var i = 0; i < map.layers[1].data.length; i++) {
+				var tc = map.layers[1].data[i]; // tile content
+				var tc2 = map.layers[0].data[i]; // background
+				if (tc == 0 && tc2 == 0) {
+					continue;
+				}
 
-			var bw = board.WIDTH / 64;
-			var x = i % bw;
-			var y = (i - x) / bw;
+				var bw = board.WIDTH / 64;
+				var x = i % bw;
+				var y = (i - x) / bw;
 
 
-			var wsp = game.rel(x * 64, y * 64);
+				var wsp = game.rel(x * 64, y * 64);
 
-			if (wsp.x > -64 && wsp.y > -64 && wsp.x < player.SCREEN_WIDTH + 64 && wsp.y < player.SCREEN_HEIGHT + 64) {
+				if (wsp.x > -64 && wsp.y > -64 && wsp.x < player.SCREEN_WIDTH + 64 && wsp.y < player.SCREEN_HEIGHT + 64) {
+					if(tc2) ctx.drawImage(resources.img.grass, tc2 * 64 - 5*64, 0, 64, 64, wsp.x, wsp.y, 64, 64);
+					if(tc) ctx.drawImage(resources.img.tileset, tc * 64 - 64, 0, 64, 64, wsp.x, wsp.y, 64, 64);
 
-				if (map) map.tilesets[0] = ctx.drawImage(resources.img.tileset, tc * 64 - 64, 0, 64, 64, wsp.x, wsp.y, 64, 64);
-
+				}
 			}
-		}
+		} else console.error('Brak mapy');
 	},
 	clear: function() {
 		ctx.clearRect(0, 0, player.SCREEN_WIDTH, player.SCREEN_HEIGHT);
 	},
-	draw_play_button: function() {
-		var gradient = ctx.createLinearGradient(0, 0, player.SCREEN_WIDTH, 0);
-		gradient.addColorStop("0", "magenta");
-		gradient.addColorStop("0.5", "blue");
-		gradient.addColorStop("1.0", "red");
-		ctx.fillStyle = gradient;
-		ctx.font = "80px Georgia";
-		ctx.fillText("PLAY", player.SCREEN_WIDTH / 2 - 100, player.SCREEN_HEIGHT / 2);
-	}
 }
-
 
 var tank = {
 	ab: function(ability) {
@@ -485,11 +535,7 @@ function game_events() {
 			tank.ab('nuke');
 	})
 	act_canvas.addEventListener('click', function(evt) {
-		if (!player.exist || player.id === null)
-			game.play();
-		else {
-			tank.ab('shot');
-		}
+		tank.ab('shot');
 	});
 	$('#m').focus(function() {
 		chat.isFocus = 1;
@@ -526,12 +572,11 @@ var resources = {
 		})(),
 		grass: (function() {
 			var img = new Image();
-			img.src = 'img/grass_64.png'
+			img.src = 'img/grass.png'
 			return img;
 		})()
 	},
 };
-
 
 
 // DO ZROBIENIA!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -569,9 +614,7 @@ var vector = function(x, y) {
 		x: this.x / this.size,
 		y: this.y / this.size
 	};
-};
-
-
+}
 
 var settings = {
 	isOpen: 0,
@@ -587,9 +630,7 @@ var settings = {
 		settings.isOpen = 0;
 		$('#settings').remove();
 	}
-
 }
-
 
 /************************** Prototypes ********************************/
 
@@ -605,12 +646,12 @@ CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
 	this.closePath();
 	return this;
 }
+
 if (!Date.now) {
 	Date.now = function() {
 		return new Date().getTime();
 	}
 }
-
 
 /*************************** SPRITES *******************************/
 
@@ -642,23 +683,23 @@ var Sprite = function(url, dx, dy, size, sp, w, h, frames, index, loop, fromCent
 		that.render();
 		setTimeout(that.next, that.speed, that);
 	}
+	game.animations.push(this);
 }
 
 Sprite.prototype.next = function(that) {
 
 	var wsp = game.rel(that.dx, that.dy);
 	if (!that.loop && that.index + 1 >= that.frames.length) {
-		act_ctx.clearRect(wsp.x, wsp.y, that.width, that.height);
+		ctx.clearRect(wsp.x, wsp.y, that.width, that.height);
 	} else {
 		that.index = (++that.index) % that.frames.length;
-		that.render();
 		setTimeout(that.next, that.speed, that);
 	}
 }
+
 Sprite.prototype.render = function() {
 	var wsp = game.rel(this.dx, this.dy);
-	act_ctx.clearRect(wsp.x, wsp.y, this.width, this.height);
-	act_ctx.drawImage(this.img,
+	ctx.drawImage(this.img,
 		this.width * this.frames[this.index], 0, // sx, sy
 		this.width, this.height, //source width and height
 		wsp.x, wsp.y, // destination x and y

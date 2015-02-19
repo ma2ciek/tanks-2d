@@ -21,14 +21,16 @@ app.use(methodOverride())
 app.use(express.static(__dirname + '/pub'));
 
 app.get('/', routes.index);
+app.get('/game', routes.game)
 app.get('/settings', routes.settings);
 
 var port = process.env.PORT || 8080;
-
+http.listen(port);
 
 io.on('connection', function(socket) {
 	socket.broadcast.emit('n-message', 'Nowa osoba dołączyła do gry');
 	socket.emit('n-message', 'Dołączyłeś do gry');
+
 	console.log(socket.id);
 
 	socket.on('disconnect', function() {
@@ -38,9 +40,28 @@ io.on('connection', function(socket) {
 		}
 	});
 
+	if (!players) players = {};
+	if (!players[socket.id])
+		players[socket.id] = {}
+	players[socket.id].kills = 0;
+	players[socket.id].deaths = 0
+	for(var i in players) {
+		if(players[i].ip == socket.handshake.address) {
+			players[socket.id].kills += players[i].kills;
+			players[socket.id].deaths += players[i].deaths;
+			// delete players[i];
+		}
+	}
+	players[socket.id].ip = socket.handshake.address;
+
+
+
 	socket.on('join-game', function(msg) {
+
+		players[socket.id].SCREEN_WIDTH = JSON.parse(msg).SCREEN_WIDTH;
+		players[socket.id].SCREEN_HEIGHT = JSON.parse(msg).SCREEN_HEIGHT;
+
 		tank.create(socket.id);
-		players[socket.id] = JSON.parse(msg);
 		socket.emit('join', JSON.stringify({
 			board: board.list,
 			width: board.WIDTH,
@@ -87,14 +108,18 @@ io.on('connection', function(socket) {
 	})
 });
 
-var map = require('./maps/map02.json');
+var map = require('./maps/map01.json');
 map.get_id = function(x, y) {
 	return Math.floor(x / map.tilewidth) + Math.floor(y / map.tileheight) * map.width;
 };
 map.get_pos = function(id) {
-
+	// Do uzupełnienia, również po stronie klienta
 };
-
+map.changes = [];
+map.av_places = [];
+for(var i=0; i<map.layers[0].data.length; i++) {
+	if(map.layers[0].data[i] != 0) map.av_places.push(i);
+}
 
 setInterval(function() {
 	var clients = io.engine.clientsCount
@@ -103,26 +128,23 @@ setInterval(function() {
 	io.emit('clients', clients);
 }, 1000);
 
-var speed = 30;
+setInterval(function() { // creating resources
+	var x = losuj(0, map.av_places.length);
+	if (map.layers[1].data[map.av_places[x]] == 0) {
+		map.layers[1].data[map.av_places[x]] = losuj(2,5);
+		map.changes.push([map.av_places[x], map.layers[1].data[map.av_places[x]]]);
+	}
+}, 10000);
+
+var speed = 40;
 
 var mainLoopTimer = setInterval(mainLoop, 1000 / speed);
-
-http.listen(port, function() {
-	console.log(port);
-});
-
-var cli = 0;
 
 function mainLoop() {
 	if (io.engine.clientsCount > 0) {
 		tank.move();
 		bullets.move();
 		send_data();
-		cli = 1;
-	} else if (cli == 1) {
-		delete require.cache['./maps/map02.json']; // nie działa
-		map = require('./maps/map02.json');
-		cli = 0;
 	}
 }
 
@@ -131,14 +153,21 @@ function send_data() {
 		tank: tank.list,
 		bullets: bullets.list,
 		date: Date.now(),
-		nr: ++packages.nr,
-		map: map.change ? map : null
+		nr: ++game.package_nr,
+		map_changes: map.changes,
+		sounds: game.sounds,
+		animations: game.animations
 	});
-	map.change = 0;
 	io.emit('game-update', res);
+	map.changes.length = 0;
+	game.sounds.length = 0;
+	game.animations.length = 0;
 }
-var packages = {
-	nr: 0
+
+var game = {
+	package_nr: 0,
+	animations: [],
+	sounds: []
 }
 
 var players = {};
@@ -147,6 +176,7 @@ var board = {
 	WIDTH: map.width * map.tilewidth,
 	HEIGHT: map.height * map.tileheight,
 }
+
 
 var tank = {
 	list: {},
@@ -172,6 +202,10 @@ var tank = {
 		this.posY = 0;
 		this.shot = 100;
 		this.nuke = 3;
+		this.kills = players[id].kills;
+		this.deaths = players[id].deaths;
+		this.Vx = 0;
+		this.Vy = 0;
 	},
 	ab: function(id, ability) {
 		if (tank.list[id][ability] > 0) {
@@ -180,32 +214,37 @@ var tank = {
 				case 'shot':
 					bullets.create(id);
 					tank.list[id].shot--;
-					io.emit('sound', ability);
+					game.sounds.push(ability);
 					break;
 				case 'nuke':
-					setTimeout(function(t, mx, my) {
-						t.nuke--;
+					t.nuke--;
+					setTimeout(function(t, mx, my, id) {
 						var tile = map.get_id(mx, my);
 						if (map.layers[1].data[tile] == 1) {
 							map.layers[1].data[tile] = 0; // usuwa box
-							map.change = 1;
+							map.changes.push([tile, 0]);
 						}
 						for (var i in tank.list) {
 							var t2 = tank.list[i];
 							if (col.circle(t2.x - mx, t2.y - my, 64)) { // 64 - AoE radius
 								t2.life -= 25;
-								if (t2.life <= 0)
+								if (t2.life <= 0) {
 									delete tank.list[i];
+									if (t != t2) {
+										t.kills++;
+										players[id].kills++;
+										players[i].deaths++;
+									}
+								}
 							}
 						}
-						io.emit('sound', ability);
-						io.emit('animation', JSON.stringify({
+						game.sounds.push(ability);
+						game.animations.push({
 							ab: ability,
 							x: mx,
 							y: my
-						}));
-					}, 500, t, t.mx, t.my);
-					// Pozostało dodać obrażenie
+						});
+					}, 500, t, t.mx, t.my, id);
 					break;
 			}
 
@@ -219,13 +258,15 @@ var tank = {
 		tank.list[id] = new tank.proto(id, position);
 	},
 	move: function() {
-		for (var id in tank.list) {
-			var t = tank.list[id];
+		for (var id in this.list) {
+			var t = this.list[id];
 			var r = t.radius;
 			var x = t.x;
 			var y = t.y;
 
 			var speed = t.speed;
+
+			//if(map.layers[0].data[map.get_id(x, y)] != 0) speed /= 1.3;
 
 			var dx = t.dirX;
 			var dy = t.dirY;
@@ -282,6 +323,7 @@ var tank = {
 					b.y2 = b.y * map.tileheight + map.tileheight;
 
 					if (b.x1 < x + r && b.x2 > x - r && b.y1 < y + r && b.y2 > y - r) {
+						var tile = otoczenie[i][0] + otoczenie[i][1] * map.width
 						if (tc == 1) { // box
 							if (dx == -1) {
 								if (Math.abs(b.x2 - (x - r)) <= Math.abs(dx * speed)) { // kolizja z prawym bokiem boxu
@@ -292,7 +334,6 @@ var tank = {
 									x = b.x1 - r;
 								}
 							}
-
 							if (dy == -1) {
 								if (Math.abs(b.y2 - (y - r)) <= Math.abs(dy * speed)) { // kolizja z prawym bokiem boxu
 									y = b.y2 + r;
@@ -303,18 +344,18 @@ var tank = {
 								}
 							}
 						} else if (tc == 2) { // ammo 
-							d[otoczenie[i][0] + otoczenie[i][1] * map.width] = 0;
+							d[tile] = 0;
 							t.shot += 10;
-							map.change = 1;
+							map.changes.push([tile, 0]);
 						} else if (tc == 3) { // nuke
-							d[otoczenie[i][0] + otoczenie[i][1] * map.width] = 0;
+							d[tile] = 0;
 							t.nuke += 3;
-							map.change = 1;
+							map.changes.push([tile, 0]);
 						} else if (tc == 4) { // hp
 							if (t.life < 100) {
 								t.life = Math.min(100, t.life + 30);
-								d[otoczenie[i][0] + otoczenie[i][1] * map.width] = 0;
-								map.change = 1;
+								d[tile] = 0;
+								map.changes.push([tile, 0]);
 							}
 						}
 					}
@@ -337,7 +378,8 @@ var tank = {
 			};
 		}
 	}
-};
+}
+
 var bullets = {
 	max_id: 0,
 	list: {},
@@ -368,10 +410,17 @@ var bullets = {
 				if (col.circle(t.x - b.x, t.y - b.y, t.r + b.r)) {
 					delete bullets.list[i];
 					t.life -= 10;
-					if (t.life <= 0)
+					
+					if (t.life <= 0) {
+						tank.list[b.owner].kills++;
 						delete tank.list[id];
+						players[b.owner].kills++;
+						players[id].deaths++;
+					}
+					
 				}
 			}
+			
 		}
 	},
 	proto: function(id, id2) {
@@ -410,8 +459,8 @@ var vector = function(x, y) {
 }
 
 function losuj(a, b) {
-	var r = Math.random() * (a - b);
-	r += a + b;
+	var r = Math.random() * (a - b)/2;
+	r += (a + b)/2;
 	return Math.floor(r);
 }
 
