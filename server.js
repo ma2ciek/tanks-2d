@@ -56,7 +56,6 @@ io.on('connection', function(socket) {
 	players[socket.id].ip = socket.handshake.address;
 
 
-
 	socket.on('join-game', function(msg) {
 
 		players[socket.id].SCREEN_WIDTH = JSON.parse(msg).SCREEN_WIDTH;
@@ -114,7 +113,9 @@ map.get_id = function(x, y) {
 	return Math.floor(x / map.tilewidth) + Math.floor(y / map.tileheight) * map.width;
 };
 map.get_pos = function(id) {
-	// Do uzupełnienia, również po stronie klienta
+	var x = (id % map.width) * map.tilewidth + map.tilewidth / 2;
+	var y = (id - id % map.width) / map.width * map.tileheight + map.tileheight / 2;
+	return {x: x, y: y};
 };
 map.changes = [];
 map.av_places = [];
@@ -174,6 +175,8 @@ var game = {
 	sounds: [],
 	latency: 0,
 	server_time: Date.now(),
+	start_positions: [125, 154, 645, 674],
+	last_start_p: -1
 }
 
 var players = {};
@@ -186,8 +189,9 @@ var board = {
 var tank = {
 	list: {},
 	proto: function(id, pos) {
-		this.x = (pos % map.width) * map.tilewidth + map.tilewidth / 2;
-		this.y = (pos - pos % map.width) / map.width * map.tileheight + map.tileheight / 2;
+		var wsp = map.get_pos(pos)
+		this.x = wsp.x;
+		this.y = wsp.y;
 		this.speed = Math.floor(300 / speed);
 		this.dirX = 0;
 		this.dirY = 0;
@@ -256,11 +260,12 @@ var tank = {
 		}
 	},
 	create: function(id) {
-		var position;
+		var x;
 		do {
-			position = losuj(0, map.width * map.height);
-		} while (map.layers[1].data[position] != 0)
-		tank.list[id] = new tank.proto(id, position);
+			x = losuj(0,4);
+		} while(x == game.last_start_p)
+		game.last_start_p = x;
+		tank.list[id] = new tank.proto(id, game.start_positions[x]);
 	},
 	move: function() {
 		for (var id in this.list) {
