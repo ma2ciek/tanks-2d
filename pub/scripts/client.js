@@ -48,7 +48,7 @@ var game = {
 			SCREEN_WIDTH: player.SCREEN_WIDTH
 		});
 		socket.emit('join-game', msg);
-		setTimeout(game.draw, 400);
+		setTimeout(game.draw, 1000);
 	},
 	update: function(msg) {
 		var msg = JSON.parse(msg);

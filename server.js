@@ -23,6 +23,7 @@ app.use(express.static(__dirname + '/pub'));
 app.get('/', routes.index);
 app.get('/game', routes.game)
 app.get('/settings', routes.settings);
+app.get('/tutorial', routes.tutorial);
 
 var port = process.env.PORT || 8080;
 http.listen(port);
