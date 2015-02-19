@@ -382,7 +382,9 @@ var tank = {
 	ab: function(ability) {
 		if (game.msg1.tank[player.id][ability] > 0) {
 			socket.emit('client-event', {
-				ability: ability
+				ability: ability,
+				mx: player.mx,
+				my: player.my
 			});
 		}
 	},
@@ -535,6 +537,8 @@ function game_events() {
 				mx: evt.clientX - rect.left,
 				my: evt.clientY - rect.top
 			});
+			player.mx = evt.clientX - rect.left;
+			player.my = evt.clientY - rect.top;
 		}
 	});
 
@@ -550,7 +554,16 @@ function game_events() {
 		chat.isFocus = 1;
 	}).blur(function() {
 		chat.isFocus = 0;
+	});
+	$('img.settings').click(function() {
+		settings.open();
+	});
+	$('img.chat').click(function() {
+		chat.show();
 	})
+
+
+
 }
 
 var bullets = {
