@@ -17,8 +17,11 @@ html(lang='pl')
 		script(src='scripts/chat.js')
 	body
 		div#main
-			canvas(id='game')
-			canvas(id='active')
+			canvas#game
+			canvas#active
+			div#player_panel
+				img.settings(src='img/settings.png')
+				img.chat(src='img/chat.png')
 		div#chat
 			div#clients
 			ul#messages

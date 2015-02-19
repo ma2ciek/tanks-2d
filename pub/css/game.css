@@ -25,7 +25,7 @@ canvas#game {
 	-webkit-perspective: 1000;
 }
 canvas#active {
-	z-index: 2;
+	z-index: 3;
 	position: absolute;
 	left: 0;
 	top: 0;
@@ -35,6 +35,31 @@ canvas#active {
 	-webkit-backface-visibility: hidden;
 	-webkit-perspective: 1000;
 }
+div#player_panel {
+	z-index: 5;
+	position: absolute;
+	bottom: 0;
+	right: 0;
+}
+
+div#player_panel img {
+	position: absolute;
+	bottom: 10px;
+	width: 32px;
+}
+div#player_panel img.settings {
+	right: 10px;
+} 
+div#player_panel img.chat {
+	right: 50px;
+}
+
+
+
+
+
+
+
 #chat {
 	display: none;
 	position: absolute;

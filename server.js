@@ -46,13 +46,15 @@ io.on('connection', function(socket) {
 		players[socket.id] = {}
 	players[socket.id].kills = 0;
 	players[socket.id].deaths = 0
-	for (var i in players) {
-		if (players[i].ip == socket.handshake.address) {
-			players[socket.id].kills += players[i].kills;
-			players[socket.id].deaths += players[i].deaths;
-			delete players[i];
-		}
-	}
+
+	// Nie dizała, gy użytkownik otworzy dwa okna!!!
+	//for (var i in players) {
+	//	if (players[i].ip == socket.handshake.address) {
+	//		players[socket.id].kills += players[i].kills;
+	//		players[socket.id].deaths += players[i].deaths;
+	//		delete players[i];
+	//	}
+	//}
 	players[socket.id].ip = socket.handshake.address;
 
 

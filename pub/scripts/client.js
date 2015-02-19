@@ -215,6 +215,7 @@ var game = {
 		var x = a.cloneNode();
 		x.volume = game.volume;
 		x.play();
+		console.log('1');
 	},
 	animate: function(msg) {
 		switch (msg.ab) {
@@ -344,7 +345,8 @@ var board = {
 		socket.emit('client-event', {
 			sw: player.SCREEN_WIDTH,
 			sh: player.SCREEN_HEIGHT
-		})
+		});
+		$('#main').css('height', player.SCREEN_HEIGHT)
 		if (game.msg1) board.draw_icons();
 	},
 	draw: function() {
