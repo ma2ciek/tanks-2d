@@ -124,12 +124,14 @@ var game = {
 					for (var j = 0; j < m.sounds.length; j++) {
 						game.play_sound(m.sounds[j]);
 					}
+					m.sounds.length = 0; //zapobiega ponownemu odtworzeniu pliku, gdy nie ma nowego pakietu danych
 				}
 
 				if (m.animations.length !== 0) {
 					for (var j = 0; j < m.animations.length; j++) {
 						game.animate(m.animations[j]);
 					}
+					m.animations.length = 0; //zapobiega ponownej animacji, gdy nie ma nowego pakietu danych
 				}
 
 				game.log.addState(); // 5
@@ -713,7 +715,7 @@ Sprite.prototype.render = function() {
 
 var matrix = {
 	id: null,
-	speed: 60,
+	speed: 60 / 1000,
 	init: function() {
 		this.id = setInterval(function() {
 			console.log(game.mid_times.join(' '))
