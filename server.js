@@ -45,8 +45,8 @@ io.on('connection', function(socket) {
 		players[socket.id] = {}
 	players[socket.id].kills = 0;
 	players[socket.id].deaths = 0
-	for(var i in players) {
-		if(players[i].ip == socket.handshake.address) {
+	for (var i in players) {
+		if (players[i].ip == socket.handshake.address) {
 			players[socket.id].kills += players[i].kills;
 			players[socket.id].deaths += players[i].deaths;
 			// delete players[i];
@@ -117,8 +117,8 @@ map.get_pos = function(id) {
 };
 map.changes = [];
 map.av_places = [];
-for(var i=0; i<map.layers[0].data.length; i++) {
-	if(map.layers[0].data[i] != 0) map.av_places.push(i);
+for (var i = 0; i < map.layers[0].data.length; i++) {
+	if (map.layers[0].data[i] != 0) map.av_places.push(i);
 }
 
 setInterval(function() {
@@ -131,10 +131,10 @@ setInterval(function() {
 setInterval(function() { // creating resources
 	var x = losuj(0, map.av_places.length);
 	if (map.layers[1].data[map.av_places[x]] == 0) {
-		map.layers[1].data[map.av_places[x]] = losuj(2,5);
+		map.layers[1].data[map.av_places[x]] = losuj(2, 5);
 		map.changes.push([map.av_places[x], map.layers[1].data[map.av_places[x]]]);
 	}
-}, 10000);
+}, 20000); // co 20s
 
 var speed = 40;
 
@@ -142,8 +142,10 @@ var mainLoopTimer = setInterval(mainLoop, 1000 / speed);
 
 function mainLoop() {
 	if (io.engine.clientsCount > 0) {
+		var time = Date.now();
 		tank.move();
 		bullets.move();
+		game.latency = Date.now() - time;
 		send_data();
 	}
 }
@@ -156,7 +158,8 @@ function send_data() {
 		nr: ++game.package_nr,
 		map_changes: map.changes,
 		sounds: game.sounds,
-		animations: game.animations
+		animations: game.animations,
+		server_latency: game.latency
 	});
 	io.emit('game-update', res);
 	map.changes.length = 0;
@@ -167,7 +170,9 @@ function send_data() {
 var game = {
 	package_nr: 0,
 	animations: [],
-	sounds: []
+	sounds: [],
+	latency: 0,
+	server_time: Date.now(),
 }
 
 var players = {};
@@ -176,7 +181,6 @@ var board = {
 	WIDTH: map.width * map.tilewidth,
 	HEIGHT: map.height * map.tileheight,
 }
-
 
 var tank = {
 	list: {},
@@ -410,17 +414,17 @@ var bullets = {
 				if (col.circle(t.x - b.x, t.y - b.y, t.r + b.r)) {
 					delete bullets.list[i];
 					t.life -= 10;
-					
+
 					if (t.life <= 0) {
 						tank.list[b.owner].kills++;
 						delete tank.list[id];
 						players[b.owner].kills++;
 						players[id].deaths++;
 					}
-					
+
 				}
 			}
-			
+
 		}
 	},
 	proto: function(id, id2) {
@@ -459,8 +463,7 @@ var vector = function(x, y) {
 }
 
 function losuj(a, b) {
-	var r = Math.random() * (a - b)/2;
-	r += (a + b)/2;
+	var r = Math.random() * (b - a) + a;
 	return Math.floor(r);
 }
 

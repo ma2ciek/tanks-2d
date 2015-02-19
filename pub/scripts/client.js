@@ -115,19 +115,19 @@ var game = {
 				game.log.addState(); // 4
 
 				if (m.map_changes.length !== 0) {
-					for(var j=0; j<m.map_changes.length; j++) {
+					for (var j = 0; j < m.map_changes.length; j++) {
 						map.layers[1].data[m.map_changes[j][0]] = m.map_changes[j][1];
 					}
 				}
 
-				if(m.sounds.length !== 0) {
-					for(var j=0; j<m.sounds.length; j++) {
+				if (m.sounds.length !== 0) {
+					for (var j = 0; j < m.sounds.length; j++) {
 						game.play_sound(m.sounds[j]);
 					}
 				}
 
-				if(m.animations.length !== 0) {
-					for(var j=0; j<m.animations.length; j++) {
+				if (m.animations.length !== 0) {
+					for (var j = 0; j < m.animations.length; j++) {
 						game.animate(m.animations[j]);
 					}
 				}
@@ -139,14 +139,13 @@ var game = {
 
 				game.log.addState(); // 6
 
-				for(var j=0; j<game.mid_times.length; j++) {
-					if(game.mid_times[j] > 15) console.error("LAG ",j, game.mid_times[j], new Date());
+				for (var j = 0; j < game.mid_times.length; j++) {
+					if (game.mid_times[j] > 15) console.error("LAG ", j, game.mid_times[j], new Date());
 				}
 			} else {
 				location.href = "/";
 			}
-		}
-		else console.error("Nie otrzymano pakietu danych", new Date());
+		} else console.error("Nie otrzymano pakietu danych", new Date());
 		game.timerId = requestAnimationFrame(game.draw);
 	},
 	rel: function(x, y) {
@@ -188,6 +187,7 @@ var game = {
 			ctx.fillText('FPS: ' + Math.floor(1000 / t), 15, 15);
 			ctx.fillText('KILLS: ' + game.msg1.tank[player.id].kills, 90, 15);
 			ctx.fillText('DEATHS: ' + game.msg1.tank[player.id].deaths, 170, 15);
+			ctx.fillText('SL: ' + game.msg1.server_latency, 15, 30);
 		}
 	},
 	disconnect: function() {
@@ -323,8 +323,14 @@ var board = {
 		act_ctx.fillText(game.msg1.tank[player.id].nuke, 255, player.SCREEN_HEIGHT - 15);
 	},
 	draw_animations: function() {
-		for(var i =0; i<game.animations.length; i++) {
-			game.animations[i].render();
+		for (var i = 0; i < game.animations.length; i++) {
+			if (game.animations[i].index +1 < game.animations[i].frames.length) {
+				game.animations[i].render();
+			}
+			else {
+				game.animations.splice(i, 1);
+				i--;
+			}
 		}
 	},
 	adjust: function() {
@@ -341,7 +347,7 @@ var board = {
 		if (game.msg1) board.draw_icons();
 	},
 	draw: function() {
-		if(map) {
+		if (map) {
 			for (var i = 0; i < map.layers[1].data.length; i++) {
 				var tc = map.layers[1].data[i]; // tile content
 				var tc2 = map.layers[0].data[i]; // background
@@ -357,8 +363,8 @@ var board = {
 				var wsp = game.rel(x * 64, y * 64);
 
 				if (wsp.x > -64 && wsp.y > -64 && wsp.x < player.SCREEN_WIDTH + 64 && wsp.y < player.SCREEN_HEIGHT + 64) {
-					if(tc2) ctx.drawImage(resources.img.grass, tc2 * 64 - 5*64, 0, 64, 64, wsp.x, wsp.y, 64, 64);
-					if(tc) ctx.drawImage(resources.img.tileset, tc * 64 - 64, 0, 64, 64, wsp.x, wsp.y, 64, 64);
+					if (tc2) ctx.drawImage(resources.img.grass, tc2 * 64 - 5 * 64, 0, 64, 64, wsp.x, wsp.y, 64, 64);
+					if (tc) ctx.drawImage(resources.img.tileset, tc * 64 - 64, 0, 64, 64, wsp.x, wsp.y, 64, 64);
 
 				}
 			}
@@ -689,9 +695,7 @@ var Sprite = function(url, dx, dy, size, sp, w, h, frames, index, loop, fromCent
 Sprite.prototype.next = function(that) {
 
 	var wsp = game.rel(that.dx, that.dy);
-	if (!that.loop && that.index + 1 >= that.frames.length) {
-		ctx.clearRect(wsp.x, wsp.y, that.width, that.height);
-	} else {
+	if (!that.loop && that.index + 1 >= that.frames.length) {} else {
 		that.index = (++that.index) % that.frames.length;
 		setTimeout(that.next, that.speed, that);
 	}
