@@ -117,7 +117,10 @@ map.get_id = function(x, y) {
 map.get_pos = function(id) {
 	var x = (id % map.width) * map.tilewidth + map.tilewidth / 2;
 	var y = (id - id % map.width) / map.width * map.tileheight + map.tileheight / 2;
-	return {x: x, y: y};
+	return {
+		x: x,
+		y: y
+	};
 };
 map.changes = [];
 map.av_places = [];
@@ -130,10 +133,18 @@ setInterval(function() {
 }, 1000);
 
 setInterval(function() { // creating resources
+	var chances = [0, 0, 0.4, 0.2, 0.3, 0.1];
 	var x = losuj(0, map.av_places.length);
 	if (map.layers[1].data[map.av_places[x]] == 0) {
-		map.layers[1].data[map.av_places[x]] = losuj(2, 5);
-		map.changes.push([map.av_places[x], map.layers[1].data[map.av_places[x]]]);
+
+		var rand = Math.random();
+		for (var i = 0; i < chances.length; i++) {
+			if (rand > chances[i]) rand -= chances[i];
+			else break;
+		}
+
+		map.layers[1].data[map.av_places[x]] = i;
+		map.changes.push([map.av_places[x], i]);
 	}
 }, 20000); // co 20s
 
@@ -214,6 +225,7 @@ var tank = {
 		this.deaths = players[id].deaths;
 		this.Vx = 0;
 		this.Vy = 0;
+		this.auras = {}
 	},
 	ab: function(id, ability) {
 		if (tank.list[id][ability] > 0) {
@@ -261,8 +273,8 @@ var tank = {
 	create: function(id) {
 		var x;
 		do {
-			x = losuj(0,4);
-		} while(x == game.last_start_p)
+			x = losuj(0, 4);
+		} while (x == game.last_start_p)
 		game.last_start_p = x;
 		tank.list[id] = new tank.proto(id, game.start_positions[x]);
 	},
@@ -273,9 +285,7 @@ var tank = {
 			var x = t.x;
 			var y = t.y;
 
-			var speed = t.speed;
-
-			//if(map.layers[0].data[map.get_id(x, y)] != 0) speed /= 1.3;
+		
 
 			var dx = t.dirX;
 			var dy = t.dirY;
@@ -285,7 +295,16 @@ var tank = {
 				y: t.y
 			};
 
-			if (dx != 0 && dy != 0) speed = Math.round(speed / 1.4);
+			var speed = t.speed;	
+			if (t.auras.sb) {
+				if (Date.now() < t.auras.sb.timeout) {
+					speed *= 1.5;
+				} else delete t.auras.sb;
+			}
+			if(map.layers[0].data[map.get_id(x, y)] != 0) speed /= 1.3;
+			if (dx != 0 && dy != 0) speed /= 1.4;
+
+			speed = Math.round(speed);
 
 			x += dx * speed;
 			y += dy * speed;
@@ -332,40 +351,54 @@ var tank = {
 					b.y2 = b.y * map.tileheight + map.tileheight;
 
 					if (b.x1 < x + r && b.x2 > x - r && b.y1 < y + r && b.y2 > y - r) {
-						var tile = otoczenie[i][0] + otoczenie[i][1] * map.width
-						if (tc == 1) { // box
-							if (dx == -1) {
-								if (Math.abs(b.x2 - (x - r)) <= Math.abs(dx * speed)) { // kolizja z prawym bokiem boxu
-									x = b.x2 + r;
+						var tile = otoczenie[i][0] + otoczenie[i][1] * map.width;
+
+
+						switch (tc) {
+							case 1:
+								if (dx == -1) {
+									if (Math.abs(b.x2 - (x - r)) <= Math.abs(dx * speed)) { // kolizja z prawym bokiem boxu
+										x = b.x2 + r;
+									}
+								} else if (dx == 1) {
+									if (Math.abs(b.x1 - (x + r)) <= Math.abs(dx * speed)) { // kolizja z lewym bokiem boxu
+										x = b.x1 - r;
+									}
 								}
-							} else if (dx == 1) {
-								if (Math.abs(b.x1 - (x + r)) <= Math.abs(dx * speed)) { // kolizja z lewym bokiem boxu
-									x = b.x1 - r;
+								if (dy == -1) {
+									if (Math.abs(b.y2 - (y - r)) <= Math.abs(dy * speed)) { // kolizja z prawym bokiem boxu
+										y = b.y2 + r;
+									}
+								} else if (dy == 1) {
+									if (Math.abs(b.y1 - (y + r)) <= Math.abs(dy * speed)) { // kolizja z lewym bokiem boxu
+										y = b.y1 - r;
+									}
 								}
-							}
-							if (dy == -1) {
-								if (Math.abs(b.y2 - (y - r)) <= Math.abs(dy * speed)) { // kolizja z prawym bokiem boxu
-									y = b.y2 + r;
-								}
-							} else if (dy == 1) {
-								if (Math.abs(b.y1 - (y + r)) <= Math.abs(dy * speed)) { // kolizja z lewym bokiem boxu
-									y = b.y1 - r;
-								}
-							}
-						} else if (tc == 2) { // ammo 
-							d[tile] = 0;
-							t.shot += 10;
-							map.changes.push([tile, 0]);
-						} else if (tc == 3) { // nuke
-							d[tile] = 0;
-							t.nuke += 3;
-							map.changes.push([tile, 0]);
-						} else if (tc == 4) { // hp
-							if (t.life < 100) {
-								t.life = Math.min(100, t.life + 30);
+								break;
+							case 2: 
+								t.shot += 10;
 								d[tile] = 0;
 								map.changes.push([tile, 0]);
-							}
+								break;
+							case 3:
+								t.nuke += 3;
+								d[tile] = 0;
+								map.changes.push([tile, 0]);
+								break;
+							case 4:
+								if (t.life < 100) {
+									t.life = Math.min(100, t.life + 30);
+									d[tile] = 0;
+									map.changes.push([tile, 0]);
+								}
+								break;
+							case 5:
+								t.auras.sb = {
+									timeout: Date.now() + 10000,
+								}
+								d[tile] = 0;
+								map.changes.push([tile, 0]);
+								break;
 						}
 					}
 				}

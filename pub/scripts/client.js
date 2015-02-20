@@ -365,7 +365,7 @@ var board = {
 				var wsp = game.rel(x * 64, y * 64);
 
 				if (wsp.x > -64 && wsp.y > -64 && wsp.x < player.SCREEN_WIDTH + 64 && wsp.y < player.SCREEN_HEIGHT + 64) {
-					if (tc2) ctx.drawImage(resources.img.grass, tc2 * 64 - 5 * 64, 0, 64, 64, wsp.x, wsp.y, 64, 64);
+					if (tc2) ctx.drawImage(resources.img.grass, tc2 * 64 - 11 * 64, 0, 64, 64, wsp.x, wsp.y, 64, 64);
 					if (tc) ctx.drawImage(resources.img.tileset, tc * 64 - 64, 0, 64, 64, wsp.x, wsp.y, 64, 64);
 
 				}

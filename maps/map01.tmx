@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.0" orientation="orthogonal" width="40" height="20" tilewidth="64" tileheight="64" backgroundcolor="#165802">
  <tileset firstgid="1" name="tilesets_01" tilewidth="64" tileheight="64">
-  <image source="../pub/img/tileset_01.png" width="256" height="64"/>
+  <image source="../pub/img/tileset_01.png" width="640" height="64"/>
  </tileset>
- <tileset firstgid="5" name="grass_64" tilewidth="64" tileheight="64">
-  <image source="../pub/img/grass_64.png" width="320" height="64"/>
+ <tileset firstgid="11" name="grass" tilewidth="64" tileheight="64">
+  <image source="../pub/img/grass.png" width="320" height="64"/>
  </tileset>
  <layer name="bg" width="40" height="20">
   <data encoding="base64" compression="zlib">
-   eJztltEKwCAIRX1prf//4eGDMOJaVpsJ23kJivTOmzUiooPikRxzFcdcI9S+zPqUDbG5Bqeyt+dFr34obutbElgvio7SyF/nRTokxs4e0HRZQf7uJqImxGrt3wT1QSTY4+j6PN+RUf4emWfWV9m389yy71pNef7p96h3jyAtnp5b/k9W432ZlXrwORAveEy3earWRpA4FzKSAZs=
+   eJztltEKwCAIRX1vrf//2+GDMOJaVpsJ23kJivTOmzUiooPikRxzFcdcI9S+zPqUDbG5Bqeyt+dFr34obutbElgvio7SyF/nRTokxs4e0HRZQf7uJqImxGrt3wT1QSTY4+j6PN+RUf4emWfWV9m389yy71pNef7p96h3jyAtnp5b/k9W432ZlXrwORAveEy3earWRpA4F+0yAwM=
   </data>
  </layer>
  <layer name="game" width="40" height="20">

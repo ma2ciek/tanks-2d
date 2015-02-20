@@ -13,7 +13,14 @@
 	src:url('./fonts/lato/Lato-Regular.ttf') format('truetype');
 	font-weight: 400;
 }
-
+@-webkit-keyframes spin {
+	from { transform: rotate(0deg); }
+	to { transform: rotate(360deg); }
+}
+@keyframes spin {
+	from { transform: rotate(0deg); }
+	to { transform: rotate(360deg); }
+}
 
 
 body {
@@ -72,8 +79,20 @@ div#player_panel img.chat {
 	right: 45px;
 }
 
+div.health {
+	position: absolute;
+	bottom: 8px;
+	left: 318px;
+	width: 80px;
+	height: 80px;
+	background: #F00;
+	background-image: -webkit-radial-gradient(45px 45px, circle cover, #f40, red);
+	background-image: radial-gradient(45px 45px, circle cover, #f40, red);
 
-
+	z-index: 5;
+	border-radius: 1000px;
+	box-shadow: 0 0 3px 1px;
+}
 
 
 /*****************CHAT********************/
