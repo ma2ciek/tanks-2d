@@ -126,10 +126,7 @@ for (var i = 0; i < map.layers[0].data.length; i++) {
 }
 
 setInterval(function() {
-	var clients = io.engine.clientsCount
-	if (clients == 1) clients += ' person connected';
-	else clients += ' persons connected'
-	io.emit('clients', clients);
+	io.emit('clients', io.engine.clientsCount);
 }, 1000);
 
 setInterval(function() { // creating resources

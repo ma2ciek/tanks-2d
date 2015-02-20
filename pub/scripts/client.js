@@ -212,10 +212,9 @@ var game = {
 	},
 	play_sound: function(msg) {
 		var a = abilities[msg].audio;
-		var x = a.cloneNode();
+		var x = a.cloneNode(true);
 		x.volume = game.volume;
 		x.play();
-		console.log('1');
 	},
 	animate: function(msg) {
 		switch (msg.ab) {
@@ -550,10 +549,12 @@ function game_events() {
 	act_canvas.addEventListener('click', function(evt) {
 		tank.ab('shot');
 	});
-	$('#m').focus(function() {
+	$('#chat').focus(function() {
 		chat.isFocus = 1;
 	}).blur(function() {
+		$('#chat').hide();
 		chat.isFocus = 0;
+		chat.isOpen = 0;
 	});
 	$('img.settings').click(function() {
 		settings.open();
@@ -611,8 +612,14 @@ var abilities = {
 		})(),
 		audio: (function() {
 			var a = new Audio('audio/explosion.mp3');
+			a.load()
 			return a;
-		})()
+		})(),
+		animation: (function() {
+			var img = new Image();
+			img.src = './img/explosion.png';
+			return img;
+		})
 	},
 	shot: {
 		img: (function() {
@@ -622,6 +629,7 @@ var abilities = {
 		})(),
 		audio: (function() {
 			var a = new Audio('audio/gun_shot.wav');
+			a.load();
 			return a;
 		})()
 	}

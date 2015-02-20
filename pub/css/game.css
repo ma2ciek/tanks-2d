@@ -44,75 +44,68 @@ div#player_panel {
 
 div#player_panel img {
 	position: absolute;
-	bottom: 10px;
+	bottom: 5px;
 	width: 32px;
 }
 div#player_panel img.settings {
-	right: 10px;
+	right: 5px;
 } 
 div#player_panel img.chat {
-	right: 50px;
+	right: 45px;
 }
 
 
 
 
 
-
+/*****************CHAT********************/
 
 #chat {
 	display: none;
 	position: absolute;
-	bottom: 0;
-	right: 0;
-	width: 300px;
-	height: 300px;	
+	bottom: 5px;
+	right: 100px;
+	width: 200px;
 	z-index: 10;
-}
-div#clients {
-	background: #57c;
-	border: 1px solid #05a;
+	background: none;
+	border: 1px solid white !important;
 	color: white;
-	padding: 4px 4px 4px 20px; /* 20px from left */
-	border-top-left-radius: 4px;
-	border-top-right-radius: 4px;
-	height: 20px;
-	line-height: 20px;
+	padding: 5px;
+	border: 5px;
+	outline: none;
 }
-ul#messages {
+#clients {
+	position: absolute;
+	right: 5px;
+	top: 5px;
+	z-index: 2;
+	color: #F55;
+}
+#messages {
 	margin: 0;
 	padding: 0;
 	list-style: none;
 	height: 241px;
-	overflow: auto;
-	background: white;
+	overflow: hidden;
 	padding-bottom: 10px;
-}
-ul li {
-	margin: 5px 10px;
-}
-#chat span {
-	display: inline-block;
-	border-radius: 10px;
-	padding: 4px 10px;
-	background: #EEE;
-}
-#chat li.my {
-	text-align: right;
-}
-#chat li.my span {
-	background: #09f;
+	z-index: 2;
 	color: white;
-	max-width: 200px;
-}
-#chat li.neutral span {
-	text-align: center;
-	background: inherit;
-	display: block;
-}
-#chat input#m {
 	position: absolute;
-	bottom: 0;
-	box-sizing: border-box;
-	width: 100%;
+	right: 0;
+	top: 20px;
+}
+#messages li {
+	margin: 5px;
+	text-align: right;
+	overflow: hidden;
+}
+#messages li.my {
+	color: #f90;
+	max-width: 100px;
+	text-overflow: ellipsis;
+	overflow: hidden;
+}
+#messages li.neutral {
+	text-align: center;
+	display: block;
 }
