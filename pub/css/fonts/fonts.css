@@ -1,0 +1,22 @@
+@font-face{
+    font-family: Futura;
+    src:url(Futura-Light.otf);
+}
+
+@font-face {
+    font-family: Edelsans;
+    src:url("edel_sans_light.eot?") format("eot"),
+        url("edel_sans_light.woff") format("woff"),
+        url("edel_sans_light.ttf") format("truetype"),
+        url("edel_sans_light.svg#edelsans-UltraLight") format("svg");
+    font-weight:normal;
+    font-style:normal;
+}
+@font-face{ 
+    font-family: code-ul;
+    src: url('code.otf');
+}
+@font-face{
+    font-family: champagne;
+    src: url('Champagne_Limousines.ttf') format('truetype');
+}

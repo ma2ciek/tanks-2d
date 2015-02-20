@@ -12,22 +12,16 @@ var chat = {
 		$('#clients').text('Online: ' + msg);
 	},
 	submit: function() {
-		if ($('#chat').val() == "" && chat.isOpen == 1) {
-			$('#chat').hide();
-			chat.isOpen = 0;
-		} else {
+		if (!$('#chat').val() == "" && chat.isOpen == 1) {
 			socket.emit('message', $('#chat').val());
 			$('#messages').append('<li class="my"></li>').find('li:last-child').text( $('#chat').val() );
 			$('#chat').val('');
 			chat.animate(0);
 		}
+		chat.close();
 	},
 	animate: function (t) {
-		//$('#messages').animate({
-		//	scrollTop: $('#messages')[0].scrollHeight - $('#messages').height()
-		//}, t || 100);
 		$('#messages li:last-child').delay(10000).fadeOut('2000');
-
 	},
 	show: function () {
 		chat.isOpen = 1;

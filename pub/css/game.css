@@ -1,7 +1,25 @@
+@font-face{
+	font-family: Lato;
+	src:url('./fonts/lato/Lato-Hairline.ttf') format('truetype');
+	font-weight: 100;
+}
+@font-face{
+	font-family: Lato;
+	src:url('./fonts/lato/Lato-Light.ttf') format('truetype');
+	font-weight: 200;
+}
+@font-face{
+	font-family: Lato;
+	src:url('./fonts/lato/Lato-Regular.ttf') format('truetype');
+	font-weight: 400;
+}
+
+
+
 body {
 	margin: 0;
 	background: #000;
-	font-family: Arial, Calibri;
+	font-family: Lato, Calibri, Arial;
 	-webkit-user-select: none;
 	-khtml-user-select: none;
 	overflow: hidden;
@@ -79,20 +97,21 @@ div#player_panel img.chat {
 	right: 5px;
 	top: 5px;
 	z-index: 2;
-	color: #F55;
+	color: #FF0;
 }
 #messages {
+	position: absolute;
+	right: 0;
+	top: 20px;
 	margin: 0;
 	padding: 0;
 	list-style: none;
-	height: 241px;
+	max-height: 300px;
 	overflow: hidden;
 	padding-bottom: 10px;
 	z-index: 2;
 	color: white;
-	position: absolute;
-	right: 0;
-	top: 20px;
+	
 }
 #messages li {
 	margin: 5px;
@@ -101,7 +120,7 @@ div#player_panel img.chat {
 }
 #messages li.my {
 	color: #f90;
-	max-width: 100px;
+	max-width: 150px;
 	text-overflow: ellipsis;
 	overflow: hidden;
 }
