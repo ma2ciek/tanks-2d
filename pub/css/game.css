@@ -79,6 +79,7 @@ div#player_panel img.chat {
 	right: 45px;
 }
 
+/*
 div.health {
 	position: absolute;
 	bottom: 8px;
@@ -93,6 +94,17 @@ div.health {
 	border-radius: 1000px;
 	box-shadow: 0 0 3px 1px;
 }
+*/
+
+
+div.game_msg {
+	position: absolute;
+	color: white;
+	z-index: 2;
+}
+
+
+
 
 
 /*****************CHAT********************/

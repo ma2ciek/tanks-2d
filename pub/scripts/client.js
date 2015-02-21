@@ -52,13 +52,12 @@ var game = {
 		console.log(Date.now(), msg);
 	},
 	play: function() {
-		cancelAnimationFrame(game.timerId);
 		var msg = JSON.stringify({
 			SCREEN_HEIGHT: player.SCREEN_HEIGHT,
 			SCREEN_WIDTH: player.SCREEN_WIDTH
 		});
 		socket.emit('join-game', msg);
-		setTimeout(game.draw, 1000);
+		if(!game.timerId) setTimeout(game.draw, 1000);
 	},
 	update: function(msg) {
 		var msg = JSON.parse(msg);
@@ -87,8 +86,9 @@ var game = {
 		if (i < 21 && i >= 1) {
 			if (player.id in packages[i].tank && player.id in packages[i - 1].tank) {
 				player.exist = 1;
-				var m = game.msg1 = packages[i];
-				game.msg2 = packages[i - 1];
+
+				var m = game.msg1 = packages[i - 1];
+				game.msg2 = packages[i];
 
 				game.log.init();
 				game.mid_times.length = 0;
@@ -146,6 +146,7 @@ var game = {
 
 				game.log.addState(); // 5
 
+				game.check_res_changes();
 
 				game.fps.count();
 
@@ -155,7 +156,8 @@ var game = {
 					if (game.mid_times[j] > 15) console.error("LAG ", j, game.mid_times[j], new Date());
 				}
 			} else {
-				location.href = "/";
+				board.clear();
+				game.play(); // settimeout nie działa (?)	
 			}
 		} else console.error("Nie otrzymano pakietu danych", new Date());
 		game.timerId = requestAnimationFrame(game.draw);
@@ -218,7 +220,7 @@ var game = {
 		// Ta & Tc - packages 
 		// Tb - Animation time
 		// A & C - Wartości odpowiadające Ta & Tc
-		return (A * (game.msg2.date - game.frame_time) + C * (game.frame_time - game.msg1.date)) / (game.msg2.date - game.msg1.date);
+		return (C * (game.msg1.date - game.frame_time) + A * (game.frame_time - game.msg2.date)) / (game.msg1.date - game.msg2.date);
 	},
 	play_sound: function(msg) {
 
@@ -248,6 +250,44 @@ var game = {
 		init: function() {
 			game.log.time = Date.now()
 		}
+	},
+	check_res_changes: function() {
+		var t1 = game.msg1.tank;
+		var t2 = game.msg2.tank;
+		if (!game.msg1.res_checked) {
+			if (t1[player.id].shot > t2[player.id].shot) {
+				game.res_change_animate()				
+					.text('You receive ' + (t1[player.id].shot - t2[player.id].shot) + ' bullets')
+			}
+			if (t1[player.id].nuke > t2[player.id].nuke) {
+				game.res_change_animate()
+					.text('You receive ' + (t1[player.id].nuke - t2[player.id].nuke) + ' explosions');
+			}
+			if (t1[player.id].life > t2[player.id].life) {
+				game.res_change_animate()
+					.text('You heal ' + (t1[player.id].life - t2[player.id].life) + ' damage');
+			}
+			if (!!t1[player.id].auras.sb > !!t2[player.id].auras.sb) {
+				game.res_change_animate()
+					.text('You gain speed bust');
+			}
+			game.msg1.res_checked = true;
+		}
+	},
+	res_change_animate: function(ability, option, resources) {
+		$('.game_msg:hidden').remove();
+		$('.game_msg').css('top', '+=20');
+		$('#main').append('<div class="game_msg"></div>');
+		setTimeout(function() {
+			$('.game_msg:last-child')			
+				.animate({
+					left: player.SCREEN_WIDTH / 2 - $('.game_msg:last-child').width() / 2,
+					top: player.SCREEN_HEIGHT / 2 - $('.game_msg:last-child').height() / 2 + 20,
+				}, 0)
+				.delay(2000)
+				.fadeOut('1000');
+		},0);
+		return $('.game_msg:last-child');
 	}
 }
 
@@ -361,8 +401,9 @@ var board = {
 		$('#main').css('height', player.SCREEN_HEIGHT)
 		if (game.msg1) board.draw_icons();
 
-		if ((window.outerHeight - window.innerHeight) > 100)
-        	alert("Don't even try to hack this game ;)");
+		if ((window.outerHeight - window.innerHeight) > 100) {
+			// alert("Don't even try to hack this game ;)");
+		}
 
 	},
 	draw: function() {
@@ -682,7 +723,7 @@ var settings = {
 		for (var i in settings.options) {
 			var s = settings.options[i]
 			var x = localStorage.getItem(i) || options[i].def;
-			s.settings_parent [ s.settings_attr] = s.format.call(this, x);
+			s.settings_parent[s.settings_attr] = s.format.call(this, x);
 		}
 	},
 	options: {

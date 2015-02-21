@@ -28,11 +28,21 @@ app.get('/tutorial', routes.tutorial);
 var port = process.env.PORT || 8080;
 http.listen(port);
 
+
+/*********************************         GAME       ***************************************/
+
+
+var col = require('./mod/col.js');
+var game = require('./mod/game.js');
+var losuj = require('./mod/losuj.js');
+
+var players = {};
+
 io.on('connection', function(socket) {
 	socket.broadcast.emit('n-message', 'Nowa osoba dołączyła do gry');
 	socket.emit('n-message', 'Dołączyłeś do gry');
 
-	console.log(socket.id);
+	console.log('ID: ' + socket.id);
 
 	socket.on('disconnect', function() {
 		io.emit('n-message', 'Osoba się rozłączyła');
@@ -47,14 +57,14 @@ io.on('connection', function(socket) {
 	players[socket.id].kills = 0;
 	players[socket.id].deaths = 0
 
-	// Nie dizała, gy użytkownik otworzy dwa okna!!!
-	//for (var i in players) {
-	//	if (players[i].ip == socket.handshake.address) {
-	//		players[socket.id].kills += players[i].kills;
-	//		players[socket.id].deaths += players[i].deaths;
-	//		delete players[i];
-	//	}
-	//}
+	for (var i in players) {
+		if (players[i].ip == socket.handshake.address) {
+			players[socket.id].kills += players[i].kills;
+			players[socket.id].deaths += players[i].deaths;
+			delete players[i];
+			delete tank.list[i];
+		}
+	}
 	players[socket.id].ip = socket.handshake.address;
 
 
@@ -128,6 +138,11 @@ for (var i = 0; i < map.layers[0].data.length; i++) {
 	if (map.layers[0].data[i] != 0) map.av_places.push(i);
 }
 
+var board = {
+	WIDTH: map.width * map.tilewidth,
+	HEIGHT: map.height * map.tileheight
+}
+
 setInterval(function() {
 	io.emit('clients', io.engine.clientsCount);
 }, 1000);
@@ -179,22 +194,6 @@ function send_data() {
 	game.animations.length = 0;
 }
 
-var game = {
-	package_nr: 0,
-	animations: [],
-	sounds: [],
-	latency: 0,
-	server_time: Date.now(),
-	start_positions: [125, 154, 645, 674],
-	last_start_p: -1
-}
-
-var players = {};
-
-var board = {
-	WIDTH: map.width * map.tilewidth,
-	HEIGHT: map.height * map.tileheight,
-}
 
 var tank = {
 	list: {},
@@ -253,6 +252,9 @@ var tank = {
 									if (t != t2) {
 										t.kills++;
 										players[id].kills++;
+										players[i].deaths++;
+									}
+									else {
 										players[i].deaths++;
 									}
 								}
@@ -376,12 +378,12 @@ var tank = {
 								}
 								break;
 							case 2: 
-								t.shot += 10;
+								t.shot += losuj(5, 20);
 								d[tile] = 0;
 								map.changes.push([tile, 0]);
 								break;
 							case 3:
-								t.nuke += 3;
+								t.nuke += losuj(1, 5);
 								d[tile] = 0;
 								map.changes.push([tile, 0]);
 								break;
@@ -411,7 +413,7 @@ var tank = {
 			t.my = t.mPosY + y - players[id].SCREEN_HEIGHT / 2;
 
 
-			var v = new vector(t.mx - t.x, t.my - t.y);
+			var v = new game.vector(t.mx - t.x, t.my - t.y);
 			t.lufa = {
 				x1: t.x + v.unit.x * 8,
 				y1: t.y + v.unit.y * 8,
@@ -427,11 +429,12 @@ var bullets = {
 	list: {},
 	move: function() {
 		for (var i in bullets.list) {
-			if (bullets.list[i] === undefined) {
+			var b = bullets.list[i];
+			if (bullets.list[i] === undefined || !tank.list[b.owner]) {
 				delete bullets.list[i];
 				continue;
 			}
-			var b = bullets.list[i];
+			
 			b.x += b.sx * b.speed;
 			b.y += b.sy * b.speed;
 
@@ -487,29 +490,4 @@ var bullets = {
 		var id2 = 'id_' + (++bullets.max_id);
 		bullets.list[id2] = new bullets.proto(id, id2);
 	},
-}
-
-// prototyp wektora
-var vector = function(x, y) {
-	this.x = x;
-	this.y = y;
-	this.size = Math.sqrt(x * x + y * y);
-	this.unit = {
-		x: this.x / this.size,
-		y: this.y / this.size
-	};
-}
-
-function losuj(a, b) {
-	var r = Math.random() * (b - a) + a;
-	return Math.floor(r);
-}
-
-var col = { // kolizje
-	circle: function(x, y, r) {
-		return x * x + y * y < r * r ? 1 : 0;
-	},
-	square: function(x1, x2, y1, y2) {
-		// to be continued
-	}
 }
