@@ -13,13 +13,20 @@ function socket_handlers() {
 	socket.on('disconnect', game.disconnect);
 	socket.on('game-update', game.update);
 	socket.on('join', game.join);
+	socket.on('game_ping', game.get_ping);
 }
+
+window.setInterval(function() {
+	socket.emit('game_ping', Date.now());
+}, 1000);
+
 
 window.addEventListener('load', function load() {
 	canvas = $('#game')[0];
 	ctx = canvas.getContext('2d');
 	act_canvas = $('#active')[0];
 	act_ctx = act_canvas.getContext('2d');
+	settings.load();
 	socket_handlers();
 	game_events();
 
@@ -41,6 +48,9 @@ var game = {
 	ctx: null,
 	counter: 0,
 	animations: [],
+	get_ping: function(msg) {
+		console.log(Date.now(), msg);
+	},
 	play: function() {
 		cancelAnimationFrame(game.timerId);
 		var msg = JSON.stringify({
@@ -211,6 +221,9 @@ var game = {
 		return (A * (game.msg2.date - game.frame_time) + C * (game.frame_time - game.msg1.date)) / (game.msg2.date - game.msg1.date);
 	},
 	play_sound: function(msg) {
+
+		// volume = (6*base_volume) / log_2(odleglosc + 64) - do dodania!!!
+
 		var a = abilities[msg].audio;
 		var x = a.cloneNode(true);
 		x.volume = game.volume;
@@ -347,6 +360,10 @@ var board = {
 		});
 		$('#main').css('height', player.SCREEN_HEIGHT)
 		if (game.msg1) board.draw_icons();
+
+		if ((window.outerHeight - window.innerHeight) > 100)
+        	alert("Don't even try to hack this game ;)");
+
 	},
 	draw: function() {
 		if (map) {
@@ -646,6 +663,7 @@ var vector = function(x, y) {
 	};
 }
 
+
 var settings = {
 	isOpen: 0,
 	toggle: function() {
@@ -659,8 +677,30 @@ var settings = {
 	close: function() {
 		settings.isOpen = 0;
 		$('#settings').remove();
+	},
+	load: function() {
+		for (var i in settings.options) {
+			var s = settings.options[i]
+			var x = localStorage.getItem(i) || options[i].def;
+			s.settings_parent [ s.settings_attr] = s.format.call(this, x);
+		}
+	},
+	options: {
+		game_delay: {
+			settings_parent: game,
+			settings_attr: 'delay',
+			def: 100,
+			format: parseInt
+		},
+		sound_volume: {
+			settings_parent: game,
+			settings_attr: 'volume',
+			def: 0.5,
+			format: parseFloat
+		}
 	}
 }
+
 
 /************************** Prototypes ********************************/
 
