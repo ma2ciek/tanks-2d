@@ -49,7 +49,7 @@ var game = {
 	counter: 0,
 	animations: [],
 	get_ping: function(msg) {
-		game.ping.client_client = Date.now() - parseInt(msg);
+		game.ping2.addState(Date.now() - parseInt(msg));
 	},
 	play: function() {
 		var msg = JSON.stringify({
@@ -57,7 +57,7 @@ var game = {
 			SCREEN_WIDTH: player.SCREEN_WIDTH
 		});
 		socket.emit('join-game', msg);
-		if(!game.timerId) setTimeout(game.draw, 1000);
+		if (!game.timerId) setTimeout(game.draw, 1000);
 	},
 	update: function(msg) {
 		var msg = JSON.parse(msg);
@@ -75,7 +75,7 @@ var game = {
 	},
 	draw: function() {
 
-		var t = Date.now() - (game.delay + game.ping.av);
+		var t = Date.now() - (game.delay + game.ping.av());
 		game.frame_time = t;
 
 		for (var i = 0; i < packages.length; i++) {
@@ -149,6 +149,7 @@ var game = {
 				game.check_res_changes();
 
 				game.fps.count();
+				game.info();
 
 				game.log.addState(); // 6
 
@@ -169,45 +170,56 @@ var game = {
 		}
 	},
 	ping: {
-		sum: 0,
-		amount: 0,
-		av: 0,
-		actual: 0,
+		times: [1],
+		time_sum: 1,
 		addState: function(x) {
-			this.actual = x;
-			this.sum += x;
-			this.amount += 1;
-			this.av = this.sum / this.amount;
+			this.times.unshift(x);
+			if (this.times.length >= 50) this.time_sum -= this.times.pop();
+			this.time_sum += x;
 		},
-		client_client: 0
+		av: function() {
+			return this.time_sum / this.times.length;
+		}
+	},
+	ping2: {
+		times: [1],
+		time_sum: 1,
+		addState: function(x) {
+			this.times.unshift(x);
+			if (this.times.length >= 50) this.time_sum -= this.times.pop();
+			this.time_sum += x;
+		},
+		av: function() {
+			return Math.round(this.time_sum / this.times.length);
+		}
 	},
 	fps: {
-		times: [],
-		time_sum: 0,
+		times: [60],
+		time_sum: 60,
 		last_time: Date.now(),
-
 		count: function() {
 			var d = Date.now() - this.last_time;
 			this.last_time = Date.now();
-
 			this.times.unshift(d);
 			if (this.times.length >= 50) this.time_sum -= this.times.pop();
-
 			this.time_sum += d;
-			var t = this.time_sum / this.times.length;
-
-			ctx.font = "13px Arial";
-			ctx.textAlign = "left";
-			ctx.fillStyle = 'white'
-			ctx.fillText('FPS: ' + Math.floor(1000 / t), 15, 15);
-			ctx.fillText('PING ' + game.ping.client_client, 15, 30);
-			// ctx.fillText('SL: ' + game.msg1.server_latency, 15, 30);
-
-			ctx.font = "13px Arial";
-			ctx.fillText('KILLS: ' + game.msg1.tank[player.id].kills, 90, 15);
-			ctx.fillText('DEATHS: ' + game.msg1.tank[player.id].deaths, 170, 15);
-			
+		},
+		av: function() {
+			return Math.round(1000 / (this.time_sum / this.times.length));
 		}
+
+	},
+	info: function() {
+		ctx.font = "13px Arial";
+		ctx.textAlign = "left";
+		ctx.fillStyle = 'white'
+		ctx.fillText('FPS: ' + game.fps.av(), 15, 15);
+		ctx.fillText('PING ' + game.ping2.av(), 15, 30);
+		// ctx.fillText('SL: ' + game.msg1.server_latency, 15, 30);
+
+		ctx.font = "13px Arial";
+		ctx.fillText('KILLS: ' + game.msg1.tank[player.id].kills, 90, 15);
+		ctx.fillText('DEATHS: ' + game.msg1.tank[player.id].deaths, 170, 15);
 	},
 	disconnect: function() {
 		location.href = './';
@@ -261,7 +273,7 @@ var game = {
 		var t2 = game.msg2.tank;
 		if (!game.msg1.res_checked) {
 			if (t1[player.id].shot > t2[player.id].shot) {
-				game.res_change_animate('You receive ' + (t1[player.id].shot - t2[player.id].shot) + ' bullets');		
+				game.res_change_animate('You receive ' + (t1[player.id].shot - t2[player.id].shot) + ' bullets');
 			}
 			if (t1[player.id].nuke > t2[player.id].nuke) {
 				game.res_change_animate('You receive ' + (t1[player.id].nuke - t2[player.id].nuke) + ' explosions');
@@ -279,8 +291,8 @@ var game = {
 		$('.game_msg:hidden').remove();
 		$('.game_msg').css('top', '+=20');
 		$('#main').append('<div class="game_msg"></div>');
-		$('.game_msg:last-child')	
-			.text(text)		
+		$('.game_msg:last-child')
+			.text(text)
 			.animate({
 				left: player.SCREEN_WIDTH / 2 - $('.game_msg:last-child').width() / 2,
 				top: player.SCREEN_HEIGHT / 2 - $('.game_msg:last-child').height() / 2 + 30,
@@ -605,7 +617,9 @@ function game_events() {
 			tank.ab('nuke');
 	})
 	act_canvas.addEventListener('click', function(evt) {
-		tank.ab('shot');
+		if(player.exist) {
+			tank.ab('shot');
+		}
 	});
 	$('#chat').focus(function() {
 		chat.isFocus = 1;
