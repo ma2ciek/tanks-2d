@@ -58,28 +58,31 @@ io.on('connection', function(socket) {
 	players[socket.id].deaths = 0
 
 	for (var i in players) {
-		if (players[i].ip == socket.handshake.address) {
+		if (players[i].ip == socket.request.connection.remoteAddress) {
 			players[socket.id].kills += players[i].kills;
 			players[socket.id].deaths += players[i].deaths;
 			delete players[i];
 			delete tank.list[i];
 		}
 	}
-	players[socket.id].ip = socket.handshake.address;
+	players[socket.id].ip = socket.request.connection.remoteAddress;
 
 
 	socket.on('join-game', function(msg) {
+		if(players[socket.id]) {
+			players[socket.id].SCREEN_WIDTH = JSON.parse(msg).SCREEN_WIDTH;
+			players[socket.id].SCREEN_HEIGHT = JSON.parse(msg).SCREEN_HEIGHT;
 
-		players[socket.id].SCREEN_WIDTH = JSON.parse(msg).SCREEN_WIDTH;
-		players[socket.id].SCREEN_HEIGHT = JSON.parse(msg).SCREEN_HEIGHT;
-
-		tank.create(socket.id);
-		socket.emit('join', JSON.stringify({
-			board: board.list,
-			width: board.WIDTH,
-			height: board.HEIGHT,
-			map: map
-		}));
+			tank.create(socket.id);
+			socket.emit('join', JSON.stringify({
+				board: board.list,
+				width: board.WIDTH,
+				height: board.HEIGHT,
+				map: map
+			}));
+		} else {
+			socket.disconnect();
+		}
 	});
 
 	socket.on('message', function(msg) {

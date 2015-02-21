@@ -205,7 +205,7 @@ var game = {
 		}
 	},
 	disconnect: function() {
-		alert("You are disconnected from the server");
+		location.href = './';
 	},
 	join: function(msg) {
 		player.id = socket.id;
