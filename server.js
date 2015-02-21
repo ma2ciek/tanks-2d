@@ -51,6 +51,10 @@ io.on('connection', function(socket) {
 		}
 	});
 
+	socket.on('game-ping', function(msg) {
+		socket.emit('game-ping', JSON.stringify(msg))
+	})
+
 	socket.on('get_players', function() {
 		socket.emit('get_players', JSON.stringify(players));
 	})

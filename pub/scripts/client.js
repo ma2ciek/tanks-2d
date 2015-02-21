@@ -13,11 +13,11 @@ function socket_handlers() {
 	socket.on('disconnect', game.disconnect);
 	socket.on('game-update', game.update);
 	socket.on('join', game.join);
-	socket.on('game_ping', game.get_ping);
+	socket.on('game-ping', game.get_ping);
 }
 
 window.setInterval(function() {
-	socket.emit('game_ping', Date.now());
+	socket.emit('game-ping', Date.now());
 }, 1000);
 
 
@@ -49,7 +49,7 @@ var game = {
 	counter: 0,
 	animations: [],
 	get_ping: function(msg) {
-		console.log(Date.now(), msg);
+		game.ping.client_client = Date.now() - parseInt(msg);
 	},
 	play: function() {
 		var msg = JSON.stringify({
@@ -179,6 +179,7 @@ var game = {
 			this.amount += 1;
 			this.av = this.sum / this.amount;
 		},
+		client_client: 0
 	},
 	fps: {
 		times: [],
@@ -199,9 +200,13 @@ var game = {
 			ctx.textAlign = "left";
 			ctx.fillStyle = 'white'
 			ctx.fillText('FPS: ' + Math.floor(1000 / t), 15, 15);
+			ctx.fillText('PING ' + game.ping.client_client, 15, 30);
+			// ctx.fillText('SL: ' + game.msg1.server_latency, 15, 30);
+
+			ctx.font = "13px Arial";
 			ctx.fillText('KILLS: ' + game.msg1.tank[player.id].kills, 90, 15);
 			ctx.fillText('DEATHS: ' + game.msg1.tank[player.id].deaths, 170, 15);
-			ctx.fillText('SL: ' + game.msg1.server_latency, 15, 30);
+			
 		}
 	},
 	disconnect: function() {
@@ -256,37 +261,32 @@ var game = {
 		var t2 = game.msg2.tank;
 		if (!game.msg1.res_checked) {
 			if (t1[player.id].shot > t2[player.id].shot) {
-				game.res_change_animate()				
-					.text('You receive ' + (t1[player.id].shot - t2[player.id].shot) + ' bullets')
+				game.res_change_animate('You receive ' + (t1[player.id].shot - t2[player.id].shot) + ' bullets');		
 			}
 			if (t1[player.id].nuke > t2[player.id].nuke) {
-				game.res_change_animate()
-					.text('You receive ' + (t1[player.id].nuke - t2[player.id].nuke) + ' explosions');
+				game.res_change_animate('You receive ' + (t1[player.id].nuke - t2[player.id].nuke) + ' explosions');
 			}
 			if (t1[player.id].life > t2[player.id].life) {
-				game.res_change_animate()
-					.text('You heal ' + (t1[player.id].life - t2[player.id].life) + ' damage');
+				game.res_change_animate('You heal ' + (t1[player.id].life - t2[player.id].life) + ' damage');
 			}
 			if (!!t1[player.id].auras.sb > !!t2[player.id].auras.sb) {
-				game.res_change_animate()
-					.text('You gain speed bust');
+				game.res_change_animate('You gain speed bust');
 			}
 			game.msg1.res_checked = true;
 		}
 	},
-	res_change_animate: function(ability, option, resources) {
+	res_change_animate: function(text) {
 		$('.game_msg:hidden').remove();
 		$('.game_msg').css('top', '+=20');
 		$('#main').append('<div class="game_msg"></div>');
-		setTimeout(function() {
-			$('.game_msg:last-child')			
-				.animate({
-					left: player.SCREEN_WIDTH / 2 - $('.game_msg:last-child').width() / 2,
-					top: player.SCREEN_HEIGHT / 2 - $('.game_msg:last-child').height() / 2 + 20,
-				}, 0)
-				.delay(2000)
-				.fadeOut('1000');
-		},0);
+		$('.game_msg:last-child')	
+			.text(text)		
+			.animate({
+				left: player.SCREEN_WIDTH / 2 - $('.game_msg:last-child').width() / 2,
+				top: player.SCREEN_HEIGHT / 2 - $('.game_msg:last-child').height() / 2 + 30,
+			}, 0)
+			.delay(2000)
+			.fadeOut('1000')
 		return $('.game_msg:last-child');
 	}
 }
