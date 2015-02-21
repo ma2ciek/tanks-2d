@@ -51,22 +51,27 @@ io.on('connection', function(socket) {
 		}
 	});
 
+	socket.on('get_players', function() {
+		socket.emit('get_players', JSON.stringify(players));
+	})
+
 	if (!players) players = {};
 	if (!players[socket.id])
 		players[socket.id] = {}
 	players[socket.id].kills = 0;
 	players[socket.id].deaths = 0
 
-	for (var i in players) {
-		if (players[i].ip == socket.request.connection.remoteAddress) {
-			players[socket.id].kills += players[i].kills;
-			players[socket.id].deaths += players[i].deaths;
-			delete players[i];
-			delete tank.list[i];
+	if(socket.handshake.address) {
+		for (var i in players) {
+			if (players[i].ip ==  socket.client.conn.remoteAddress) {
+				players[socket.id].kills += players[i].kills;
+				players[socket.id].deaths += players[i].deaths;
+				delete players[i];
+				delete tank.list[i];
+			}
 		}
-	}
-	players[socket.id].ip = socket.request.connection.remoteAddress;
-
+		players[socket.id].ip = socket.client.conn.remoteAddress;
+	} 
 
 	socket.on('join-game', function(msg) {
 		if(players[socket.id]) {
