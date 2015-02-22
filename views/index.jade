@@ -28,6 +28,12 @@ html(lang='pl')
 			h1 Tanks 2D 
 				span v 1.0
 		div#main
-			a#play.button.big.positive(href='/play') Play
-			a#tut.button.big(href='/tutorial') Tutorial
-			a#settings.button.big(href='/settings2') Settings
+			form(action="javascript:play()")
+				div#play Play as
+					input.nick(placeholder="Your nick", pattern="[0-9A-Za-z]*", required="required")
+					button.big.positive(type='submit') Play
+			a.button.big(href='/tutorial') Tutorial
+			a.button.big(href='/settings2') Settings
+		footer
+			a(href="mailto:ma2ciek@gmail.com?subject=Tanks-2D") Maciej Bukowski
+			span , 2015

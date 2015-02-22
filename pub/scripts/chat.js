@@ -8,9 +8,6 @@ var chat = {
 		$('#messages').append('<li class="neutral"></li>').find('li:last-child').text(msg);
 		chat.animate();
 	},
-	clients: function(msg) {
-		$('#clients').text('Online: ' + msg);
-	},
 	submit: function() {
 		if (!$('#chat').val() == "" && chat.isOpen == 1) {
 			socket.emit('message', $('#chat').val());

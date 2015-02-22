@@ -39,13 +39,11 @@ var losuj = require('./mod/losuj.js');
 var players = {};
 
 io.on('connection', function(socket) {
-	socket.broadcast.emit('n-message', 'Nowa osoba dołączyła do gry');
-	socket.emit('n-message', 'Dołączyłeś do gry');
 
-	console.log('ID: ' + socket.id);
-
-	socket.on('disconnect', function() {
-		io.emit('n-message', 'Osoba się rozłączyła');
+	socket.on('disconnect', function(socket) {
+		if(tank.list[socket.id]) {
+			io.emit('n-message', tank.list[socket.id].nick + ' się rozłączył/-a');
+		} 
 		if (!delete tank.list[socket.id]) {
 			console.log('ERROR - nie można usunąć czołgu');
 		}
@@ -55,44 +53,55 @@ io.on('connection', function(socket) {
 		socket.emit('game-ping', JSON.stringify(msg))
 	})
 
-	socket.on('get_players', function() {
-		socket.emit('get_players', JSON.stringify(players));
+	socket.on('get-players', function() {
+		socket.emit('get-players', JSON.stringify(players));
 	})
 
-	if (!players) players = {};
-	if (!players[socket.id])
-		players[socket.id] = {}
-	players[socket.id].kills = 0;
-	players[socket.id].deaths = 0
-
-	if (socket.handshake.address) {
-		for (var i in players) {
-			if (players[i].ip == socket.client.conn.remoteAddress) {
-				players[socket.id].kills += players[i].kills;
-				players[socket.id].deaths += players[i].deaths;
-				delete players[i];
-				delete tank.list[i];
-			}
-		}
-		players[socket.id].ip = socket.client.conn.remoteAddress;
-	}
-
 	socket.on('join-game', function(msg) {
-		if (players[socket.id]) {
-			players[socket.id].SCREEN_WIDTH = JSON.parse(msg).SCREEN_WIDTH;
-			players[socket.id].SCREEN_HEIGHT = JSON.parse(msg).SCREEN_HEIGHT;
+		var msg = JSON.parse(msg);
+		socket.broadcast.emit('n-message', msg.nick + 'dołączył/-a do gry');
+		socket.emit('n-message', 'Dołączyłeś/aś do gry');
 
+		console.log('ID: ' + socket.id);
+		
+		if (!players) players = {};
+		if (!players[socket.id])
+			players[socket.id] = {}
+		players[socket.id].kills = 0;
+		players[socket.id].deaths = 0
+
+		if (socket.handshake.address) {
+			for (var i in players) {
+				if (players[i].ip == socket.client.conn.remoteAddress) {
+					players[socket.id].kills += players[i].kills;
+					players[socket.id].deaths += players[i].deaths;
+					delete players[i];
+					delete tank.list[i];
+					
+				}
+			}
+			players[socket.id].ip = socket.client.conn.remoteAddress;
+		}
+		players[socket.id].SCREEN_WIDTH = msg.SCREEN_WIDTH;
+		players[socket.id].SCREEN_HEIGHT = msg.SCREEN_HEIGHT;
+		players[socket.id].nick = msg.nick;
+
+		tank.create(socket.id);
+		socket.emit('join', JSON.stringify({
+			width: board.WIDTH,
+			height: board.HEIGHT,
+			map: map
+		}));
+	});
+
+	socket.on('reborn', function() {
+		if (socket.id) {
 			tank.create(socket.id);
 			socket.emit('join', JSON.stringify({
-				board: board.list,
-				width: board.WIDTH,
-				height: board.HEIGHT,
 				map: map
 			}));
-		} else {
-			socket.disconnect();
 		}
-	});
+	})
 
 	socket.on('message', function(msg) {
 		socket.broadcast.emit('message', msg);
@@ -154,10 +163,6 @@ var board = {
 	WIDTH: map.width * map.tilewidth,
 	HEIGHT: map.height * map.tileheight
 }
-
-setInterval(function() {
-	io.emit('clients', io.engine.clientsCount);
-}, 1000);
 
 setInterval(game.creating_resources, 20000, map, losuj);
 
@@ -227,7 +232,8 @@ var tank = {
 			tar_keg: 1,
 			nuke: 3,
 			shot: 100
-		}
+		},
+		this.nick = players[id].nick;
 	},
 	ab: function(id, ability) {
 		if (tank.list[id].ab[ability] > 0) {

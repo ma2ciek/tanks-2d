@@ -14,6 +14,7 @@ function socket_handlers() {
 	socket.on('game-update', game.update);
 	socket.on('join', game.join);
 	socket.on('game-ping', game.get_ping);
+	socket.on('get-players', game.get_players);
 }
 
 window.setInterval(function() {
@@ -54,10 +55,10 @@ var game = {
 	play: function() { // start lub kontynuacja gry
 		var msg = JSON.stringify({
 			SCREEN_HEIGHT: player.SCREEN_HEIGHT,
-			SCREEN_WIDTH: player.SCREEN_WIDTH
+			SCREEN_WIDTH: player.SCREEN_WIDTH,
+			nick: localStorage.getItem('nick')
 		});
 		socket.emit('join-game', msg);
-		if (!game.timerId) setTimeout(game.draw, 1000);
 	},
 	update: function(msg) { // Odbieranie pakietów
 		var msg = JSON.parse(msg);
@@ -73,8 +74,21 @@ var game = {
 
 		}
 	},
+	disconnect: function() {
+		//location.href = './';
+		$('#messages').append('<li class="neutral"><DISCONNECTED/li>');
+	},
+	join: function(msg) {
+		player.id = socket.id;
+		var m = JSON.parse(msg)
+		board.WIDTH = board.WIDTH || m.width;
+		board.HEIGHT = board.HEIGHT || m.height;
+		window.map = m.map;
+		if (!game.timerId) {
+			game.draw();
+		}
+	},
 	draw: function() { // główna pętla gry
-
 		var t = Date.now() - (game.delay + game.ping.av());
 		game.frame_time = t;
 
@@ -82,8 +96,11 @@ var game = {
 			if (t > packages[i].timestamp) break;
 		}
 		game.ts_id = i;
+
+
 		// czas t pomiędzy i-1 oraz i
 		if (i < 21 && i >= 1) {
+
 			if (player.id in packages[i].tank && player.id in packages[i - 1].tank) {
 				player.exist = 1;
 
@@ -115,7 +132,7 @@ var game = {
 					draw++;
 				}
 				if (m.tank[player.id].ab.nuke != player.ab.nuke) {
-					player.ab.nuke = m.tank[player.id].ab.nuke
+					player.ab.nuke = m.tank[player.id].ab.nuke;
 					draw++;
 				}
 				if (m.tank[player.id].ab.shot != player.ab.shot) {
@@ -163,7 +180,9 @@ var game = {
 				}
 			} else {
 				board.clear();
-				game.play(); // settimeout nie działa (?)	
+				game.timerId = null;
+				setTimeout(function(){socket.emit('reborn')}, 1000);
+				return;
 			}
 		} else console.error("Nie otrzymano pakietu danych", new Date());
 		game.timerId = requestAnimationFrame(game.draw);
@@ -225,17 +244,7 @@ var game = {
 		ctx.font = "13px Arial";
 		ctx.fillText('KILLS: ' + game.msg1.tank[player.id].kills, 90, 15);
 		ctx.fillText('DEATHS: ' + game.msg1.tank[player.id].deaths, 170, 15);
-	},
-	disconnect: function() {
-		location.href = './';
-	},
-	join: function(msg) {
-		player.id = socket.id;
-		var m = JSON.parse(msg)
-		board.list = m.board;
-		board.WIDTH = m.width;
-		board.HEIGHT = m.height;
-		window.map = m.map;
+		$('#clients').text('Online: ' + Object.keys(packages[0].tank).length);
 	},
 	interp: function(A, C) { // Interpolacja
 		// Zwraca wartość środkowej wartości
@@ -327,6 +336,9 @@ var game = {
 	display_right_ab: function() {
 		$('#ppm').css('background-image', 'url("' + abilities[player.active_ability].img.src + '")');
 		if (game.msg1) $('#ppm .amount').text(game.msg1.tank[player.id].ab[player.active_ability]);
+	},
+	get_players: function(msg) {
+		console.log(JSON.parse(msg));
 	}
 }
 
@@ -542,6 +554,13 @@ var tank = {
 				ctx.lineTo(wsp2.x, wsp2.y);
 				ctx.stroke();
 				ctx.closePath();
+
+				if(player.id != i) {
+					ctx.font = "13px Arial";
+					ctx.textAlign = "center";
+					ctx.fillStyle = 'white'
+					ctx.fillText(game.msg1.tank[i].nick, wsp.x, wsp.y-30);
+				}
 			}
 		}
 	}
