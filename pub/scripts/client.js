@@ -4,6 +4,15 @@ var ctx, canvas;
 var act_ctx, act_canvas;
 var PI = Math.PI;
 var socket = io();
+var logs = [];
+
+window.requestAnimationFrame = window.requestAnimationFrame ||
+    window.webkitRequestAnimationFrame ||
+    window.mozRequestAnimationFrame ||
+    window.oRequestAnimationFrame ||
+    window.msRequestAnimationFrame || function (callback) {
+        window.setTimeout(callback, 1000 / 60);
+    };
 
 // Socket Event Handlers
 function socket_handlers() {
@@ -96,7 +105,13 @@ var game = {
 		}
 		game.ts_id = i;
 
-
+		if(packages.length > 0) {
+			if (packages[0].map_changes.length !== 0) {
+				for (var j = 0; j < packages[0].map_changes.length; j++) {
+					map.layers[1].data[packages[0].map_changes[j][0]] = packages[0].map_changes[j][1];
+				}
+			}
+		}
 		// czas t pomiędzy i-1 oraz i
 		if (i < 21 && i >= 1) {
 
@@ -145,12 +160,6 @@ var game = {
 				if (draw != 0) board.draw_icons();
 				game.log.addState(); // 4
 
-				if (m.map_changes.length !== 0) {
-					for (var j = 0; j < m.map_changes.length; j++) {
-						map.layers[1].data[m.map_changes[j][0]] = m.map_changes[j][1];
-					}
-				}
-
 				if (m.sounds.length !== 0) {
 					for (var j = 0; j < m.sounds.length; j++) {
 						game.play_sound(m.sounds[j]);
@@ -175,7 +184,7 @@ var game = {
 				game.log.addState(); // 6
 
 				for (var j = 0; j < game.mid_times.length; j++) {
-					if (game.mid_times[j] > 15) console.error("LAG ", j, game.mid_times[j], new Date());
+					if (game.mid_times[j] > 15) logs.push("LAG ", j, game.mid_times[j], new Date());
 				}
 			} else {
 				board.clear();
@@ -185,7 +194,7 @@ var game = {
 				}, 1000);
 				return;
 			}
-		} else console.error("Nie otrzymano pakietu danych", new Date());
+		} else logs.push("Nie otrzymano pakietu danych", new Date());
 		game.timerId = requestAnimationFrame(game.draw);
 	},
 	rel: function(x, y) {
@@ -395,7 +404,7 @@ var board = {
 						ctx.closePath();
 						break;
 					default:
-						console.error('Dziwny obiekt');
+						logs.push('Dziwny obiekt');
 				}
 			}
 		}
@@ -479,7 +488,7 @@ var board = {
 
 				}
 			}
-		} else console.error('Brak mapy');
+		} else logs.push('Brak mapy');
 	},
 	clear: function() {
 		ctx.clearRect(0, 0, player.SCREEN_WIDTH, player.SCREEN_HEIGHT);
@@ -696,16 +705,20 @@ function game_events() {
 }
 
 var phone = {
+	targets: [],
 	touchstart: function(evt) {
+		this.targets.push(evt);
 		joystick.start_pos = {
 			x: evt.touches[0].clientX,
 			y: evt.touches[0].clientY
 		}
 	},
 	touchmove: function(evt) {
-		joystick.actual_pos = {
-			x: evt.targetTouches[0].clientX,
-			y: evt.targetTouches[0].clientY
+		var j = joystick;
+
+		j.actual_pos = {
+			x: evt.touches[0].clientX,
+			y: evt.touches[0].clientY
 		};
 		//joystick.create_vector();
 		var x = joystick.dir().x;
@@ -717,26 +730,32 @@ var phone = {
 			});
 			player.dirX = x;
 			player.dirY = y;
+			j.touch_id = evt.touches[0].identifier
 		}
 	},
 	touchend: function(evt) {
-		player.dirX = 0;
-		player.dirY = 0;
-		socket.emit('client-event', {
-			dirX: 0,
-			dirY: 0
-		});
+		if(evt.target.identifier == joystick.touch_id) {
+			player.dirX = 0;
+			player.dirY = 0;
+			socket.emit('client-event', {
+				dirX: 0,
+				dirY: 0
+			});
+		}
 	},
 	touchcancel: function(evt) {
-		player.dirX = 0;
-		player.dirY = 0;
-		socket.emit('client-event', {
-			dirX: 0,
-			dirY: 0
-		});
+		if(evt.target.identifier == joystick.touch_id) {
+			player.dirX = 0;
+			player.dirY = 0;
+			socket.emit('client-event', {
+				dirX: 0,
+				dirY: 0
+			});
+		}
 	},
 }
 var joystick = {
+	touch_id: 0,
 	start_pos: {},
 	actual_pos: {},
 	diff: function() {
