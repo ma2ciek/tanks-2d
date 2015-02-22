@@ -41,9 +41,9 @@ var players = {};
 io.on('connection', function(socket) {
 
 	socket.on('disconnect', function(socket) {
-		if(tank.list[socket.id]) {
+		if (tank.list[socket.id]) {
 			io.emit('n-message', tank.list[socket.id].nick + ' się rozłączył/-a');
-		} 
+		}
 		if (!delete tank.list[socket.id]) {
 			console.log('ERROR - nie można usunąć czołgu');
 		}
@@ -63,7 +63,7 @@ io.on('connection', function(socket) {
 		socket.emit('n-message', 'Dołączyłeś/aś do gry');
 
 		console.log('ID: ' + socket.id);
-		
+
 		if (!players) players = {};
 		if (!players[socket.id])
 			players[socket.id] = {}
@@ -72,15 +72,20 @@ io.on('connection', function(socket) {
 
 		if (socket.handshake.address) {
 			for (var i in players) {
-				if (players[i].ip == socket.client.conn.remoteAddress) {
+				if (players[i].ip == socket.handshake.address) {
 					players[socket.id].kills += players[i].kills;
 					players[socket.id].deaths += players[i].deaths;
+					try {
+						io.socket[i].disconnect
+					} catch (err) {
+						console.log(err);
+					}
 					delete players[i];
 					delete tank.list[i];
-					
+
 				}
 			}
-			players[socket.id].ip = socket.client.conn.remoteAddress;
+			players[socket.id].ip = socket.handshake.address;
 		}
 		players[socket.id].SCREEN_WIDTH = msg.SCREEN_WIDTH;
 		players[socket.id].SCREEN_HEIGHT = msg.SCREEN_HEIGHT;
@@ -229,11 +234,11 @@ var tank = {
 		this.Vy = 0;
 		this.auras = {}
 		this.ab = {
-			tar_keg: 1,
-			nuke: 3,
-			shot: 100
-		},
-		this.nick = players[id].nick;
+				tar_keg: 1,
+				nuke: 3,
+				shot: 100
+			},
+			this.nick = players[id].nick;
 	},
 	ab: function(id, ability) {
 		if (tank.list[id].ab[ability] > 0) {
