@@ -50,8 +50,8 @@ var settings = {
 	},
 	load: function() {
 		for (var i in this.options) {
-			var s = settings.options[i]
-			var x = localStorage.getItem(i) || options[i].def;
+			var s = this.options[i]
+			var x = localStorage.getItem(i) || this.options[i].def;
 			s.settings_parent[s.settings_attr] = s.format.call(this, x);
 
 			$('#' + i).off().on('change keydown', function(ev) {
