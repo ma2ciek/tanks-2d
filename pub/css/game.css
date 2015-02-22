@@ -162,7 +162,7 @@ div.game_msg {
 
 
 
-/*****************CHAT********************/
+/***************************CHAT***********************************/
 
 #chat {
 	display: none;
@@ -212,5 +212,56 @@ div.game_msg {
 }
 #messages li.neutral {
 	text-align: center;
+	display: block;
+}
+
+
+/****************************SETTINGS**********************************/
+
+#settings {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0,0,0,0.6);
+	z-index: 100;
+	color: white;
+	display: none;
+}
+#settings h1 {
+	text-align: center;
+}
+#settings > div {
+	display: flex;
+	justify-content: space-around;
+	text-align: center;
+}
+#settings div > div {
+	flex: 1;
+	max-width: 400px;
+}
+#settings h2 {
+	margin-top: 30px;
+	margin-bottom: 10px;
+}
+#settings ul {
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+}
+#settings span {
+	display: inline-block;
+	width: 140px;
+}
+#settings input {
+	width: 100px;
+}
+#settings button {
+	width: 100px;
+}
+#exit_settings {
+	text-align: center;
+	margin: 50px auto 0;
 	display: block;
 }

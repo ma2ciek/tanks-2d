@@ -15,7 +15,8 @@ html(lang='pl')
 		script(src='scripts/jquery-2.1.0.min.js')
 		script(src='scripts/data.js')
 		script(src='scripts/client.js')
-		script(src='scripts/chat.js')
+		script(src='scripts/chat_settings.js')
+
 	body.game
 		div#main
 			canvas#game
@@ -36,4 +37,37 @@ html(lang='pl')
 				div#ppm
 					din.info PPM
 					div.amount 3
-			
+		div#settings
+			H1 Settings
+			div
+				div.basic
+					h2 Basic
+					ul
+						li 
+							span Sound volume:
+							input#sound_volume(type="range", min="0", max="1", step="0.1", value="0.5")
+				div.advanced
+					h2 Advanced
+					ul
+						li 
+							span Game delay:
+							input#game_delay(type="text", value="100")
+				div.controls
+					h2 Controls
+					ul
+						li
+							span Move:
+							span [WSAD], Arrows
+						li
+							span First skill:
+							span [Space], LMB
+						li
+							span Second skill:
+							span RMB
+						li
+							span Chat:
+							span [ENTER]
+						li
+							span Toggle abilities:
+							span [TAB]
+			button#exit_settings EXIT

@@ -85,7 +85,7 @@ var game = {
 		board.HEIGHT = board.HEIGHT || m.height;
 		window.map = m.map;
 		if (!game.timerId) {
-			setTimeout(game.draw, 100);
+			setTimeout(game.draw, 300);
 		}
 	},
 	draw: function() { // główna pętla gry
@@ -674,14 +674,9 @@ function game_events() {
 		chat.isFocus = 0;
 		chat.isOpen = 0;
 	});
-	$('img.settings').click(function() {
-		settings.open();
-	});
-	$('img.chat').click(function() {
-		chat.show();
-	})
-
-
+	$('img.settings').click(settings.open);
+	$('img.chat').click(chat.show);
+	$('#exit_settings').click(settings.close);
 
 }
 
@@ -768,44 +763,6 @@ var vector = function(x, y) {
 		x: this.x / this.size,
 		y: this.y / this.size
 	};
-}
-
-
-var settings = {
-	isOpen: 0,
-	toggle: function() {
-		(settings.isOpen == 1) ? settings.close(): settings.open()
-	},
-	open: function() {
-		settings.isOpen = 1;
-		$('body').append('<div id="settings"></div>');
-		$('div#settings').load('/settings');
-	},
-	close: function() {
-		settings.isOpen = 0;
-		$('#settings').remove();
-	},
-	load: function() {
-		for (var i in settings.options) {
-			var s = settings.options[i]
-			var x = localStorage.getItem(i) || options[i].def;
-			s.settings_parent[s.settings_attr] = s.format.call(this, x);
-		}
-	},
-	options: {
-		game_delay: {
-			settings_parent: game,
-			settings_attr: 'delay',
-			def: 100,
-			format: parseInt
-		},
-		sound_volume: {
-			settings_parent: game,
-			settings_attr: 'volume',
-			def: 0.5,
-			format: parseFloat
-		}
-	}
 }
 
 

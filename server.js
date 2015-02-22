@@ -40,7 +40,7 @@ var players = {};
 
 io.on('connection', function(socket) {
 
-	socket.on('disconnect', function(socket) {
+	socket.on('disconnect', function() {
 		if (tank.list[socket.id]) {
 			io.emit('n-message', tank.list[socket.id].nick + ' się rozłączył/-a');
 		}
@@ -62,8 +62,8 @@ io.on('connection', function(socket) {
 
 	socket.on('join-game', function(msg) {
 		var msg = JSON.parse(msg);
-		socket.broadcast.emit('n-message', msg.nick + 'dołączył/-a do gry');
-		socket.emit('n-message', 'Dołączyłeś/aś do gry');
+		socket.broadcast.emit('n-message', msg.nick + ' dołączył/-a do gry');
+		socket.emit('n-message', 'Dołączyłeś/-aś do gry');
 
 		console.log('ID: ' + socket.id);
 
@@ -79,9 +79,9 @@ io.on('connection', function(socket) {
 					players[socket.id].kills += players[i].kills;
 					players[socket.id].deaths += players[i].deaths;
 					try {
-						io.socket[i].disconnect();
+						io.sockets.connected[i].disconnect();
 					} catch (err) {
-						console.log(err);
+						console.log(err, 'disconnect');
 					}
 					delete players[i];
 					delete tank.list[i];
