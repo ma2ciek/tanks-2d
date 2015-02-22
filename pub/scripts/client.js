@@ -85,7 +85,7 @@ var game = {
 		board.HEIGHT = board.HEIGHT || m.height;
 		window.map = m.map;
 		if (!game.timerId) {
-			game.draw();
+			setTimeout(game.draw, 100);
 		}
 	},
 	draw: function() { // główna pętla gry

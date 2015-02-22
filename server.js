@@ -44,8 +44,11 @@ io.on('connection', function(socket) {
 		if (tank.list[socket.id]) {
 			io.emit('n-message', tank.list[socket.id].nick + ' się rozłączył/-a');
 		}
-		if (!delete tank.list[socket.id]) {
-			console.log('ERROR - nie można usunąć czołgu');
+		try {
+			delete tank.list[socket.id];
+		}
+		catch (err) {
+			console.log(err, id);
 		}
 	});
 
@@ -76,7 +79,7 @@ io.on('connection', function(socket) {
 					players[socket.id].kills += players[i].kills;
 					players[socket.id].deaths += players[i].deaths;
 					try {
-						io.socket[i].disconnect
+						io.socket[i].disconnect();
 					} catch (err) {
 						console.log(err);
 					}
