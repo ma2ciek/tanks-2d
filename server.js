@@ -127,7 +127,7 @@ io.on('connection', function(socket) {
 					tank.list[id].mPosY = msg[i];
 					break;
 				case 'ability':
-					tank.ab(id, msg[i]);
+					setTimeout(tank.ab, 0, id, msg[i]);
 					break;
 				case 'dirX':
 					tank.list[id].dirX = msg[i];

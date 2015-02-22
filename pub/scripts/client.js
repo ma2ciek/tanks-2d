@@ -180,7 +180,9 @@ var game = {
 			} else {
 				board.clear();
 				game.timerId = null;
-				setTimeout(function(){socket.emit('reborn')}, 1000);
+				setTimeout(function() {
+					socket.emit('reborn')
+				}, 1000);
 				return;
 			}
 		} else console.error("Nie otrzymano pakietu danych", new Date());
@@ -554,11 +556,11 @@ var tank = {
 				ctx.stroke();
 				ctx.closePath();
 
-				if(player.id != i) {
+				if (player.id != i) {
 					ctx.font = "13px Arial";
 					ctx.textAlign = "center";
 					ctx.fillStyle = 'white'
-					ctx.fillText(game.msg1.tank[i].nick, wsp.x, wsp.y-30);
+					ctx.fillText(game.msg1.tank[i].nick, wsp.x, wsp.y - 30);
 				}
 			}
 		}
@@ -658,11 +660,18 @@ function game_events() {
 
 	window.addEventListener('contextmenu', function(evt) {
 		evt.preventDefault();
-		if (evt.target.nodeName == 'CANVAS')
+		if (evt.target.nodeName == 'CANVAS') {
+			var rect = act_canvas.getBoundingClientRect();
+			player.mx = evt.clientX - rect.left;
+			player.my = evt.clientY - rect.top;
 			tank.ab(player.active_ability);
+		}
 	})
 	act_canvas.addEventListener('click', function(evt) {
 		if (player.exist) {
+			var rect = act_canvas.getBoundingClientRect();
+			player.mx = evt.clientX - rect.left;
+			player.my = evt.clientY - rect.top;
 			tank.ab('shot');
 		}
 	});
@@ -678,7 +687,7 @@ function game_events() {
 	$('#exit_settings').click(settings.close);
 	$('#ppm').click(game.switch_weapons);
 
-	if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+	if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
 		window.addEventListener('touchstart', phone.touchstart, false);
 		window.addEventListener('touchmove', phone.touchmove, false);
 		window.addEventListener('touchend', phone.touchend, false);
@@ -697,14 +706,14 @@ var phone = {
 		joystick.actual_pos = {
 			x: evt.targetTouches[0].clientX,
 			y: evt.targetTouches[0].clientY
-		}
+		};
 		//joystick.create_vector();
 		var x = joystick.dir().x;
 		var y = joystick.dir().y;
-		if(x != player.dirX || y != player.dirY) {
+		if (x != player.dirX || y != player.dirY) {
 			socket.emit('client-event', {
 				dirX: x,
-				dirY: y
+				dirY: y,
 			});
 			player.dirX = x;
 			player.dirY = y;

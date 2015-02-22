@@ -30,7 +30,7 @@ html(lang='pl')
 		div#main
 			form(action="javascript:play()")
 				div#play Play as
-					input.nick(placeholder="Your nick", pattern="[0-9A-Za-z]*", required="required")
+					input.nick(placeholder="Your nick", pattern="[0-9A-Za-z]{4,15}", required="required")
 					button.big.positive(type='submit') Play
 			a.button.big(href='/tutorial') Tutorial
 			a.button.big(href='/settings') Settings
