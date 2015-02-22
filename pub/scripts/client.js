@@ -21,7 +21,6 @@ window.setInterval(function() {
 	socket.emit('game-ping', Date.now());
 }, 1000);
 
-
 window.addEventListener('load', function load() {
 	canvas = $('#game')[0];
 	ctx = canvas.getContext('2d');
@@ -677,9 +676,73 @@ function game_events() {
 	$('img.settings').click(settings.open);
 	$('img.chat').click(chat.show);
 	$('#exit_settings').click(settings.close);
+	$('#ppm').click(game.switch_weapons);
 
+	if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+		window.addEventListener('touchstart', phone.touchstart, false);
+		window.addEventListener('touchmove', phone.touchmove, false);
+		window.addEventListener('touchend', phone.touchend, false);
+		window.addEventListener('touchcancel', phone.touchcacel, false);
+	}
 }
 
+var phone = {
+	touchstart: function(evt) {
+		joystick.start_pos = {
+			x: evt.touches[0].clientX,
+			y: evt.touches[0].clientY
+		}
+	},
+	touchmove: function(evt) {
+		joystick.actual_pos = {
+			x: evt.targetTouches[0].clientX,
+			y: evt.targetTouches[0].clientY
+		}
+		//joystick.create_vector();
+		var x = joystick.dir().x;
+		var y = joystick.dir().y;
+		if(x != player.dirX || y != player.dirY) {
+			socket.emit('client-event', {
+				dirX: x,
+				dirY: y
+			});
+			player.dirX = x;
+			player.dirY = y;
+		}
+	},
+	touchend: function(evt) {
+		player.dirX = 0;
+		player.dirY = 0;
+		socket.emit('client-event', {
+			dirX: 0,
+			dirY: 0
+		});
+	},
+	touchcancel: function(evt) {
+		player.dirX = 0;
+		player.dirY = 0;
+		socket.emit('client-event', {
+			dirX: 0,
+			dirY: 0
+		});
+	},
+}
+var joystick = {
+	start_pos: {},
+	actual_pos: {},
+	diff: function() {
+		return {
+			x: this.actual_pos.x - this.start_pos.x,
+			y: this.actual_pos.y - this.start_pos.y
+		}
+	},
+	dir: function() {
+		return {
+			x: Math.sign(Math.round(this.diff().x / 100)),
+			y: Math.sign(Math.round(this.diff().y / 100)),
+		}
+	}
+}
 var bullets = {
 	draw: function() {
 		for (var i in game.msg1.bullets) {
