@@ -29,7 +29,7 @@ window.addEventListener('load', function load() {
 	settings.load();
 	socket_handlers();
 	game_events();
-
+	game.display_right_ab();
 	board.adjust();
 	game.play();
 });
@@ -51,7 +51,7 @@ var game = {
 	get_ping: function(msg) {
 		game.ping2.addState(Date.now() - parseInt(msg));
 	},
-	play: function() {
+	play: function() { // start lub kontynuacja gry
 		var msg = JSON.stringify({
 			SCREEN_HEIGHT: player.SCREEN_HEIGHT,
 			SCREEN_WIDTH: player.SCREEN_WIDTH
@@ -59,10 +59,10 @@ var game = {
 		socket.emit('join-game', msg);
 		if (!game.timerId) setTimeout(game.draw, 1000);
 	},
-	update: function(msg) {
+	update: function(msg) { // Odbieranie pakietów
 		var msg = JSON.parse(msg);
 
-		game.ping.addState(Date.now() - msg.date);
+		game.ping.addState(Date.now() - msg.timestamp);
 
 		if (msg.nr > game.package_nr) {
 			game.package_nr = msg.nr;
@@ -73,13 +73,13 @@ var game = {
 
 		}
 	},
-	draw: function() {
+	draw: function() { // główna pętla gry
 
 		var t = Date.now() - (game.delay + game.ping.av());
 		game.frame_time = t;
 
 		for (var i = 0; i < packages.length; i++) {
-			if (t > packages[i].date) break;
+			if (t > packages[i].timestamp) break;
 		}
 		game.ts_id = i;
 		// czas t pomiędzy i-1 oraz i
@@ -95,6 +95,7 @@ var game = {
 
 				player.pos();
 				board.draw_background();
+				board.draw_sp_objects();
 				game.log.addState(); // 0
 
 				board.draw();
@@ -113,12 +114,16 @@ var game = {
 					player.life = m.tank[player.id].life;
 					draw++;
 				}
-				if (m.tank[player.id].nuke != player.nuke) {
-					player.nuke = m.tank[player.id].nuke
+				if (m.tank[player.id].ab.nuke != player.ab.nuke) {
+					player.ab.nuke = m.tank[player.id].ab.nuke
 					draw++;
 				}
-				if (m.tank[player.id].shot != player.shot) {
-					player.shot = m.tank[player.id].shot;
+				if (m.tank[player.id].ab.shot != player.ab.shot) {
+					player.ab.shot = m.tank[player.id].ab.shot;
+					draw++;
+				}
+				if (m.tank[player.id].ab.tar_keg != player.ab.tar_keg) {
+					player.ab.tar_keg = m.tank[player.id].ab.tar_keg;
 					draw++;
 				}
 				if (draw != 0) board.draw_icons();
@@ -146,7 +151,7 @@ var game = {
 
 				game.log.addState(); // 5
 
-				game.check_res_changes();
+				game.res_changes.check();
 
 				game.fps.count();
 				game.info();
@@ -234,10 +239,9 @@ var game = {
 	},
 	interp: function(A, C) { // Interpolacja
 		// Zwraca wartość środkowej wartości
-		// Ta & Tc - packages 
-		// Tb - Animation time
-		// A & C - Wartości odpowiadające Ta & Tc
-		return (C * (game.msg1.date - game.frame_time) + A * (game.frame_time - game.msg2.date)) / (game.msg1.date - game.msg2.date);
+		// A & C - Wartości odpowiadające msg1 & msg2
+		if (A != C) return (C * (game.msg1.timestamp - game.frame_time) + A * (game.frame_time - game.msg2.timestamp)) / (game.msg1.timestamp - game.msg2.timestamp);
+		else return A;
 	},
 	play_sound: function(msg) {
 
@@ -268,38 +272,61 @@ var game = {
 			game.log.time = Date.now()
 		}
 	},
-	check_res_changes: function() {
-		var t1 = game.msg1.tank;
-		var t2 = game.msg2.tank;
-		if (!game.msg1.res_checked) {
-			if (t1[player.id].shot > t2[player.id].shot) {
-				game.res_change_animate('You receive ' + (t1[player.id].shot - t2[player.id].shot) + ' bullets');
+	res_changes: {
+		check: function() {
+			var t1 = game.msg1.tank[player.id];
+			var t2 = game.msg2.tank[player.id];
+			if (!game.msg1.res_checked) {
+				if (t1.ab.shot > t2.ab.shot) {
+					this.animate('You receive ' + (t1.ab.shot - t2.ab.shot) + ' bullets');
+				}
+				if (t1.ab.nuke > t2.ab.nuke) {
+					this.animate('You receive ' + (t1.ab.nuke - t2.ab.nuke) + ' nukes');
+				}
+				if (t1.life > t2.life) {
+					this.animate('You heal ' + (t1.life - t2.life) + ' damage');
+				}
+				if (!!t1.auras.sb > !!t2.auras.sb) {
+					this.animate('You gain speed bust');
+				}
+				if (t1.ab.tar_keg > t2.ab.tar_keg) {
+					this.animate('You receive ' + (t1.ab.tar_keg - t2.ab.tar_keg) + ' tar kegs');
+				}
+				game.msg1.res_checked = true;
 			}
-			if (t1[player.id].nuke > t2[player.id].nuke) {
-				game.res_change_animate('You receive ' + (t1[player.id].nuke - t2[player.id].nuke) + ' explosions');
-			}
-			if (t1[player.id].life > t2[player.id].life) {
-				game.res_change_animate('You heal ' + (t1[player.id].life - t2[player.id].life) + ' damage');
-			}
-			if (!!t1[player.id].auras.sb > !!t2[player.id].auras.sb) {
-				game.res_change_animate('You gain speed bust');
-			}
-			game.msg1.res_checked = true;
+		},
+		animate: function(text) {
+			$('.game_msg:hidden').remove();
+			$('.game_msg').css('top', '+=20');
+			$('#main').append('<div class="game_msg"></div>');
+			$('.game_msg:last-child')
+				.text(text)
+				.animate({
+					left: player.SCREEN_WIDTH / 2 - $('.game_msg:last-child').width() / 2,
+					top: player.SCREEN_HEIGHT / 2 - $('.game_msg:last-child').height() / 2 + 30,
+				}, 0)
+				.delay(2000)
+				.fadeOut('1000')
+			return $('.game_msg:last-child');
 		}
 	},
-	res_change_animate: function(text) {
-		$('.game_msg:hidden').remove();
-		$('.game_msg').css('top', '+=20');
-		$('#main').append('<div class="game_msg"></div>');
-		$('.game_msg:last-child')
-			.text(text)
-			.animate({
-				left: player.SCREEN_WIDTH / 2 - $('.game_msg:last-child').width() / 2,
-				top: player.SCREEN_HEIGHT / 2 - $('.game_msg:last-child').height() / 2 + 30,
-			}, 0)
-			.delay(2000)
-			.fadeOut('1000')
-		return $('.game_msg:last-child');
+	switch_weapons: function() {
+		var ab = null;
+		var found = false;
+		var first = null;
+		for (var i in player.ab) {
+			if (player.ab.hasOwnProperty(i) && player.ab[i] != 0 && i != 'shot') {
+				if (!first) first = i;
+				if (found) ab = i;
+				if (i == player.active_ability) found = 1;
+			}
+		}
+		player.active_ability = ab || first;
+		game.display_right_ab();
+	},
+	display_right_ab: function() {
+		$('#ppm').css('background-image', 'url("' + abilities[player.active_ability].img.src + '")');
+		if (game.msg1) $('#ppm .amount').text(game.msg1.tank[player.id].ab[player.active_ability]);
 	}
 }
 
@@ -310,11 +337,13 @@ var player = {
 	x: null,
 	y: null,
 	exist: 0,
-	angle: 0, // kąt lufy
+	angle: 0, // kąt lufy - do dodania
 	pos: function() {
 		player.x = game.interp(game.msg1.tank[player.id].x, game.msg2.tank[player.id].x);
 		player.y = game.interp(game.msg1.tank[player.id].y, game.msg2.tank[player.id].y);
-	}
+	},
+	ab: {},
+	active_ability: 'nuke'
 }
 
 var board = {
@@ -330,6 +359,33 @@ var board = {
 		ctx.fillRect(x1, y1, x2, y2);
 		ctx.fill();
 		ctx.closePath();
+	},
+	draw_sp_objects: function() {
+		for (var i in game.msg1.sp_objects) {
+			if (i in game.msg2.sp_objects) {
+				switch (game.msg2.sp_objects[i].kind) {
+					case 'dark_spot':
+						var ob1 = game.msg1.sp_objects[i];
+						var ob2 = game.msg2.sp_objects[i];
+
+						var x = game.interp(ob1.x, ob2.x);
+						var y = game.interp(ob1.y, ob2.y);
+						var r = game.interp(ob1.r, ob2.r);
+						var op = game.interp(ob1.op, ob2.op);
+						var wsp = game.rel(x, y);
+
+						ctx.beginPath();
+						ctx.fillStyle = 'rgba(0, 0, 0, ' + op + ')';
+						ctx.beginPath();
+						ctx.arc(wsp.x, wsp.y, r, 0, 2 * Math.PI);
+						ctx.fill();
+						ctx.closePath();
+						break;
+					default:
+						console.error('Dziwny obiekt');
+				}
+			}
+		}
 	},
 	draw_icons: function() {
 
@@ -355,39 +411,9 @@ var board = {
 		act_ctx.font = "15px Arial";
 		act_ctx.fillText(game.msg1.tank[player.id].life + ' / 100', 60, player.SCREEN_HEIGHT - 45);
 
-		// BULLETS
-		act_ctx.beginPath();
-		act_ctx.strokeStyle = '#AA0';
-		act_ctx.lineWidth = 2;
-		act_ctx.roundRect(120, player.SCREEN_HEIGHT - 70, 60, 60, 10);
-		act_ctx.stroke();
-		act_ctx.closePath();
-
-		act_ctx.drawImage(abilities.shot.img, 0, 0, 199, 100, 95, player.SCREEN_HEIGHT - 65, 100, 50);
-		act_ctx.fillStyle = 'white';
-		act_ctx.font = "10px Arial";
-		act_ctx.textAlign = "center";
-		act_ctx.fillText('LPM', 150, player.SCREEN_HEIGHT - 74);
-		act_ctx.font = "13px Arial";
-		act_ctx.textAlign = "right";
-		act_ctx.fillText(game.msg1.tank[player.id].shot, 175, player.SCREEN_HEIGHT - 15);
-
-		//NUKE 
-		act_ctx.beginPath();
-		act_ctx.strokeStyle = '#AA0';
-		act_ctx.lineWidth = 2;
-		act_ctx.roundRect(200, player.SCREEN_HEIGHT - 70, 60, 60, 10);
-		act_ctx.stroke();
-		act_ctx.closePath();
-
-		act_ctx.drawImage(abilities.nuke.img, 0, 0, 111, 134, 205, player.SCREEN_HEIGHT - 65, 45, 50);
-		act_ctx.fillStyle = 'white';
-		act_ctx.font = "10px Arial";
-		act_ctx.textAlign = "center";
-		act_ctx.fillText('PPM', 230, player.SCREEN_HEIGHT - 74);
-		act_ctx.font = "13px Arial";
-		act_ctx.textAlign = "right";
-		act_ctx.fillText(game.msg1.tank[player.id].nuke, 255, player.SCREEN_HEIGHT - 15);
+		// Abilities
+		$('#lpm .amount').text(game.msg1.tank[player.id].ab.shot)
+		$('#ppm .amount').text(game.msg1.tank[player.id].ab[player.active_ability]);
 	},
 	draw_animations: function() {
 		for (var i = 0; i < game.animations.length; i++) {
@@ -449,7 +475,7 @@ var board = {
 
 var tank = {
 	ab: function(ability) {
-		if (game.msg1.tank[player.id][ability] > 0) {
+		if (game.msg1.tank[player.id].ab[ability] > 0) {
 			socket.emit('client-event', {
 				ability: ability,
 				mx: player.mx,
@@ -533,6 +559,7 @@ function game_events() {
 			switch (evt.which) {
 				case 9:
 					evt.preventDefault();
+					game.switch_weapons();
 					break;
 				case 13: // Enter - czat
 					chat.show();
@@ -614,10 +641,10 @@ function game_events() {
 	window.addEventListener('contextmenu', function(evt) {
 		evt.preventDefault();
 		if (evt.target.nodeName == 'CANVAS')
-			tank.ab('nuke');
+			tank.ab(player.active_ability);
 	})
 	act_canvas.addEventListener('click', function(evt) {
-		if(player.exist) {
+		if (player.exist) {
 			tank.ab('shot');
 		}
 	});
@@ -642,7 +669,7 @@ function game_events() {
 var bullets = {
 	draw: function() {
 		for (var i in game.msg1.bullets) {
-			if (game.msg1.bullets[i] && game.msg2.bullets[i]) { // trzeba zamienić na identyfikatory!!!
+			if (game.msg1.bullets[i] && game.msg2.bullets[i]) {
 				var x = game.interp(game.msg1.bullets[i].x, game.msg2.bullets[i].x);
 				var y = game.interp(game.msg1.bullets[i].y, game.msg2.bullets[i].y);
 				var r = 5;
@@ -674,12 +701,11 @@ var resources = {
 };
 
 
-// DO ZROBIENIA!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 var abilities = {
 	nuke: {
 		img: (function() {
 			var img = new Image();
-			img.src = './img/nuke.png';
+			img.src = './img/radio_active.png';
 			return img;
 		})(),
 		audio: (function() {
@@ -696,7 +722,7 @@ var abilities = {
 	shot: {
 		img: (function() {
 			var img = new Image();
-			img.src = './img/bullet.png';
+			img.src = './img/ammo.png';
 			return img;
 		})(),
 		audio: (function() {
@@ -704,6 +730,13 @@ var abilities = {
 			a.load();
 			return a;
 		})()
+	},
+	tar_keg: {
+		img: (function() {
+			var img = new Image();
+			img.src = './img/tar_keg.png';
+			return img;
+		})(),
 	}
 }
 
@@ -833,13 +866,13 @@ Sprite.prototype.render = function() {
 
 var matrix = {
 	id: null,
-	speed: 60 / 1000,
+	speed: 60,
 	init: function() {
-		this.id = setInterval(function() {
-			console.log(game.mid_times.join(' '))
-		}, 1000 / this.speed);
+		clearTimeout(this.id);
+		console.log(game.mid_times.join(' '))
+		this.id = setTimeout(matrix.init, 1000 / matrix.speed);
 	},
 	end: function() {
-		clearInterval(this.id);
+		clearTimeout(this.id);
 	}
 }

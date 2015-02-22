@@ -65,9 +65,9 @@ io.on('connection', function(socket) {
 	players[socket.id].kills = 0;
 	players[socket.id].deaths = 0
 
-	if(socket.handshake.address) {
+	if (socket.handshake.address) {
 		for (var i in players) {
-			if (players[i].ip ==  socket.client.conn.remoteAddress) {
+			if (players[i].ip == socket.client.conn.remoteAddress) {
 				players[socket.id].kills += players[i].kills;
 				players[socket.id].deaths += players[i].deaths;
 				delete players[i];
@@ -75,10 +75,10 @@ io.on('connection', function(socket) {
 			}
 		}
 		players[socket.id].ip = socket.client.conn.remoteAddress;
-	} 
+	}
 
 	socket.on('join-game', function(msg) {
-		if(players[socket.id]) {
+		if (players[socket.id]) {
 			players[socket.id].SCREEN_WIDTH = JSON.parse(msg).SCREEN_WIDTH;
 			players[socket.id].SCREEN_HEIGHT = JSON.parse(msg).SCREEN_HEIGHT;
 
@@ -159,21 +159,7 @@ setInterval(function() {
 	io.emit('clients', io.engine.clientsCount);
 }, 1000);
 
-setInterval(function() { // creating resources
-	var chances = [0, 0, 0.4, 0.2, 0.3, 0.1];
-	var x = losuj(0, map.av_places.length);
-	if (map.layers[1].data[map.av_places[x]] == 0) {
-
-		var rand = Math.random();
-		for (var i = 0; i < chances.length; i++) {
-			if (rand > chances[i]) rand -= chances[i];
-			else break;
-		}
-
-		map.layers[1].data[map.av_places[x]] = i;
-		map.changes.push([map.av_places[x], i]);
-	}
-}, 20000); // co 20s
+setInterval(game.creating_resources, 20000, map, losuj);
 
 var speed = 40;
 
@@ -184,6 +170,7 @@ function mainLoop() {
 		var time = Date.now();
 		tank.move();
 		bullets.move();
+		sp_objects.animate();
 		game.latency = Date.now() - time;
 		send_data();
 	}
@@ -193,12 +180,13 @@ function send_data() {
 	var res = JSON.stringify({
 		tank: tank.list,
 		bullets: bullets.list,
-		date: Date.now(),
-		nr: ++game.package_nr,
 		map_changes: map.changes,
+		sp_objects: sp_objects.list,
 		sounds: game.sounds,
 		animations: game.animations,
-		server_latency: game.latency
+		server_latency: game.latency,
+		timestamp: Date.now(),
+		nr: ++game.package_nr,
 	});
 	io.emit('game-update', res);
 	map.changes.length = 0;
@@ -230,25 +218,27 @@ var tank = {
 		this.my = 0;
 		this.posX = 0;
 		this.posY = 0;
-		this.shot = 100;
-		this.nuke = 3;
 		this.kills = players[id].kills;
 		this.deaths = players[id].deaths;
 		this.Vx = 0;
 		this.Vy = 0;
 		this.auras = {}
+		this.ab = {
+			tar_keg: 1,
+			nuke: 3,
+			shot: 100
+		}
 	},
 	ab: function(id, ability) {
-		if (tank.list[id][ability] > 0) {
+		if (tank.list[id].ab[ability] > 0) {
 			var t = tank.list[id];
+			t.ab[ability] --;
 			switch (ability) {
 				case 'shot':
 					bullets.create(id);
-					tank.list[id].shot--;
 					game.sounds.push(ability);
 					break;
 				case 'nuke':
-					t.nuke--;
 					setTimeout(function(t, mx, my, id) {
 						var tile = map.get_id(mx, my);
 						if (map.layers[1].data[tile] == 1) {
@@ -265,8 +255,7 @@ var tank = {
 										t.kills++;
 										players[id].kills++;
 										players[i].deaths++;
-									}
-									else {
+									} else {
 										players[i].deaths++;
 									}
 								}
@@ -280,8 +269,10 @@ var tank = {
 						});
 					}, 500, t, t.mx, t.my, id);
 					break;
+				case 'tar_keg':
+					sp_objects.create('dark_spot', t.mx, t.my);
+					break;
 			}
-
 		}
 	},
 	create: function(id) {
@@ -299,7 +290,7 @@ var tank = {
 			var x = t.x;
 			var y = t.y;
 
-		
+
 
 			var dx = t.dirX;
 			var dy = t.dirY;
@@ -309,14 +300,28 @@ var tank = {
 				y: t.y
 			};
 
-			var speed = t.speed;	
+			// SPEED: 
+
+			var speed = t.speed;
 			if (t.auras.sb) {
 				if (Date.now() < t.auras.sb.timeout) {
 					speed *= 1.5;
 				} else delete t.auras.sb;
 			}
-			if(map.layers[0].data[map.get_id(x, y)] != 0) speed /= 1.3;
+			if (map.layers[0].data[map.get_id(x, y)] != 0) speed /= 1.3;
 			if (dx != 0 && dy != 0) speed /= 1.4;
+
+			var max_op = 0;
+			for (var i in sp_objects.list) {
+				var ob = sp_objects.list[i];
+
+				if (ob.kind = 'dark_spot') {
+					if (col.circle(ob.x - x, ob.y - y, ob.r + r)) {
+						max_op = Math.max(max_op, ob.op);
+					}
+				}
+			}
+			speed *= ((2 - max_op) / 2)
 
 			speed = Math.round(speed);
 
@@ -389,13 +394,13 @@ var tank = {
 									}
 								}
 								break;
-							case 2: 
-								t.shot += losuj(5, 20);
+							case 2:
+								t.ab.shot += losuj(5, 20);
 								d[tile] = 0;
 								map.changes.push([tile, 0]);
 								break;
 							case 3:
-								t.nuke += losuj(1, 5);
+								t.ab.nuke += losuj(1, 5);
 								d[tile] = 0;
 								map.changes.push([tile, 0]);
 								break;
@@ -410,6 +415,11 @@ var tank = {
 								t.auras.sb = {
 									timeout: Date.now() + 10000,
 								}
+								d[tile] = 0;
+								map.changes.push([tile, 0]);
+								break;
+							case 6:
+								t.ab.tar_keg += losuj(1, 3);
 								d[tile] = 0;
 								map.changes.push([tile, 0]);
 								break;
@@ -437,7 +447,7 @@ var tank = {
 }
 
 var bullets = {
-	max_id: 0,
+	index: 0,
 	list: {},
 	move: function() {
 		for (var i in bullets.list) {
@@ -446,7 +456,7 @@ var bullets = {
 				delete bullets.list[i];
 				continue;
 			}
-			
+
 			b.x += b.sx * b.speed;
 			b.y += b.sy * b.speed;
 
@@ -499,7 +509,57 @@ var bullets = {
 		this.speed = Math.floor(1000 / speed);
 	},
 	create: function(id) {
-		var id2 = 'id_' + (++bullets.max_id);
+		var id2 = 'id_' + (++bullets.index);
 		bullets.list[id2] = new bullets.proto(id, id2);
 	},
+}
+
+
+var sp_objects = {
+	index: 0,
+	list: {},
+	animate: function() {
+		for (var i in this.list) {
+			var o = this.list[i];
+			switch (o.kind) {
+				case 'dark_spot':
+					var d = Date.now();
+					if (d - o.creation_time < o.t1) { // grow up
+						o.r = Math.round((d - o.creation_time) / o.t1 * o.max_r);
+					} else if (d - o.creation_time < o.t2)
+						o.r = o.max_r;
+					else if (d - o.creation_time < o.t3) {
+						o.op = parseFloat(((o.t3 - d + o.creation_time) / (o.t3 - o.t2)).toFixed(2));
+					} else {
+						-o.creation_tim
+						delete this.list[i];
+					}
+					break;
+				default:
+					console.error('Dziwny typ obiektu');
+			}
+
+		}
+	},
+	proto: function(kind, x, y) {
+		this.kind = kind;
+		this.x = x;
+		this.y = y;
+		switch (this.kind) {
+			case 'dark_spot':
+				this.r = 0;
+				this.op = 1;
+				this.creation_time = Date.now();
+				this.t1 = 500;
+				this.t2 = 6000;
+				this.t3 = 8000;
+				this.max_r = 100;
+				break;
+			default:
+				console.error('Dziwny typ obiektu');
+		}
+	},
+	create: function(kind, x, y) {
+		this.list['id_' + ++this.index] = new this.proto(kind, x, y);
+	}
 }
