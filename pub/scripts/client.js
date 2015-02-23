@@ -15,6 +15,7 @@ function socket_handlers() {
 	socket.on('join', game.join);
 	socket.on('game-ping', game.get_ping);
 	socket.on('get-players', game.get_players);
+	socket.on('map', game.get_map);
 }
 
 window.setInterval(function() {
@@ -60,7 +61,7 @@ var game = {
 	update: function(msg) { // Odbieranie pakietów
 		var msg = JSON.parse(msg);
 
-		game.ping.addState(Date.now() - msg.timestamp);
+		game.ping.addState(Date.now() - msg.ts);
 
 		if (msg.nr > game.package_nr) {
 			game.package_nr = msg.nr;
@@ -77,6 +78,9 @@ var game = {
 	},
 	join: function(msg) {
 		player.id = socket.id;
+
+
+
 		var m = JSON.parse(msg)
 		board.WIDTH = board.WIDTH || m.width;
 		board.HEIGHT = board.HEIGHT || m.height;
@@ -90,15 +94,23 @@ var game = {
 		game.frame_time = t;
 
 		for (var i = 0; i < packages.length; i++) {
-			if (t > packages[i].timestamp) break;
+			if (t > packages[i].ts) break;
 		}
 		game.ts_id = i;
 
-		map = packages[0].map;
+		if (packages.length > 0) {
+			if (packages[0].mc.length !== 0) {
+				for (var j = 0; j < packages[0].mc.length; j++) {
+					map.layers[1].data[packages[0].mc[j][0]] = packages[0].mc[j][1];
+				}
+			}
+		}
+
 		// czas t pomiędzy i-1 oraz i
 		if (i < 21 && i >= 1) {
 
-			if (player.id in packages[i].tank && player.id in packages[i - 1].tank) {
+			if (player.id in packages[i].t && player.id in packages[i - 1].t) {
+
 				player.exist = 1;
 
 				var m = game.msg1 = packages[i - 1];
@@ -125,28 +137,28 @@ var game = {
 
 				var draw = 0;
 
-				if (m.tank[player.id].life != player.life) {
-					player.life = m.tank[player.id].life;
+				if (m.t[player.id].life != player.life) {
+					player.life = m.t[player.id].life;
 					draw++;
 				}
-				if (m.tank[player.id].ab.nuke != player.ab.nuke) {
-					player.ab.nuke = m.tank[player.id].ab.nuke;
+				if (m.t[player.id].ab.nuke != player.ab.nuke) {
+					player.ab.nuke = m.t[player.id].ab.nuke;
 					draw++;
 				}
-				if (m.tank[player.id].ab.shot != player.ab.shot) {
-					player.ab.shot = m.tank[player.id].ab.shot;
+				if (m.t[player.id].ab.shot != player.ab.shot) {
+					player.ab.shot = m.t[player.id].ab.shot;
 					draw++;
 				}
-				if (m.tank[player.id].ab.tar_keg != player.ab.tar_keg) {
-					player.ab.tar_keg = m.tank[player.id].ab.tar_keg;
+				if (m.t[player.id].ab.tar_keg != player.ab.tar_keg) {
+					player.ab.tar_keg = m.t[player.id].ab.tar_keg;
 					draw++;
 				}
 				if (draw != 0) board.draw_icons();
 				game.log.addState(); // 4
 
 				var actions = {
-					animations: game.animate,
-					murders: chat.murders
+					a: game.animate,
+					m: chat.murders
 				};
 
 				for(var j in actions) {
@@ -155,27 +167,7 @@ var game = {
 					}
 					m[j].length = 0; // zapobiega ponownemu odtowrzeniu, gdy nie ma nowego pakietu danych
 				}
-				/*
-				if (m.sounds.length !== 0) {
-					for (var j = 0; j < m.sounds.length; j++) {
-						game.play_sound(m.sounds[j]);
-					}
-					m.sounds.length = 0; //zapobiega ponownemu odtworzeniu pliku, gdy nie ma nowego pakietu danych
-				}
-
-				if (m.animations.length !== 0) {
-					for (var j = 0; j < m.animations.length; j++) {
-						game.animate(m.animations[j]);
-					}
-					m.animations.length = 0; //zapobiega ponownej animacji, gdy nie ma nowego pakietu danych
-				}
-
-				if (m.murders.length !== 0) {
-					for (var j = 0; j < m.murders.length; j++) {
-						game.animate(m.animations[j]);
-					}
-				}
-				*/
+				
 				game.log.addState(); // 5
 
 				game.res_changes.check();
@@ -256,17 +248,16 @@ var game = {
 		ctx.fillStyle = 'white'
 		ctx.fillText('FPS: ' + game.fps.av(), 15, 15);
 		ctx.fillText('PING ' + game.ping2.av(), 15, 30);
-		// ctx.fillText('SL: ' + game.msg1.server_latency, 15, 30);
 
 		ctx.font = "13px Arial";
-		ctx.fillText('KILLS: ' + game.msg1.tank[player.id].kills, 90, 15);
-		ctx.fillText('DEATHS: ' + game.msg1.tank[player.id].deaths, 170, 15);
-		$('#clients').text('Online: ' + Object.keys(packages[0].tank).length);
+		ctx.fillText('KILLS: ' + game.msg1.t[player.id].kills, 90, 15);
+		ctx.fillText('DEATHS: ' + game.msg1.t[player.id].deaths, 170, 15);
+		$('#clients').text('Online: ' + Object.keys(packages[0].t).length);
 	},
 	interp: function(A, C) { // Interpolacja
 		// Zwraca wartość środkowej wartości
 		// A & C - Wartości odpowiadające msg1 & msg2
-		if (A != C) return (C * (game.msg1.timestamp - game.frame_time) + A * (game.frame_time - game.msg2.timestamp)) / (game.msg1.timestamp - game.msg2.timestamp);
+		if (A != C) return (C * (game.msg1.ts - game.frame_time) + A * (game.frame_time - game.msg2.ts)) / (game.msg1.ts - game.msg2.ts);
 		else return A;
 	},
 	animate: function(msg) {
@@ -295,8 +286,8 @@ var game = {
 	},
 	res_changes: {
 		check: function() {
-			var t1 = game.msg1.tank[player.id];
-			var t2 = game.msg2.tank[player.id];
+			var t1 = game.msg1.t[player.id];
+			var t2 = game.msg2.t[player.id];
 			if (!game.msg1.res_checked) {
 				if (t1.ab.shot.amount > t2.ab.shot.amount) {
 					this.animate('You received ' + (t1.ab.shot.amount - t2.ab.shot.amount) + ' bullets');
@@ -361,7 +352,7 @@ var game = {
 	},
 	display_right_ab: function() {
 		$('#ppm').css('background-image', 'url("' + abilities[player.active_ability].img.src + '")');
-		if (game.msg1) $('#ppm .amount').text(game.msg1.tank[player.id].ab[player.active_ability].amount);
+		if (game.msg1) $('#ppm .amount').text(game.msg1.t[player.id].ab[player.active_ability].amount);
 	},
 	get_players: function(msg) {
 		console.log(JSON.parse(msg));
@@ -385,8 +376,30 @@ var game = {
 	},
 	remove_ab_info: function() {
 		$('.opis').remove();
+	},
+	get_map: function(msg) {
+		if(map) map.layers[1].data = msg.split('');
 	}
 
+}
+
+var debug = {
+	pl: function() { 
+		console.log(JSON.stringify(packages[0]).length);
+	},
+	fps: function() {
+
+	},
+	ping: function() {
+
+	},
+
+	sl: function() {
+		return packages[0].sl;
+	},
+	logs: function() {
+
+	}	
 }
 
 var player = {
@@ -398,8 +411,8 @@ var player = {
 	exist: 0,
 	angle: 0, // kąt lufy - do dodania
 	pos: function() {
-		player.x = game.interp(game.msg1.tank[player.id].x, game.msg2.tank[player.id].x);
-		player.y = game.interp(game.msg1.tank[player.id].y, game.msg2.tank[player.id].y);
+		player.x = game.interp(game.msg1.t[player.id].x, game.msg2.t[player.id].x);
+		player.y = game.interp(game.msg1.t[player.id].y, game.msg2.t[player.id].y);
 	},
 	ab: {},
 	active_ability: 'nuke',
@@ -432,14 +445,14 @@ var board = {
 		ctx.fillText('Zostałeś zabity', player.SCREEN_WIDTH/2, player.SCREEN_HEIGHT/2);
 	},
 	draw_sp_objects: function() {
-		for (var i in game.msg1.sp_objects) {
-			if (i in game.msg2.sp_objects) {
-				var ob1 = game.msg1.sp_objects[i];
-				var ob2 = game.msg2.sp_objects[i];
+		for (var i in game.msg1.sp) {
+			if (i in game.msg2.sp) {
+				var ob1 = game.msg1.sp[i];
+				var ob2 = game.msg2.sp[i];
 				var x = game.interp(ob1.x, ob2.x);
 				var y = game.interp(ob1.y, ob2.y);
 				var wsp = game.rel(x, y);
-				switch (game.msg1.sp_objects[i].kind) {	
+				switch (game.msg1.sp[i].kind) {	
 						case 'dark-spot':				
 						var r = game.interp(ob1.r, ob2.r);
 						ctx.beginPath();
@@ -460,7 +473,7 @@ var board = {
 		}
 	},
 	draw_icons: function() {
-		var t = game.msg1.tank[player.id]
+		var t = game.msg1.t[player.id]
 
 		if(player.html.hp != t.life) {
 			$('#hp div').height(t.life /  t.max_life * 80);
@@ -539,7 +552,7 @@ var board = {
 
 var tank = {
 	ab: function(ability) {
-		if (game.msg1.tank[player.id].ab[ability].amount > 0) {
+		if (game.msg1.t[player.id].ab[ability].amount > 0) {
 			socket.emit('client-event', {
 				ability: ability,
 				mx: player.mx,
@@ -548,10 +561,10 @@ var tank = {
 		}
 	},
 	draw: function() {
-		for (var i in game.msg1.tank) {
-			if (i in game.msg2.tank) { // mógł zostać zabity
-				var t1 = game.msg1.tank[i];
-				var t2 = game.msg2.tank[i];
+		for (var i in game.msg1.t) {
+			if (i in game.msg2.t) { // mógł zostać zabity
+				var t1 = game.msg1.t[i];
+				var t2 = game.msg2.t[i];
 				var x = game.interp(t1.x, t2.x);
 				var y = game.interp(t1.y, t2.y);
 				var life = t1.life; 
@@ -747,10 +760,10 @@ function game_events() {
 
 var bullets = {
 	draw: function() {
-		for (var i in game.msg1.bullets) {
-			if (game.msg1.bullets[i] && game.msg2.bullets[i]) {
-				var x = game.interp(game.msg1.bullets[i].x, game.msg2.bullets[i].x);
-				var y = game.interp(game.msg1.bullets[i].y, game.msg2.bullets[i].y);
+		for (var i in game.msg1.b) {
+			if (game.msg1.b[i] && game.msg2.b[i]) {
+				var x = game.interp(game.msg1.b[i].x, game.msg2.b[i].x);
+				var y = game.interp(game.msg1.b[i].y, game.msg2.b[i].y);
 				var r = 5;
 				var wsp = game.rel(x, y);
 

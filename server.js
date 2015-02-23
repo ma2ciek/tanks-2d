@@ -160,6 +160,7 @@ map.get_pos = function(id) {
 		y: y
 	};
 };
+map.changes= [];
 map.av_places = [];
 map.boxes = [];
 
@@ -175,11 +176,14 @@ var board = {
 	HEIGHT: map.height * map.tileheight
 }
 
-setInterval(game.creating_resources, 20000, map, losuj);
+
 
 var speed = 40;
 
-var mainLoopTimer = setInterval(mainLoop, 1000 / speed);
+
+var mapreloadId = setInterval(uploadMap, 3000);
+var mainLoopId = setInterval(mainLoop, 1000 / speed);
+var resourceLoopId = setInterval(game.creating_resources, 20000, map, losuj);
 
 function mainLoop() {
 	if (io.engine.clientsCount > 0) {
@@ -192,21 +196,27 @@ function mainLoop() {
 	}
 }
 
+function uploadMap () {
+	var data = map.layers[1].data;
+	io.emit('map', data.join(''));
+}
+
+
+
 function send_data() {
 	var res = JSON.stringify({
-		tank: tank.list,
-		bullets: bullets.list,
-		map: map,
-		sp_objects: sp_objects.list,
-		sounds: game.sounds,
-		animations: game.animations,
-		server_latency: game.latency,
-		timestamp: Date.now(),
-		murders: game.murders,
+		t:  tank.list,
+		b:  bullets.export(),
+		mc: map.changes,
+		sp: sp_objects.list,
+		a:  game.animations,
+		sl: game.latency,
+		ts: Date.now(),
+		m:  game.murders,
 		nr: ++game.package_nr,
 	});
 	io.emit('game-update', res);
-	game.sounds.length = 0;
+	map.changes.length = 0;
 	game.animations.length = 0;
 	game.murders.length = 0;
 }
@@ -340,6 +350,7 @@ var tank = {
 						map.boxes[tile].life -= dmg;
 						if (map.boxes[tile].life <= 0) {
 							map.layers[1].data[tile] = 0; // usuwa box
+							map.changes.push([tile, 0]);
 						}
 					}
 				}
@@ -497,15 +508,18 @@ var tank = {
 							case 2:
 								t.ab.shot.amount += losuj(5, 20);
 								d[tile] = 0;
+								map.changes.push([tile, 0]);
 								break;
 							case 3:
 								t.ab.nuke.amount += losuj(1, 5);
 								d[tile] = 0;
+								map.changes.push([tile, 0]);
 								break;
 							case 4:
 								if (t.life < t.max_life) {
 									t.life = Math.min(t.max_life, t.life + 30);
 									d[tile] = 0;
+									map.changes.push([tile, 0]);
 								}
 								break;
 							case 5:
@@ -513,10 +527,12 @@ var tank = {
 									timeout: Date.now() + 10000,
 								}
 								d[tile] = 0;
+								map.changes.push([tile, 0]);
 								break;
 							case 6:
 								t.ab.tar_keg.amount += losuj(1, 5);
 								d[tile] = 0;
+								map.changes.push([tile, 0]);
 								break;
 						}
 					}
@@ -554,6 +570,17 @@ tank.proto.prototype.count = function() {
 var bullets = {
 	index: 0,
 	list: {},
+	export: function() {
+		var el = {}
+		for(i in this.list) {
+			el[i] = {
+				x: parseInt(this.list[i].x),
+				y: parseInt(this.list[i].y),
+				r: this.list[i].r
+			}
+		}
+		return el;
+	},
 	move: function() {
 		for (var i in bullets.list) {
 			var b = bullets.list[i];

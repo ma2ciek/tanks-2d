@@ -1,5 +1,11 @@
 [{
-  "commit": "62b42d6",
+  "commit": "dad98ed",
+  "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+  "date": "2015-02-23",
+  "message": "Poprawiony duży bug w grze związany z przesyłaniem zbyt dużych ilości danych; Częściowo rozwiązny problem z deaktualizacją mapy; Mocniejsza kompresja i filtracja przesyłanych danych"
+},
+{
+  "commit": "681061c",
   "author": "Maciej Bukowski <ma2ciek@gmail.com>",
   "date": "2015-02-23",
   "message": "Dodane napisy przy zwycięstwie i porażce; Przy nicku wyświetlają się statystyki przecienika; Każde zabicie przeciwnika daje małą premię; Zmiana sposobu wyświetlania umiejętności; Dodane opisy umiejętności ukazujące się po najechaniu myszką"
