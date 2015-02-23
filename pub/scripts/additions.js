@@ -11,11 +11,16 @@ var abilities = {
 			a.load()
 			return a;
 		})(),
-		animation: (function() {
+		animation: {
+			src: './img/explosion.png',
+			size: 13,
+			speed: 30
+		},
+		mark: (function() {
 			var img = new Image();
-			img.src = './img/explosion.png';
+			img.src = './img/mark.png';
 			return img;
-		})
+		})()
 	},
 	shot: {
 		img: (function() {

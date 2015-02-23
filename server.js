@@ -7,13 +7,13 @@ var express = require('express');
 var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
-var commits = require('./logs.json');
 
 app.set('view engine', 'jade');
 app.set('views', __dirname + '/views');
 app.set('view options', {
 	layout: false
 });
+
 app.use(bodyParser.urlencoded({
 	extended: true
 }))
@@ -32,7 +32,6 @@ http.listen(port);
 
 /*********************************         GAME       ***************************************/
 
-
 var col = require('./mod/col.js');
 var game = require('./mod/game.js');
 var losuj = require('./mod/losuj.js');
@@ -47,8 +46,7 @@ io.on('connection', function(socket) {
 		}
 		try {
 			delete tank.list[socket.id];
-		}
-		catch (err) {
+		} catch (err) {
 			console.log(err, id);
 		}
 	});
@@ -164,6 +162,7 @@ map.get_pos = function(id) {
 };
 map.changes = [];
 map.av_places = [];
+map.boxes = {};
 for (var i = 0; i < map.layers[0].data.length; i++) {
 	if (map.layers[0].data[i] != 0) map.av_places.push(i);
 }
@@ -208,7 +207,6 @@ function send_data() {
 	game.animations.length = 0;
 }
 
-
 var tank = {
 	list: {},
 	proto: function(id, pos) {
@@ -238,9 +236,9 @@ var tank = {
 		this.Vy = 0;
 		this.auras = {}
 		this.ab = {
-				tar_keg: 1,
-				nuke: 3,
-				shot: 100
+				tar_keg: 2,
+				nuke: 2,
+				shot: 60
 			},
 			this.nick = players[id].nick;
 	},
@@ -254,16 +252,23 @@ var tank = {
 					game.sounds.push(ability);
 					break;
 				case 'nuke':
+					sp_objects.create('nuke-mark', t.mx, t.my);
 					setTimeout(function(t, mx, my, id) {
 						var tile = map.get_id(mx, my);
 						if (map.layers[1].data[tile] == 1) {
-							map.layers[1].data[tile] = 0; // usuwa box
-							map.changes.push([tile, 0]);
+							if (!map.boxes[tile]) map.boxes[tile] = {
+								life: 50
+							};
+							map.boxes[tile].life -= 20;
+							if (map.boxes[tile].life <= 0) {
+								map.layers[1].data[tile] = 0; // usuwa box
+								map.changes.push([tile, 0]);
+							}
 						}
 						for (var i in tank.list) {
 							var t2 = tank.list[i];
 							if (col.circle(t2.x - mx, t2.y - my, 64)) { // 64 - AoE radius
-								t2.life -= 25;
+								t2.life -= 20;
 								if (t2.life <= 0) {
 									delete tank.list[i];
 									if (t != t2) {
@@ -285,7 +290,7 @@ var tank = {
 					}, 500, t, t.mx, t.my, id);
 					break;
 				case 'tar_keg':
-					sp_objects.create('dark_spot', t.mx, t.my);
+					sp_objects.create('dark-spot', t.mx, t.my);
 					break;
 			}
 		}
@@ -323,14 +328,13 @@ var tank = {
 					speed *= 1.5;
 				} else delete t.auras.sb;
 			}
-			if (map.layers[0].data[map.get_id(x, y)] != 0) speed /= 1.3;
 			if (dx != 0 && dy != 0) speed /= 1.4;
 
 			var max_op = 0;
 			for (var i in sp_objects.list) {
 				var ob = sp_objects.list[i];
 
-				if (ob.kind = 'dark_spot') {
+				if (ob.kind == 'dark-spot') {
 					if (col.circle(ob.x - x, ob.y - y, ob.r + r)) {
 						max_op = Math.max(max_op, ob.op);
 					}
@@ -529,39 +533,46 @@ var bullets = {
 	},
 }
 
-
 var sp_objects = {
 	index: 0,
 	list: {},
 	animate: function() {
 		for (var i in this.list) {
-			var o = this.list[i];
-			switch (o.kind) {
-				case 'dark_spot':
-					var d = Date.now();
-					if (d - o.creation_time < o.t1) { // grow up
-						o.r = Math.round((d - o.creation_time) / o.t1 * o.max_r);
-					} else if (d - o.creation_time < o.t2)
-						o.r = o.max_r;
-					else if (d - o.creation_time < o.t3) {
-						o.op = parseFloat(((o.t3 - d + o.creation_time) / (o.t3 - o.t2)).toFixed(2));
-					} else {
-						-o.creation_tim
-						delete this.list[i];
-					}
-					break;
-				default:
-					console.error('Dziwny typ obiektu');
-			}
+			if(this.list.hasOwnProperty(i)) {
+				var o = this.list[i];
+				console.log(o);
+				var d = Date.now();
+				switch (o.kind) {
+					case 'dark-spot':
+						if (d - o.creation_time < o.t1) { // grow up
+							o.r = Math.round((d - o.creation_time) / o.t1 * o.max_r);
+						} else if (d - o.creation_time < o.t2)
+							o.r = o.max_r;
+						else if (d - o.creation_time < o.t3) {
+							o.op = parseFloat(((o.t3 - d + o.creation_time) / (o.t3 - o.t2)).toFixed(2));
+						} else {
+							delete this.list[i];
+						}
+						break;
+					case 'nuke-mark':
+						console.log(d, o.creation_time);
+						if (d - o.creation_time > 500) {
+							delete this.list[i];
+						}
+						break;
+					default:
+						console.error('Dziwny typ obiektu', o.kind);
+				}
 
+			}
 		}
 	},
 	proto: function(kind, x, y) {
 		this.kind = kind;
 		this.x = x;
 		this.y = y;
-		switch (this.kind) {
-			case 'dark_spot':
+		switch (kind) {
+			case 'dark-spot':
 				this.r = 0;
 				this.op = 1;
 				this.creation_time = Date.now();
@@ -570,8 +581,11 @@ var sp_objects = {
 				this.t3 = 8000;
 				this.max_r = 100;
 				break;
+			case 'nuke-mark':
+				this.creation_time = Date.now();
+				break;
 			default:
-				console.error('Dziwny typ obiektu');
+				console.error('Dziwny typ obiektu', kind);
 		}
 	},
 	create: function(kind, x, y) {

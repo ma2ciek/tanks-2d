@@ -109,7 +109,7 @@ div.health {
 	background-repeat: no-repeat;
 	background-position: center;
 	background-color:  #ffd700;
-	background-size: 90%;
+	background-size: 100%;
 }
 
 
@@ -146,19 +146,11 @@ div.health {
 }
 
 
-
-
-
-
-
-
 div.game_msg {
 	position: absolute;
 	color: white;
 	z-index: 2;
 }
-
-
 
 
 
@@ -249,6 +241,11 @@ div.game_msg {
 	list-style-type: none;
 	margin: 0;
 	padding: 0;
+}
+#settings li {
+	padding: 10px 0;
+	border-bottom: 1px solid #AAA;
+	display: inline-block;
 }
 #settings span {
 	display: inline-block;

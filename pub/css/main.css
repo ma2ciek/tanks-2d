@@ -16,25 +16,13 @@
 
 
 
-
-
-
-
 body {
-	min-height: 100%;
 	background-color: #333;
 	margin: 0;
 	color: #FFF;
 	font-family: Lato, Calibri, Arial;
-    overflow: hidden;
     margin-top: calc(50vh - 150px);
 }
-img.bg {
-	position: absolute;
-	width: 1000px;
-	height: 1000px;
-}
-
 header {
     width: 100%;
     text-align: center;
@@ -69,6 +57,56 @@ div#play {
 	padding: 5px 10px;
 	width: 100px;
 }
+
+
+
+
+h2 {
+	font-family: Lato;
+	font-weight: 400;
+	padding-top: 20px;
+}
+
+div.comm {
+	padding: 20px 0;
+	border-bottom: 1px solid #DDD;
+}
+
+div.commit {
+	display: inline-block;
+	color: gold;
+}
+div.author {
+	display: inline-block;
+	padding-left: 30px;
+	color: gold;
+}
+.date {
+	color: orange;
+	display: inline-block;
+	margin-left: 30px;
+}
+.commit:before {
+	content: "Commit: ";
+	color: white;
+}
+.author:before {
+	content: "Author: ";
+	color: white;
+}
+ul.message {
+	text-align: left;
+	padding-left: 80px;
+}
+ul.message li {
+	padding: 3px;
+}
+
+
+
+
+
+
 
 footer {
 	margin-top: 40px;

@@ -9,7 +9,7 @@ var chat = {
 			chat.isFocus = 0;
 			chat.isOpen = 0;
 		});
-	}
+	},
 	message: function(msg) {
 		$('#messages').append('<li><span></span></li>').find('li:last-child').text(msg);
 		chat.animate();
@@ -61,18 +61,34 @@ var settings = {
 	load: function() {
 		$('img.settings').click(settings.open);
 		$('#exit_settings').click(settings.close);
-		for (var i in this.options) {
-			var s = this.options[i]
-			var x = localStorage.getItem(i) || this.options[i].def;
-			s.settings_parent[s.settings_attr] = s.format.call(this, x);
-
-			$('#' + i).off().on('change keydown', function(ev) {
-				var id = ev.target.id;
-				var o = settings.options[id];
-				var val = o.format.call(this, $('#' + id).val());
-				o.settings_parent[o.settings_attr] = val;
-				localStorage.setItem(id, val);
-			}).val(x);
+		for (var id in this.options) {
+			var s = this.options[id]
+			var x = localStorage.getItem(id) || this.options[id].def;
+			switch($('#' + id)[0].type) {
+				case 'text':
+				case 'range':
+					s.settings_parent[s.settings_attr] = s.format.call(this, x);
+					$('#' + id).off().on('change keydown', function(ev) {
+						var id = this.id;
+						var o = settings.options[id];
+						var val = o.format.call(this, $('#' + id).val());
+						o.settings_parent[o.settings_attr] = val;
+						localStorage.setItem(id, val);
+					}).val(x);
+					break;
+				case 'checkbox':
+					x = (x == 'true')? 1 : 0;
+					s.settings_parent[s.settings_attr] = x;
+					console.log(x);
+					$('#' + id).off().on('change', function(ev) {
+						var id = this.id;
+						var o = settings.options[id];
+						var val = $('#' + id).prop('checked');
+						o.settings_parent[o.settings_attr] = val;
+						localStorage.setItem(id, val);
+					}).prop('checked', x);
+					break;
+			}			
 		}
 	},
 	options: {
@@ -87,6 +103,11 @@ var settings = {
 			settings_attr: 'volume',
 			def: 0.5,
 			format: parseFloat
+		},
+		brak_trawy: {
+			settings_parent: game,
+			settings_attr: 'brak_trawy',
+			def: 0,
 		}
 	}
 }

@@ -1,6 +1,7 @@
 *.sublime-project
-*.log
 *.sublime-workspace
+*.log
+*.sh
 ./pub/img/*.xcf
 maps/*.tmx
 maps/*.tmx~

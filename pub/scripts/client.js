@@ -95,7 +95,7 @@ var game = {
 		}
 		game.ts_id = i;
 
-		if(packages.length > 0) {
+		if (packages.length > 0) {
 			if (packages[0].map_changes.length !== 0) {
 				for (var j = 0; j < packages[0].map_changes.length; j++) {
 					map.layers[1].data[packages[0].map_changes[j][0]] = packages[0].map_changes[j][1];
@@ -262,14 +262,8 @@ var game = {
 		x.play();
 	},
 	animate: function(msg) {
-		switch (msg.ab) {
-			case 'nuke':
-				new Sprite('/img/explosion.png', msg.x, msg.y, 13, 30)
-				break;
-			case '0':
-
-				break;
-		}
+		var a = abilities.nuke.animation;
+		new Sprite(a.src, msg.x, msg.y, a.size, a.speed);
 	},
 	log: {
 		time: 0,
@@ -330,8 +324,20 @@ var game = {
 				if (i == player.active_ability) found = 1;
 			}
 		}
-		player.active_ability = ab || first;
+		player.active_ability = ab || first || 'nuke';
 		game.display_right_ab();
+	},
+	get_ab: function(x) {
+		var s = 0;
+		for (var i in player.ab) {
+			if (s == x) {
+				player.active_ability = i;
+				game.display_right_ab();
+			}
+			if (player.ab.hasOwnProperty(i) && i != 'shot') {
+				s++
+			}
+		}
 	},
 	display_right_ab: function() {
 		$('#ppm').css('background-image', 'url("' + abilities[player.active_ability].img.src + '")');
@@ -375,27 +381,28 @@ var board = {
 	draw_sp_objects: function() {
 		for (var i in game.msg1.sp_objects) {
 			if (i in game.msg2.sp_objects) {
-				switch (game.msg2.sp_objects[i].kind) {
-					case 'dark_spot':
-						var ob1 = game.msg1.sp_objects[i];
-						var ob2 = game.msg2.sp_objects[i];
-
-						var x = game.interp(ob1.x, ob2.x);
-						var y = game.interp(ob1.y, ob2.y);
+				var ob1 = game.msg1.sp_objects[i];
+				var ob2 = game.msg2.sp_objects[i];
+				var x = game.interp(ob1.x, ob2.x);
+				var y = game.interp(ob1.y, ob2.y);
+				var wsp = game.rel(x, y);
+				switch (game.msg1.sp_objects[i].kind) {	
+						case 'dark-spot':				
 						var r = game.interp(ob1.r, ob2.r);
-						var op = game.interp(ob1.op, ob2.op);
-						var wsp = game.rel(x, y);
-
 						ctx.beginPath();
-						ctx.fillStyle = 'rgba(0, 0, 0, ' + op + ')';
+						ctx.fillStyle = 'rgba(0, 0, 0, ' + ob1.op + ')';
 						ctx.beginPath();
 						ctx.arc(wsp.x, wsp.y, r, 0, 2 * Math.PI);
 						ctx.fill();
-						ctx.closePath();
+						ctx.closePath();	
+						break;
+					case 'nuke-mark':
+						var mark = abilities.nuke.mark
+						ctx.drawImage(mark, wsp.x - mark.width/2, wsp.y - mark.width/2, 32, 32);
 						break;
 					default:
 						logs.push('Dziwny obiekt');
-				}
+					}
 			}
 		}
 	},
@@ -473,7 +480,7 @@ var board = {
 				var wsp = game.rel(x * 64, y * 64);
 
 				if (wsp.x > -64 && wsp.y > -64 && wsp.x < player.SCREEN_WIDTH + 64 && wsp.y < player.SCREEN_HEIGHT + 64) {
-					if (tc2) ctx.drawImage(resources.img.grass, tc2 * 64 - 11 * 64, 0, 64, 64, wsp.x, wsp.y, 64, 64);
+					if (tc2 && !game.brak_trawy) ctx.drawImage(resources.img.grass, tc2 * 64 - 11 * 64, 0, 64, 64, wsp.x, wsp.y, 64, 64);
 					if (tc) ctx.drawImage(resources.img.tileset, tc * 64 - 64, 0, 64, 64, wsp.x, wsp.y, 64, 64);
 
 				}
@@ -576,7 +583,10 @@ function game_events() {
 			settings.toggle();
 		} else if (player.exist && !chat.isFocus) {
 			switch (evt.which) {
-				case 9:
+				case 8: // Backspace
+					evt.preventDefault();
+					break;
+				case 9: // TAB
 					evt.preventDefault();
 					game.switch_weapons();
 					break;
@@ -588,6 +598,15 @@ function game_events() {
 						tank.ab('shot');
 						game.space_shot = 0;
 					}
+					break;
+				case 49: // 1
+					game.get_ab(0);
+					break;
+				case 50: // 2
+					game.get_ab(1);
+					break;
+				case 51: // 2
+					game.get_ab(1);
 					break;
 				case 37: // LEFT
 				case 65: // A
