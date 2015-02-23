@@ -7,12 +7,13 @@ var express = require('express');
 var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
+var commits = require('./logs.json');
+
 app.set('view engine', 'jade');
 app.set('views', __dirname + '/views');
 app.set('view options', {
 	layout: false
 });
-
 app.use(bodyParser.urlencoded({
 	extended: true
 }))

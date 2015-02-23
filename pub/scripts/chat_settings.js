@@ -1,5 +1,15 @@
 /****************************CHAT*********************************/
 var chat = {
+	load: function() { // chat events
+		$('img.chat').click(chat.show);
+		$('#chat').focus(function() {
+			chat.isFocus = 1;
+		}).blur(function() {
+			$('#chat').hide();
+			chat.isFocus = 0;
+			chat.isOpen = 0;
+		});
+	}
 	message: function(msg) {
 		$('#messages').append('<li><span></span></li>').find('li:last-child').text(msg);
 		chat.animate();
@@ -18,7 +28,7 @@ var chat = {
 		chat.close();
 	},
 	animate: function(t) {
-		$('#messages li:last-child').delay(10000).fadeOut('2000');
+		$('#messages li:last-child').delay(30000).fadeOut('2000');
 		$('#messages li:hidden').remove();
 	},
 	show: function() {
@@ -49,6 +59,8 @@ var settings = {
 		$('#settings').hide(0);
 	},
 	load: function() {
+		$('img.settings').click(settings.open);
+		$('#exit_settings').click(settings.close);
 		for (var i in this.options) {
 			var s = this.options[i]
 			var x = localStorage.getItem(i) || this.options[i].def;

@@ -2,17 +2,9 @@
 
 var ctx, canvas;
 var act_ctx, act_canvas;
-var PI = Math.PI;
 var socket = io();
 var logs = [];
-
-window.requestAnimationFrame = window.requestAnimationFrame ||
-    window.webkitRequestAnimationFrame ||
-    window.mozRequestAnimationFrame ||
-    window.oRequestAnimationFrame ||
-    window.msRequestAnimationFrame || function (callback) {
-        window.setTimeout(callback, 1000 / 60);
-    };
+var packages = [];
 
 // Socket Event Handlers
 function socket_handlers() {
@@ -36,15 +28,13 @@ window.addEventListener('load', function load() {
 	act_canvas = $('#active')[0];
 	act_ctx = act_canvas.getContext('2d');
 	settings.load();
+	chat.load();
 	socket_handlers();
 	game_events();
 	game.display_right_ab();
 	board.adjust();
 	game.play();
 });
-
-var packages = [];
-
 
 var game = {
 	mid_times: [],
@@ -524,13 +514,13 @@ var tank = {
 				}
 
 				ctx.beginPath();
-				ctx.arc(wsp.x, wsp.y, 20, 0, 2 * PI, false);
+				ctx.arc(wsp.x, wsp.y, 20, 0, 2 * Math.PI, false);
 				ctx.lineWidth = 3;
 				ctx.stroke();
 
 				ctx.moveTo(wsp.x, wsp.y);
 
-				ctx.arc(wsp.x, wsp.y, 10, 0, 2 * PI, false);
+				ctx.arc(wsp.x, wsp.y, 10, 0, 2 * Math.PI, false);
 				ctx.fill();
 				ctx.closePath();
 
@@ -538,13 +528,13 @@ var tank = {
 				ctx.beginPath();
 				ctx.lineWidth = 9;
 				ctx.strokeStyle = '#fc0';
-				ctx.arc(wsp.x, wsp.y, 14, 0, PI * life / 50, false);
+				ctx.arc(wsp.x, wsp.y, 14, 0, Math.PI * life / 50, false);
 				ctx.stroke();
 				ctx.closePath();
 
 				ctx.beginPath();
 				ctx.strokeStyle = '#f00';
-				ctx.arc(wsp.x, wsp.y, 14, PI * life / 50, 2 * PI, false);
+				ctx.arc(wsp.x, wsp.y, 14, Math.PI * life / 50, 2 * Math.PI, false);
 				ctx.stroke();
 				ctx.closePath();
 
@@ -684,93 +674,9 @@ function game_events() {
 			tank.ab('shot');
 		}
 	});
-	$('#chat').focus(function() {
-		chat.isFocus = 1;
-	}).blur(function() {
-		$('#chat').hide();
-		chat.isFocus = 0;
-		chat.isOpen = 0;
-	});
-	$('img.settings').click(settings.open);
-	$('img.chat').click(chat.show);
-	$('#exit_settings').click(settings.close);
 	$('#ppm').click(game.switch_weapons);
-
-	if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-		window.addEventListener('touchstart', phone.touchstart, false);
-		window.addEventListener('touchmove', phone.touchmove, false);
-		window.addEventListener('touchend', phone.touchend, false);
-		window.addEventListener('touchcancel', phone.touchcacel, false);
-	}
 }
 
-var phone = {
-	targets: [],
-	touchstart: function(evt) {
-		this.targets.push(evt);
-		joystick.start_pos = {
-			x: evt.touches[0].clientX,
-			y: evt.touches[0].clientY
-		}
-	},
-	touchmove: function(evt) {
-		var j = joystick;
-
-		j.actual_pos = {
-			x: evt.touches[0].clientX,
-			y: evt.touches[0].clientY
-		};
-		//joystick.create_vector();
-		var x = joystick.dir().x;
-		var y = joystick.dir().y;
-		if (x != player.dirX || y != player.dirY) {
-			socket.emit('client-event', {
-				dirX: x,
-				dirY: y,
-			});
-			player.dirX = x;
-			player.dirY = y;
-			j.touch_id = evt.touches[0].identifier
-		}
-	},
-	touchend: function(evt) {
-		if(evt.target.identifier == joystick.touch_id) {
-			player.dirX = 0;
-			player.dirY = 0;
-			socket.emit('client-event', {
-				dirX: 0,
-				dirY: 0
-			});
-		}
-	},
-	touchcancel: function(evt) {
-		if(evt.target.identifier == joystick.touch_id) {
-			player.dirX = 0;
-			player.dirY = 0;
-			socket.emit('client-event', {
-				dirX: 0,
-				dirY: 0
-			});
-		}
-	},
-}
-var joystick = {
-	touch_id: 0,
-	start_pos: {},
-	actual_pos: {},
-	diff: function() {
-		return {
-			x: this.actual_pos.x - this.start_pos.x,
-			y: this.actual_pos.y - this.start_pos.y
-		}
-	},
-	dir: function() {
-		return {
-			x: Math.sign(Math.round(this.diff().x / 100)),
-			y: Math.sign(Math.round(this.diff().y / 100)),
-		}
-	}
-}
 var bullets = {
 	draw: function() {
 		for (var i in game.msg1.bullets) {
@@ -782,99 +688,11 @@ var bullets = {
 
 				ctx.beginPath();
 				ctx.fillStyle = '#333';
-				ctx.arc(wsp.x, wsp.y, r, 0, 2 * PI, false);
+				ctx.arc(wsp.x, wsp.y, r, 0, 2 * Math.PI, false);
 				ctx.fill();
 				ctx.closePath();
 			}
 		}
-	}
-}
-
-var resources = {
-	img: {
-		tileset: (function() {
-			var img = new Image();
-			img.src = 'img/tileset_01.png'
-			return img;
-		})(),
-		grass: (function() {
-			var img = new Image();
-			img.src = 'img/grass.png'
-			return img;
-		})()
-	},
-};
-
-
-var abilities = {
-	nuke: {
-		img: (function() {
-			var img = new Image();
-			img.src = './img/radio_active.png';
-			return img;
-		})(),
-		audio: (function() {
-			var a = new Audio('audio/explosion.mp3');
-			a.load()
-			return a;
-		})(),
-		animation: (function() {
-			var img = new Image();
-			img.src = './img/explosion.png';
-			return img;
-		})
-	},
-	shot: {
-		img: (function() {
-			var img = new Image();
-			img.src = './img/ammo.png';
-			return img;
-		})(),
-		audio: (function() {
-			var a = new Audio('audio/gun_shot.wav');
-			a.load();
-			return a;
-		})()
-	},
-	tar_keg: {
-		img: (function() {
-			var img = new Image();
-			img.src = './img/tar_keg.png';
-			return img;
-		})(),
-	}
-}
-
-// prototyp wektora
-var vector = function(x, y) {
-	this.x = x;
-	this.y = y;
-	this.size = Math.sqrt(x * x + y * y);
-	this.unit = {
-		x: this.x / this.size,
-		y: this.y / this.size
-	};
-}
-
-
-/************************** Prototypes ********************************/
-
-CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
-	if (w < 2 * r) r = w / 2;
-	if (h < 2 * r) r = h / 2;
-	this.beginPath();
-	this.moveTo(x + r, y);
-	this.arcTo(x + w, y, x + w, y + h, r);
-	this.arcTo(x + w, y + h, x, y + h, r);
-	this.arcTo(x, y + h, x, y, r);
-	this.arcTo(x, y, x + w, y, r);
-	this.closePath();
-	return this;
-}
-
-if (!Date.now) {
-	Date.now = function() {
-		return new Date().getTime();
 	}
 }
 
@@ -928,18 +746,4 @@ Sprite.prototype.render = function() {
 		wsp.x, wsp.y, // destination x and y
 		this.width, this.height
 	)
-}
-
-
-var matrix = {
-	id: null,
-	speed: 60,
-	init: function() {
-		clearTimeout(this.id);
-		console.log(game.mid_times.join(' '))
-		this.id = setTimeout(matrix.init, 1000 / matrix.speed);
-	},
-	end: function() {
-		clearTimeout(this.id);
-	}
 }

@@ -1,0 +1,518 @@
+{
+  "eb68304": {
+    "commit": "eb68304a733c274c7bd48c925feb493074683d50",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-22 21:04:53 +0100",
+    "message": "Bug fixed - map actualisation"
+  },
+  "0d139a0": {
+    "commit": "0d139a05c7b4154cb18cde7198d41bb5e59ffa77",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-22 18:14:21 +0100",
+    "message": "Small changes"
+  },
+  "8720cc8": {
+    "commit": "8720cc8d734fec9c73aac24a361565d64857dab2",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-22 17:53:00 +0100",
+    "message": "Buggy joystick added"
+  },
+  "209dbdb": {
+    "commit": "209dbdbee06ebfd72c840d88b1ec82f10a4aad77",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-22 07:57:07 +0100",
+    "message": "Bug fixed"
+  },
+  "fd4cf88": {
+    "commit": "fd4cf88942631219d0b6b5d7d568dc974baf50ff",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-22 07:29:57 +0100",
+    "message": "Poprawione ustawienia i połączone z chatem gry"
+  },
+  "61b6569": {
+    "commit": "61b6569fb9c808b9adabb162da73eb1063df365d",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-22 06:03:21 +0100",
+    "message": "game draw issue"
+  },
+  "2245340": {
+    "commit": "224534050d99364b5c9c13973c8d031cfec79006",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-22 05:58:13 +0100",
+    "message": "IP and disconnect bug fix"
+  },
+  "bc3b411": {
+    "commit": "bc3b4118c9d24ad1805983469295bf410bf729ba",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-22 05:40:19 +0100",
+    "message": "Dodany login, stopka, wyświetlanie loginu w grze"
+  },
+  "f63bd50": {
+    "commit": "f63bd50cfe834018733000e66d436a6680334b5e",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-22 02:15:23 +0100",
+    "message": "Dodana beczka smoły, tabulator jako zmiana  i wiele innych rzeczy zmienionych"
+  },
+  "2facbe4": {
+    "commit": "2facbe4eaf2afcd843f5256ab9f4856ae1fa6b04",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-21 16:50:15 +0100",
+    "message": "Zmian tych cd."
+  },
+  "522219c": {
+    "commit": "522219c1ba285f436e70d10f78aaf18826783f07",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-21 16:25:29 +0100",
+    "message": "Zmiana wyswietlania pinga"
+  },
+  "2471cf4": {
+    "commit": "2471cf41529a648f1bc219072ac2e2a3a25a34d5",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-21 06:19:03 +0100",
+    "message": "Bug"
+  },
+  "053a96c": {
+    "commit": "053a96c58906b71ddd2c5f691d3b279421c90456",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-21 06:07:01 +0100",
+    "message": "Ip and connection"
+  },
+  "713a932": {
+    "commit": "713a93276ffc00cdf71fe005f401970c1b0580ec",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-21 05:22:16 +0100",
+    "message": "#18 Random res. amount, resolve kill and death stats and multiple windows, resource's msgs reborn on the same page"
+  },
+  "29291d6": {
+    "commit": "29291d6fb3c947e367dc23658caaa7547b7cb3c2",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-21 01:04:48 +0100",
+    "message": "Settings startup added"
+  },
+  "077e4c1": {
+    "commit": "077e4c1d04d97abb351ea02de91068ada775fc65",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-20 05:28:37 +0100",
+    "message": "Wreszcie rozwiązany problem spowolnienia, dodana pierwsza aura - speed boost"
+  },
+  "b6513b6": {
+    "commit": "b6513b6d27a6d010d74fc205ccfbecf766b10a96",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-20 03:43:15 +0100",
+    "message": "Added few fonts, chat improved, start window improved"
+  },
+  "eb518be": {
+    "commit": "eb518be394e2f3d94e0b8f27f2e590bb9ec9f40f",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-20 02:56:51 +0100",
+    "message": "Removed needless files"
+  },
+  "b3e5ce2": {
+    "commit": "b3e5ce2469447b8ebcbb025f5592893a62fbe7d9",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-20 02:36:55 +0100",
+    "message": "Big chat modification"
+  },
+  "aee5473": {
+    "commit": "aee54734bbb23cab08a88c4717ee386925977119",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-20 00:13:01 +0100",
+    "message": "Dodane ikony chatu i ustawień"
+  },
+  "b7399e9": {
+    "commit": "b7399e9d1a58bfcd3aed32313b6bcf77cd37ba17",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-19 23:41:28 +0100",
+    "message": "Tymczasowo wyeliminowany błąd"
+  },
+  "59ed37e": {
+    "commit": "59ed37e706757ac33f76a167efac74a76eb957c2",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-19 22:22:54 +0100",
+    "message": "Bug fixed"
+  },
+  "882cc33": {
+    "commit": "882cc330d2789a07036469ecf9f4760e256cb4bf",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-19 15:50:35 +0100",
+    "message": "Added meta tags"
+  },
+  "05a51b0": {
+    "commit": "05a51b049623d2c9a607795ea933240a7351e29b",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-19 07:27:04 +0100",
+    "message": "Favicon"
+  },
+  "21c0199": {
+    "commit": "21c0199a14725505dbe433dbfa1ef29c40744dac",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-19 06:42:52 +0100",
+    "message": "Google analytics"
+  },
+  "f754a53": {
+    "commit": "f754a5357df986c607d6b3c008df370ddefdef96",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-19 06:25:08 +0100",
+    "message": "changed android scale"
+  },
+  "a7b6ada": {
+    "commit": "a7b6adab12e49b7adddad88289498c7cbaf54d4a",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-19 06:22:19 +0100",
+    "message": "Added started positions"
+  },
+  "1e2d282": {
+    "commit": "1e2d282d380ca6694d095bb019e24bad0ecc01d6",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-19 05:48:02 +0100",
+    "message": "Disable android doubleclick zoom"
+  },
+  "4cfc987": {
+    "commit": "4cfc98767064c01b5c43e2e43836a2dc3514cc69",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-19 05:41:13 +0100",
+    "message": "Small change"
+  },
+  "44584ae": {
+    "commit": "44584ae7fc5286035381f6dee2033a642c8108d5",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-19 05:36:29 +0100",
+    "message": "Usunięcie zbędnych graczy"
+  },
+  "94c2a1d": {
+    "commit": "94c2a1dc3eabd8b26010e57f312b221ddf89b27a",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-19 05:14:19 +0100",
+    "message": "Hotfix"
+  },
+  "7bf05ba": {
+    "commit": "7bf05ba126462c502c9c0a5b73052021fa8de551",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-19 05:03:42 +0100",
+    "message": "Zwiększony czas oczekwiania na gracza"
+  },
+  "7140de0": {
+    "commit": "7140de085ba4dd84733172c52b2b916d33127551",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-19 04:38:13 +0100",
+    "message": "Server load, napraiona f. losuj, usuwana namacja na zakończenie"
+  },
+  "9a28baf": {
+    "commit": "9a28bafedbe66ae05bbef96db23c8ca423288f57",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-19 03:47:11 +0100",
+    "message": "#17 Zmiana storny głównej, mapy, połączenie paru socketów, naprawa nuke (możliwe było kilkukrotne użycie bez surowców), Dodany lekki wykrywacz błedów, Dodane do mapy miejsca odtworzenia przedmiotów"
+  },
+  "64c2cdf": {
+    "commit": "64c2cdfec18fcb1bcc4b0aa7186380bb77bc694a",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-18 19:56:52 +0100",
+    "message": "#16 Dodana animacja eksplozji ;)"
+  },
+  "b19e1d7": {
+    "commit": "b19e1d7d7885a41137814a2d6fe8b8831322aeeb",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-18 00:01:15 +0100",
+    "message": "#15 Drobne zmiany, mapa powinna sie restartować gdy nie ma graczy"
+  },
+  "4b28526": {
+    "commit": "4b2852647b3f9b3467f2e1e603429c4901aadc76",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-17 19:37:41 +0100",
+    "message": "Usunięty ping z ekranu"
+  },
+  "20cd1fa": {
+    "commit": "20cd1faa7c77873cbae5557bd15350fc76594b32",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-17 19:23:58 +0100",
+    "message": "#14 Nowa plansza z nabojami, nuke dodany - bez obrażeń, uogólniony dźwięk"
+  },
+  "e170186": {
+    "commit": "e170186f994159c3279e8cf200c68a80a8702e78",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-17 03:33:41 +0100",
+    "message": "Ulepszona pozycja początkowa"
+  },
+  "59d6c67": {
+    "commit": "59d6c67ec3793d0de6d5895a276e3192a4af7b31",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-17 03:04:43 +0100",
+    "message": "Huge bug with game delay, fixed chat, 100 bullets"
+  },
+  "4b2dd38": {
+    "commit": "4b2dd3892a2a6610bca2615e5dda82db3a7b9a89",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-17 02:52:05 +0100",
+    "message": "Merged"
+  },
+  "a81236f": {
+    "commit": "a81236f058078e9f287c190ea505d032620fbf0a",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-17 02:40:34 +0100",
+    "message": "#13 Added map ;), better performance, join game improved, 50Hz server loop"
+  },
+  "47ed3af": {
+    "commit": "47ed3af1633704f211d9a4410ea01820b51a3990",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-16 23:00:33 +0100",
+    "message": "#12 Upgraded settings, two canvases - first with game and second with stats and event handler"
+  },
+  "c7013ef": {
+    "commit": "c7013ef2d1951f03b08ea7869bcb5435c58e6b4b",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-16 06:37:02 +0100",
+    "message": "#11 Nuke icon and health icon added"
+  },
+  "d72f3b6": {
+    "commit": "d72f3b6e151b68130d979e886109c802d1bc7b16",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-16 04:56:26 +0100",
+    "message": "#10 Settings view, limited bullets with icon"
+  },
+  "44d4016": {
+    "commit": "44d4016b5f9e932241a4c16bcbb8fc4e4d3173e6",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-15 21:00:59 +0100",
+    "message": "Szybszy server"
+  },
+  "29810cb": {
+    "commit": "29810cb78d380287c1cd8c8893cc1b52722e0a71",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-15 01:09:30 +0100",
+    "message": "#09 Space bug fixed, FPS reorder"
+  },
+  "723c085": {
+    "commit": "723c0850c73dda0b09acccf865ec3e0d18bdec9e",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-14 22:32:22 +0100",
+    "message": "#08 Zmiana koloru przeciwnika, naprawiony błąd po zgonie, naprawiony (lekko) negative ping"
+  },
+  "e0311be": {
+    "commit": "e0311beccff7d07eb37aa0e98d3c1881a102b6f2",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-14 16:25:17 +0100",
+    "message": "Lufa dodana, parę niepotrzebnych własności usunąłem"
+  },
+  "05eaf68": {
+    "commit": "05eaf68fe62656a60e44c13c29a3fc2110d9ce77",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-14 16:06:37 +0100",
+    "message": "ISSUE #07 Grupowania funckcji cd, naprawiony ekran powitalny"
+  },
+  "1f20a76": {
+    "commit": "1f20a769d523d2349663efab32221ad99cd54665",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-14 15:24:30 +0100",
+    "message": "ISSUE #06 Dodany onresize eventhandler, uproszczenie i pogrupowanie funckji oraz metod, rozwiązany problem canvas scrollbar"
+  },
+  "0ccf6c5": {
+    "commit": "0ccf6c511d447b0a979c1d4ca8ab01a97f2fddcd",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-14 06:54:13 +0100",
+    "message": "ISSUE #05 Interpolacja i zamiana +new Date() na Date.now(); Za to do uzupełnienia pociski, przedmioty, lufa"
+  },
+  "c125dd2": {
+    "commit": "c125dd2237a84b8ab580a536421a29f448ccd209",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-14 02:49:57 +0100",
+    "message": "Pogrupowanie katalogu main"
+  },
+  "55a09e2": {
+    "commit": "55a09e223da9ee841355b32d8d0b99cfb63e15c8",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-14 02:30:26 +0100",
+    "message": "Merge branch 'display'"
+  },
+  "953f8ab": {
+    "commit": "953f8ab33a3bed45912170305c1049abeaf4ba26",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-14 02:29:27 +0100",
+    "message": "ISSUE #03 Chat przeniesiony do zewnętrznego pliku, FPS_counter rebuild"
+  },
+  "1575eb2": {
+    "commit": "1575eb2ec656fed3f8afaded397e73a8994f4e3d",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-14 02:13:50 +0100",
+    "message": "MERGED"
+  },
+  "f84528b": {
+    "commit": "f84528bf5a2e74c83d9cb58cf39cb91bfe1b3ea7",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-14 02:07:27 +0100",
+    "message": "ISSUE #02 Removed stats.js, improved chat focus detecting"
+  },
+  "f4d4929": {
+    "commit": "f4d492908df7a367352a9607334da8ac9c4044fb",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-14 00:52:59 +0100",
+    "message": "Issue #01 Poprawa wyglądu i działania chatu, obsługa klawisza [ESC], poprawa błedów bezpieczeństwa związana z chatem"
+  },
+  "5d5de3f": {
+    "commit": "5d5de3f5517eb6b4ae5ee380cc1e916b17746ae6",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-14 00:52:59 +0100",
+    "message": "Issue#01 Poprawa wyglądu i działania chatu, obsługa klawisza [ESC], poprawa błedów bezpieczeństwa związana z chatem"
+  },
+  "6f6486e": {
+    "commit": "6f6486ed4585dbd2be531cf6525ec2784efa2155",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-13 04:19:40 +0100",
+    "message": "Bug with negative ping probably fixed"
+  },
+  "906005d": {
+    "commit": "906005dcbaf21ae3c3ac70ce7b5d68e818b75ef7",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-13 03:46:01 +0100",
+    "message": "Merging"
+  },
+  "62f2757": {
+    "commit": "62f2757fa5fbd71adbf7eaabb923f9aa0a31c248",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-13 03:24:46 +0100",
+    "message": "Dodana obsługa spacji"
+  },
+  "f3e5a02": {
+    "commit": "f3e5a02622c0a8d2694d2d54fd8370429704a2bb",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-13 03:20:37 +0100",
+    "message": "Zmiana obramowania, dodane wyświetlanie fps i ping'a, naprawiony chat, dodane tło gry"
+  },
+  "81a8b50": {
+    "commit": "81a8b505fc437e839966337e77b392b6b0219f28",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-11 15:47:55 +0100",
+    "message": "Little smoothing"
+  },
+  "f53f60e": {
+    "commit": "f53f60ee82e1d0a7220cebcfea2f214272148c1e",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-11 02:45:01 +0100",
+    "message": "Obsługa spacji"
+  },
+  "a852af5": {
+    "commit": "a852af5b0017528cd93ad40a4135e28b303730ac",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-11 02:24:56 +0100",
+    "message": "Zmiana wartości, które może przyjąć setTimeout"
+  },
+  "6844019": {
+    "commit": "6844019155e67ecf9c4bd9f2bf15a213bd84d514",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-11 02:05:05 +0100",
+    "message": "niepotrzebne tło usunięte"
+  },
+  "6f9a986": {
+    "commit": "6f9a98689267a2e5a95aec080f8923d6c860c545",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-11 01:59:52 +0100",
+    "message": "usunięcie jednego canvasa, drobne optymalizacje, play button"
+  },
+  "9b78b03": {
+    "commit": "9b78b032066713df52d67486731da5a641ff74bf",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-11 00:30:31 +0100",
+    "message": "Smoooooth and some other stuff"
+  },
+  "0a11205": {
+    "commit": "0a11205a0bfdcdc00d6a9869d34805784d8af7b8",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-10 14:53:49 +0100",
+    "message": "FPS Added, double shot fixed"
+  },
+  "72a53da": {
+    "commit": "72a53da1387d8867c1b4c6403debd043661d8fa8",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-10 01:50:54 +0100",
+    "message": "Few bugs fixed: - green line - undefined bullets - better lib name"
+  },
+  "5eb9da3": {
+    "commit": "5eb9da3dbe428fcd6090f668efff6040cd32c3b7",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-09 07:04:47 +0100",
+    "message": "Powiększona plansza, losowwanie miejsca startu dla czołgów"
+  },
+  "e4ad113": {
+    "commit": "e4ad1131278ea7434116cf54036d465af15da46f",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-09 05:26:35 +0100",
+    "message": "Niewiele działa, ale zawsze coś :D"
+  },
+  "a9412a9": {
+    "commit": "a9412a92ffc25be9fe6498fa5081c75c1c8fdc24",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-08 20:58:56 +0100",
+    "message": "Przyspieszenie"
+  },
+  "8ace7e3": {
+    "commit": "8ace7e355f115a73e7704ad8dd57f475fe7ed13b",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-08 02:30:09 +0100",
+    "message": "Dodana możliwość pokonania innego gracza, pasek życia, plus parę błedów poprawionych"
+  },
+  "6ebd0d1": {
+    "commit": "6ebd0d12b4b10c55719a623c9799692894b8341c",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-08 01:35:31 +0100",
+    "message": "Ultra hiper super - możliwość dodania wielu graczy do gry"
+  },
+  "62ae440": {
+    "commit": "62ae44082d8585110250b1321e8bb8753a5da02c",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-07 20:33:34 +0100",
+    "message": "Hotfix"
+  },
+  "88cc14b": {
+    "commit": "88cc14b344ddf4ac06b3760783b89d68c6c9a6f7",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-07 20:24:11 +0100",
+    "message": "Dodany moduł socket.io, dodany czat, pewnie coś jeszcze"
+  },
+  "ea526d8": {
+    "commit": "ea526d88f34be6f370b0c0fed2c2ab38d844767b",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-07 17:02:55 +0100",
+    "message": "Added jQuery"
+  },
+  "e10939d": {
+    "commit": "e10939deaaa16cdc871c63ad12420f92a337b41a",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-07 16:36:53 +0100",
+    "message": "Przyciszony dźwięk strzału"
+  },
+  "f9d2df0": {
+    "commit": "f9d2df02b14bf54ff4affab76fbfb2b9771a3a32",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-07 15:49:53 +0100",
+    "message": "Succesful installation of node.js"
+  },
+  "50616b1": {
+    "commit": "50616b18577346aa76e99f3cd0f5411e8d9b5021",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-07 15:32:43 +0100",
+    "message": "Wstęp do instalowania node.js"
+  },
+  "661c7f9": {
+    "commit": "661c7f9d651949e883d828696207cf262cc72a8f",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-07 15:23:49 +0100",
+    "message": "Dodana kolizja pocisku z boxem i możliwość zniszczenia boxa"
+  },
+  "3636c8e": {
+    "commit": "3636c8e7f06ce170df6bef7b983ad1f79016271b",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-07 14:54:08 +0100",
+    "message": "Dodany dźwięk Dodana przeszkoda + kolizja z czołgiem Zmiana obiektu player i dodanie obiektu tank"
+  },
+  "c9ebef3": {
+    "commit": "c9ebef3fdcbc29d623ab66d13643550065ef3ef7",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-07 02:52:22 +0100",
+    "message": "Empty lines deleted"
+  },
+  "e8fe8ac": {
+    "commit": "e8fe8acb919d6fcf5e3f5fb48da1314b2f60457a",
+    "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+    "date": "2015-02-07 02:42:55 +0100",
+    "message": "Added Basics"
+  }
+}
