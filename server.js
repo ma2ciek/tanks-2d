@@ -78,7 +78,7 @@ io.on('connection', function(socket) {
 					players[socket.id].kills += players[i].kills;
 					players[socket.id].deaths += players[i].deaths;
 					try {
-						io.sockets.connected[i].disconnect();
+						// io.sockets.connected[i].disconnect();
 					} catch (err) {
 						console.log(err, 'disconnect');
 					}
@@ -160,10 +160,13 @@ map.get_pos = function(id) {
 		y: y
 	};
 };
-map.changes = [];
 map.av_places = [];
-map.boxes = {};
+map.boxes = [];
+
 for (var i = 0; i < map.layers[0].data.length; i++) {
+	map.boxes[i] = {
+		life: 60
+	}
 	if (map.layers[0].data[i] != 0) map.av_places.push(i);
 }
 
@@ -193,19 +196,94 @@ function send_data() {
 	var res = JSON.stringify({
 		tank: tank.list,
 		bullets: bullets.list,
-		map_changes: map.changes,
+		map: map,
 		sp_objects: sp_objects.list,
 		sounds: game.sounds,
 		animations: game.animations,
 		server_latency: game.latency,
 		timestamp: Date.now(),
+		murders: game.murders,
 		nr: ++game.package_nr,
 	});
 	io.emit('game-update', res);
-	map.changes.length = 0;
 	game.sounds.length = 0;
 	game.animations.length = 0;
+	game.murders.length = 0;
 }
+
+var sp_ob = {
+	'nuke-mark': {
+		init: {
+			r: 0,
+			op: 1,
+			max_r: function(owner) {
+				tank.list[owner].ab.tar_keg.radius;
+			}
+		},
+		states: [{
+			time: 0,
+			animations: {
+				r: 'max_r' //błað?
+			},
+		}, {
+			time: 500,
+		}, {
+			time: 6000,
+			animations: {
+				op: 0
+			},
+		}, {
+			time: 8000,
+			delete: true
+		}]
+	}
+}
+var ab = {
+	nuke: {
+		base_dmg: 25,
+		dmg_per_lvl: 2,
+		latency: 500,
+		can_destroy: true,
+		AoE: true,
+		base_radius: 64,
+		radius_per_lvl: 3,
+		sp_object: 'nuke-mark',
+		opis: 'Mina wybuchająca po 0.5 sekundy',
+		start_amount: 2,
+		counted_values: ['dmg', 'radius'],
+		dmg: function(id) {
+			return this.base_dmg + this.dmg_per_lvl * players[id].kills;
+		},
+		radius: function(id) {
+			return this.base_radius + this.radius_per_lvl * players[id].kills;
+		},
+	},
+	shot: {
+		base_dmg: 10,
+		dmg_per_lvl: 1,
+		bullets: true,
+		opis: 'Zwykły strzał z lufy',
+		start_amount: 60,
+		counted_values: ['dmg'],
+		dmg: function(id) {
+			return this.base_dmg + this.dmg_per_lvl * players[id].kills;
+		}
+	},
+	tar_keg: {
+		AoE: true,
+		base_radius: 100,
+		radius_per_lvl: 10,
+		sp_object: 'dark-spot', // do zmiany na obiekt
+		opis: 'Beczka ze smołą spowalniająca przeciwnika',
+		start_amount: 2,
+		counted_values: ['radius'],
+		radius: function(id) {
+			return this.base_radius + this.radius_per_lvl * players[id].kills;
+		}
+	}
+}
+
+
 
 var tank = {
 	list: {},
@@ -225,7 +303,7 @@ var tank = {
 			y2: this.y
 		};
 		this.id = id;
-		this.life = 100;
+		this.life = 100 + players[id].kills * 10;
 		this.mx = 0;
 		this.my = 0;
 		this.posX = 0;
@@ -235,64 +313,67 @@ var tank = {
 		this.Vx = 0;
 		this.Vy = 0;
 		this.auras = {}
-		this.ab = {
-				tar_keg: 2,
-				nuke: 2,
-				shot: 60
-			},
-			this.nick = players[id].nick;
+		this.nick = players[id].nick;
+		this.ab = {};
+		for (var i in ab) {
+			this.ab[i] = {
+				amount: ab[i].start_amount,
+				opis: ab[i].opis
+			}
+		}
+		this.count();
+
 	},
 	ab: function(id, ability) {
-		if (tank.list[id].ab[ability] > 0) {
-			var t = tank.list[id];
-			t.ab[ability] --;
-			switch (ability) {
-				case 'shot':
-					bullets.create(id);
-					game.sounds.push(ability);
-					break;
-				case 'nuke':
-					sp_objects.create('nuke-mark', t.mx, t.my);
-					setTimeout(function(t, mx, my, id) {
-						var tile = map.get_id(mx, my);
-						if (map.layers[1].data[tile] == 1) {
-							if (!map.boxes[tile]) map.boxes[tile] = {
-								life: 50
-							};
-							map.boxes[tile].life -= 20;
-							if (map.boxes[tile].life <= 0) {
-								map.layers[1].data[tile] = 0; // usuwa box
-								map.changes.push([tile, 0]);
-							}
+		var a = ab[ability];
+		var t = tank.list[id];
+		if (t.ab[ability].amount > 0) {
+			t.ab[ability].amount--;
+			if (a.bullets) bullets.create(id);
+			if (a.sp_object) sp_objects.create(id, a, t.mx, t.my);
+
+			setTimeout(function(t, mx, my, id, a) {
+				var dmg = a.base_dmg + a.dmg_per_lvl * players[id].kills;
+				if (a.can_destroy) {
+					var tile = map.get_id(mx, my);
+					if (map.layers[1].data[tile] == 1) {
+						map.boxes[tile].life -= dmg;
+						if (map.boxes[tile].life <= 0) {
+							map.layers[1].data[tile] = 0; // usuwa box
 						}
+					}
+				}
+				if (a.AoE) {
+					if (a.base_dmg + a.dmg_per_lvl * players[id].kills > 0) {
 						for (var i in tank.list) {
 							var t2 = tank.list[i];
-							if (col.circle(t2.x - mx, t2.y - my, 64)) { // 64 - AoE radius
-								t2.life -= 20;
+							if (col.circle(t2.x - mx, t2.y - my, a.base_radius)) {
+								t2.life -= dmg;
 								if (t2.life <= 0) {
 									delete tank.list[i];
 									if (t != t2) {
 										t.kills++;
 										players[id].kills++;
+										tank.list[id].count.call(tank.list[id]);
+										game.murders.push([players[id].nick, players[i].nick]);
 										players[i].deaths++;
+
 									} else {
 										players[i].deaths++;
 									}
 								}
 							}
 						}
-						game.sounds.push(ability);
-						game.animations.push({
-							ab: ability,
-							x: mx,
-							y: my
-						});
-					}, 500, t, t.mx, t.my, id);
-					break;
-				case 'tar_keg':
-					sp_objects.create('dark-spot', t.mx, t.my);
-					break;
-			}
+					}
+				}
+				game.animations.push({
+					ab: ability,
+					x: mx,
+					y: my
+				});
+
+
+			}, a.latency, t, t.mx, t.my, id, a);
 		}
 	},
 	create: function(id) {
@@ -414,20 +495,17 @@ var tank = {
 								}
 								break;
 							case 2:
-								t.ab.shot += losuj(5, 20);
+								t.ab.shot.amount += losuj(5, 20);
 								d[tile] = 0;
-								map.changes.push([tile, 0]);
 								break;
 							case 3:
-								t.ab.nuke += losuj(1, 5);
+								t.ab.nuke.amount += losuj(1, 5);
 								d[tile] = 0;
-								map.changes.push([tile, 0]);
 								break;
 							case 4:
-								if (t.life < 100) {
-									t.life = Math.min(100, t.life + 30);
+								if (t.life < t.max_life) {
+									t.life = Math.min(t.max_life, t.life + 30);
 									d[tile] = 0;
-									map.changes.push([tile, 0]);
 								}
 								break;
 							case 5:
@@ -435,12 +513,10 @@ var tank = {
 									timeout: Date.now() + 10000,
 								}
 								d[tile] = 0;
-								map.changes.push([tile, 0]);
 								break;
 							case 6:
-								t.ab.tar_keg += losuj(1, 3);
+								t.ab.tar_keg.amount += losuj(1, 5);
 								d[tile] = 0;
-								map.changes.push([tile, 0]);
 								break;
 						}
 					}
@@ -463,6 +539,16 @@ var tank = {
 			};
 		}
 	}
+}
+
+tank.proto.prototype.count = function() {
+	for (var i in ab) {
+		var abilities = ab[i].counted_values
+		for (var j = 0; j < abilities.length; j++) {
+			this.ab[i][abilities[j]] = ab[i][abilities[j]].call(ab[i], this.id);
+		}
+	}
+	this.max_life = 100 + players[this.id].kills * 10;
 }
 
 var bullets = {
@@ -498,10 +584,13 @@ var bullets = {
 					t.life -= 10;
 
 					if (t.life <= 0) {
+						game.murders.push([players[b.owner].nick, players[id].nick]);
 						tank.list[b.owner].kills++;
-						delete tank.list[id];
+						var o = b.owner;
 						players[b.owner].kills++;
 						players[id].deaths++;
+						tank.list[o].count.call(tank.list[o]);
+						delete tank.list[id];
 					}
 
 				}
@@ -538,9 +627,8 @@ var sp_objects = {
 	list: {},
 	animate: function() {
 		for (var i in this.list) {
-			if(this.list.hasOwnProperty(i)) {
+			if (this.list.hasOwnProperty(i)) {
 				var o = this.list[i];
-				console.log(o);
 				var d = Date.now();
 				switch (o.kind) {
 					case 'dark-spot':
@@ -555,8 +643,10 @@ var sp_objects = {
 						}
 						break;
 					case 'nuke-mark':
-						console.log(d, o.creation_time);
-						if (d - o.creation_time > 500) {
+
+
+
+						if (d - o.creation_time > o.t1) {
 							delete this.list[i];
 						}
 						break;
@@ -567,28 +657,29 @@ var sp_objects = {
 			}
 		}
 	},
-	proto: function(kind, x, y) {
-		this.kind = kind;
+	proto: function(owner, ability, x, y) {
+		this.kind = ability.sp_object;
 		this.x = x;
 		this.y = y;
-		switch (kind) {
+		this.creation_time = Date.now();
+		switch (this.kind) {
+			// do zmiany 
 			case 'dark-spot':
-				this.r = 0;
-				this.op = 1;
-				this.creation_time = Date.now();
 				this.t1 = 500;
 				this.t2 = 6000;
 				this.t3 = 8000;
-				this.max_r = 100;
+				this.r = 0;
+				this.op = 1;
+				this.max_r = tank.list[owner].ab.tar_keg.radius;
 				break;
 			case 'nuke-mark':
-				this.creation_time = Date.now();
+				this.t1 = 500;
 				break;
 			default:
-				console.error('Dziwny typ obiektu', kind);
+				console.error('Dziwny typ obiektu', this.ind);
 		}
 	},
-	create: function(kind, x, y) {
-		this.list['id_' + ++this.index] = new this.proto(kind, x, y);
+	create: function(owner, ability, x, y) {
+		this.list['id_' + ++this.index] = new this.proto(owner, ability, x, y);
 	}
 }

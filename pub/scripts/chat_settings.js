@@ -11,17 +11,17 @@ var chat = {
 		});
 	},
 	message: function(msg) {
-		$('#messages').append('<li><span></span></li>').find('li:last-child').text(msg);
+		$('#messages').append('<li>').find('li:last-child').text(msg);
 		chat.animate();
 	},
 	neutral_message: function(msg) {
-		$('#messages').append('<li class="neutral"></li>').find('li:last-child').text(msg);
+		$('#messages').append('<li class="neutral">').find('li:last-child').text(msg);
 		chat.animate();
 	},
 	submit: function() {
 		if (!$('#chat').val() == "" && chat.isOpen == 1) {
 			socket.emit('message', $('#chat').val());
-			$('#messages').append('<li class="my"></li>').find('li:last-child').text($('#chat').val());
+			$('#messages').append('<li class="my">').find('li:last-child').text($('#chat').val());
 			$('#chat').val('');
 			chat.animate(0);
 		}
@@ -38,6 +38,10 @@ var chat = {
 	close: function() {
 		chat.isOpen = 0;
 		$('#chat').hide().blur();
+	},
+	murders: function(msg) {
+		$('#messages').append('<li class="killing">').find('li:last-child').text(msg[0] + ' zabił gracza ' + msg[1]);
+		chat.animate();
 	},
 	isOpen: 0,
 	isFocus: 0,
@@ -79,7 +83,6 @@ var settings = {
 				case 'checkbox':
 					x = (x == 'true')? 1 : 0;
 					s.settings_parent[s.settings_attr] = x;
-					console.log(x);
 					$('#' + id).off().on('change', function(ev) {
 						var id = this.id;
 						var o = settings.options[id];

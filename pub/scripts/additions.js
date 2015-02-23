@@ -61,6 +61,24 @@ var resources = {
 
 
 /* ADDITIONS */
+
+var logs = {
+	LAG_1: 0,
+	LAG_2: 0,
+	LAG_3: 0,
+	LAG_4: 0,
+	LAG_5: 0,
+	LAG_6: 0,
+	brak_mapy: 0,
+	dziwny_obiekt: 0,
+	no_packages: 0
+
+
+};
+
+
+
+
 var matrix = {
 	id: null,
 	speed: 60,

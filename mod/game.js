@@ -1,5 +1,6 @@
 module.exports = exports = {
 	package_nr: 0,
+	murders: [],
 	animations: [],
 	sounds: [],
 	latency: 0,
@@ -25,9 +26,7 @@ module.exports = exports = {
 				if (rand > chances[i]) rand -= chances[i];
 				else break;
 			}
-
 			map.layers[1].data[map.av_places[x]] = i;
-			map.changes.push([map.av_places[x], i]);
 		}
 	}
 }

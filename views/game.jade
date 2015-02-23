@@ -18,6 +18,7 @@ html(lang='pl')
 		script(src='scripts/chat_settings.js')
 
 	body.game
+		h1 Tanks 2D
 		div#main
 			canvas#game
 			canvas#active
@@ -30,6 +31,9 @@ html(lang='pl')
 				img.settings(src='img/settings.png')
 				img.chat(src='img/chat.png')
 
+			div#hp
+				div.taken_damage
+				span
 			div#abilities
 				div#lpm
 					div.info LPM
@@ -38,10 +42,10 @@ html(lang='pl')
 					div.info PPM
 					div.amount 3
 		div#settings
-			H1 Ustawienia
+			H2 Ustawienia
 			div
 				div.basic
-					h2 Podstawowe
+					h3 Podstawowe
 					ul
 						li 
 							span Poziom dźwięku:
@@ -50,13 +54,13 @@ html(lang='pl')
 							span Brak trawy
 							input#brak_trawy(type="checkbox")
 				div.advanced
-					h2 Zaawansowane
+					h3 Zaawansowane
 					ul
 						li 
 							span Opóźnienie:
 							input#game_delay(type="text")
 				div.controls
-					h2 Sterowanie
+					h3 Sterowanie
 					ul
 						li
 							span Ruch:
@@ -65,8 +69,11 @@ html(lang='pl')
 							span Strzał:
 							span [Space], LPM
 						li
-							span Skill:
+							span Aktywny skill:
 							span PPM
+						li
+							span Skill'e
+							span [1], [2], ...
 						li
 							span Chat:
 							span [ENTER]
