@@ -31,24 +31,21 @@ window.addEventListener('load', function load() {
 	chat.load();
 	socket_handlers();
 	game_events();
-	game.display_right_ab();
+	game.ab.display_right();
 	board.adjust();
 	game.play();
 });
 
 var game = {
-	mid_times: [],
+
 	timerId: null,
 	package_nr: 0,
 	delay: 100, // [ms]
 	frame_time: 0,
 	space_shot: 1,
-	volume: 0.5,
-	ctx: null,
-	counter: 0,
 	animations: [],
 	get_ping: function(msg) {
-		game.ping2.addState(Date.now() - parseInt(msg));
+		debug.ping2.addState(Date.now() - parseInt(msg));
 	},
 	play: function() { // start lub kontynuacja gry
 		var msg = JSON.stringify({
@@ -61,7 +58,7 @@ var game = {
 	update: function(msg) { // Odbieranie pakietów
 		var msg = JSON.parse(msg);
 
-		game.ping.addState(Date.now() - msg.ts);
+		debug.ping.addState(Date.now() - msg.ts);
 
 		if (msg.nr > game.package_nr) {
 			game.package_nr = msg.nr;
@@ -90,7 +87,7 @@ var game = {
 		}
 	},
 	draw: function() { // główna pętla gry
-		var t = Date.now() - (game.delay + game.ping.av());
+		var t = Date.now() - (game.delay + debug.ping.av());
 		game.frame_time = t;
 
 		for (var i = 0; i < packages.length; i++) {
@@ -116,69 +113,69 @@ var game = {
 				var m = game.msg1 = packages[i - 1];
 				game.msg2 = packages[i];
 
-				game.log.init();
-				game.mid_times.length = 0;
+				debug.log.init();
+				debug.log.mid_times.length = 0;
 
 				player.pos();
 				board.draw_background();
 				board.draw_sp_objects();
-				game.log.addState(); // 0
+				debug.log.addState(); // 0
 
 				board.draw();
-				game.log.addState() // 1
+				debug.log.addState() // 1
 
 				tank.draw();
-				game.log.addState(); // 2
+				debug.log.addState(); // 2
 
 				bullets.draw();
-				game.log.addState(); // 3
+				debug.log.addState(); // 3
 
 				board.draw_animations();
 
 				var draw = 0;
 
-				if (m.t[player.id].life != player.life) {
-					player.life = m.t[player.id].life;
+				if (player.life != m.t[player.id].lf) {
+					player.life = m.t[player.id].lf;
 					draw++;
 				}
-				if (m.t[player.id].ab.nuke != player.ab.nuke) {
-					player.ab.nuke = m.t[player.id].ab.nuke;
+				if (player.ab.shot != m.t[player.id].ab[0]) {
+					player.ab.shot = m.t[player.id].ab[0];
 					draw++;
 				}
-				if (m.t[player.id].ab.shot != player.ab.shot) {
-					player.ab.shot = m.t[player.id].ab.shot;
+				if (player.ab.nuke != m.t[player.id].ab[1]) {
+					player.ab.nuke = m.t[player.id].ab[1]
 					draw++;
 				}
-				if (m.t[player.id].ab.tar_keg != player.ab.tar_keg) {
-					player.ab.tar_keg = m.t[player.id].ab.tar_keg;
+				if (player.ab.tar_keg != m.t[player.id].ab[2]) {
+					player.ab.tar_keg = m.t[player.id].ab[2];
 					draw++;
 				}
 				if (draw != 0) board.draw_icons();
-				game.log.addState(); // 4
+				debug.log.addState(); // 4
 
 				var actions = {
 					a: game.animate,
 					m: chat.murders
 				};
 
-				for(var j in actions) {
-					for(var k=0; k < m[j].length; k++) {
+				for (var j in actions) {
+					for (var k = 0; k < m[j].length; k++) {
 						actions[j].call(this, m[j][k])
 					}
 					m[j].length = 0; // zapobiega ponownemu odtowrzeniu, gdy nie ma nowego pakietu danych
 				}
-				
-				game.log.addState(); // 5
+
+				debug.log.addState(); // 5
 
 				game.res_changes.check();
 
-				game.fps.count();
+				debug.fps.count();
 				game.info();
 
-				game.log.addState(); // 6
+				debug.log.addState(); // 6
 
-				for (var j = 0; j < game.mid_times.length; j++) {
-					if (game.mid_times[j] > 15) logs['LAG_' + j]++;
+				for (var j = 0; j < debug.log.mid_times.length; j++) {
+					if (debug.log.mid_times[j] > 15) logs['LAG_' + j] ++;
 				}
 			} else {
 				board.clear();
@@ -193,13 +190,170 @@ var game = {
 				}, 1000);
 				return;
 			}
-		} else logs["no_packages"]++;
+		} else logs["no_packages"] ++;
 		game.timerId = requestAnimationFrame(game.draw);
 	},
 	rel: function(x, y) {
 		return {
 			x: x + player.SCREEN_WIDTH / 2 - player.x,
 			y: y + player.SCREEN_HEIGHT / 2 - player.y
+		}
+	},
+	info: function() {
+		ctx.font = "13px Arial";
+		ctx.textAlign = "left";
+		ctx.fillStyle = 'white'
+		ctx.fillText('FPS: ' + debug.fps.av(), 15, 15);
+		ctx.fillText('PING ' + debug.ping2.av(), 15, 30);
+
+		ctx.font = "13px Arial";
+		ctx.fillText('KILLS: ' + game.msg1.t[player.id].k, 90, 15);
+		ctx.fillText('DEATHS: ' + game.msg1.t[player.id].d, 170, 15);
+		$('#clients').text('Online: ' + Object.keys(packages[0].t).length);
+	},
+	interp: function(A, C) { // Interpolacja
+		// Zwraca wartość środkowej wartości
+		// A & C - Wartości odpowiadające msg1 & msg2
+		if (A != C) return (C * (game.msg1.ts - game.frame_time) + A * (game.frame_time - game.msg2.ts)) / (game.msg1.ts - game.msg2.ts);
+		else return A;
+	},
+	animate: function(msg) {
+		var t = game.msg1.t[player.id];
+		// volume = (6*base_volume) / log_2(odleglosc + 64) - do dodania!!!
+
+		var a = abilities[msg.ab].audio;
+		if (a) {
+			var x = a.cloneNode(true);
+			x.volume = (6 * game.volume) / Math.log2((msg.x - t.x) * (msg.x - t.x) + (msg.y - t.y) * (msg.y - t.y) + 64)
+			x.play();
+		}
+
+		var a = abilities[msg.ab].animation;
+		if (a) new Sprite(a.src, msg.x, msg.y, a.size, a.speed);
+	},
+	get_players: function(msg) {
+		console.log(JSON.parse(msg));
+	},
+
+	get_map: function(msg) {
+		if (map) map.layers[1].data = msg.split('');
+	},
+	res_changes: {
+		check: function() {
+			var t1 = game.msg1.t[player.id];
+			var t2 = game.msg2.t[player.id];
+			if (!game.msg1.res_checked) {
+				if (t1.ab[0].a > t2.ab[0].a) { // a - amount
+					this.animate('You received ' + (t1.ab[0].a - t2.ab[0].a) + ' bullets');
+				}
+				if (t1.ab[1].a > t2.ab[1].a) {
+					this.animate('You received ' + (t1.ab[1].a - t2.ab[1].a) + ' nukes');
+				}
+				if (t1.lf > t2.lf) {
+					this.animate('You healed ' + (t1.lf - t2.lf) + ' damage');
+				}
+				if (t1.ab[2].a > t2.ab[2].a) {
+					this.animate('You received ' + (t1.ab[2].a - t2.ab[2].a) + ' tar kegs');
+				}
+				if (!!t1.a.sb > !!t2.a.sb) {
+					this.animate('You gained speed bust');
+				}
+				game.msg1.res_checked = true;
+			}
+		},
+		animate: function(text) {
+			$('.game_msg:hidden').remove();
+			$('.game_msg').css('top', '+=20');
+			$('#main').append('<div class="game_msg"></div>');
+			$('.game_msg:last-child')
+				.text(text)
+				.animate({
+					left: player.SCREEN_WIDTH / 2 - $('.game_msg:last-child').width() / 2,
+					top: player.SCREEN_HEIGHT / 2 - $('.game_msg:last-child').height() / 2 + 30,
+				}, 0)
+				.delay(2000)
+				.fadeOut('1000')
+			return $('.game_msg:last-child');
+		}
+	},
+	ab: {
+		get: function(x) {
+			var s = 0;
+			for (var i in player.ab) {
+				if (s == x) {
+					player.active_ability = i;
+					this.display_right();
+					//show_ab_info();
+				}
+				if (player.ab.hasOwnProperty(i) && i != 'shot') {
+					s++
+				}
+			}
+		},
+		switch: function() {
+			var ab = null;
+			var found = false;
+			var first = null;
+			for (var i in player.ab) {
+				if (player.ab.hasOwnProperty(i) && player.ab[i].a != 0 && i != 'shot') {
+					if (!first) first = i;
+					if (found) ab = i;
+					if (i == player.active_ability) found = 1;
+				}
+			}
+			player.active_ability = ab || first || 1;
+			this.display_right();
+		},
+		display_right: function() {
+			$('#ppm').css('background-image', 'url("' + abilities[player.active_ability].img.src + '")');
+			if (game.msg1) $('#ppm .amount').text(game.msg1.t[player.id].ab[player.tr[player.active_ability]].a);
+		},
+		show_info: function(e) {
+			var id = e ? e.target.id : 'ppm';	
+			var ability = (id == 'lpm') ? 'shot' : player.active_ability;
+			var cechy = player.ab[ability];
+			var changes = {
+				d: 'Obrażenia',
+				r: 'Promień',
+				a: 'Ilość'
+			}
+			
+			$('.opis').remove();
+			$('#' + id).append('<div class="opis"></div>');
+			for (var i in cechy) {
+				if (i == 'a') continue;
+				$('.opis').append('<div class="oopis">');
+				$('.oopis:last-child').append('<div class="cecha">' + changes[i] + ':</div>')
+					.append('<div class="value">' + cechy[i] + '</div>');
+			}
+			var x = $('.oopis:last-child').clone().prependTo('.opis');
+			x.find('.cecha').text('Opis');
+			x.find('.value').text(abilities[ability].opis);
+
+
+		},
+		remove_info: function() {
+			$('.opis').remove();
+		},
+	},
+}
+
+var debug = {
+	pl: function() {
+		console.log(JSON.stringify(packages[0]).length);
+	},
+	sl: function() {
+		return packages[0].sl;
+	},
+	log: {
+		mid_times: [],
+		time: 0,
+		addState: function() {
+			this.mid_times.push(Date.now() - this.time);
+			this.time = Date.now()
+		},
+		init: function() {
+			this.time = Date.now()
 		}
 	},
 	ping: {
@@ -242,164 +396,6 @@ var game = {
 		}
 
 	},
-	info: function() {
-		ctx.font = "13px Arial";
-		ctx.textAlign = "left";
-		ctx.fillStyle = 'white'
-		ctx.fillText('FPS: ' + game.fps.av(), 15, 15);
-		ctx.fillText('PING ' + game.ping2.av(), 15, 30);
-
-		ctx.font = "13px Arial";
-		ctx.fillText('KILLS: ' + game.msg1.t[player.id].kills, 90, 15);
-		ctx.fillText('DEATHS: ' + game.msg1.t[player.id].deaths, 170, 15);
-		$('#clients').text('Online: ' + Object.keys(packages[0].t).length);
-	},
-	interp: function(A, C) { // Interpolacja
-		// Zwraca wartość środkowej wartości
-		// A & C - Wartości odpowiadające msg1 & msg2
-		if (A != C) return (C * (game.msg1.ts - game.frame_time) + A * (game.frame_time - game.msg2.ts)) / (game.msg1.ts - game.msg2.ts);
-		else return A;
-	},
-	animate: function(msg) {
-
-		// volume = (6*base_volume) / log_2(odleglosc + 64) - do dodania!!!
-
-		var a = abilities[msg.ab].audio;
-		if(a) {
-			var x = a.cloneNode(true);
-			x.volume = game.volume;
-			x.play();
-		}
-		
-		var a = abilities[msg.ab].animation;
-		if(a) new Sprite(a.src, msg.x, msg.y, a.size, a.speed);
-	},
-	log: {
-		time: 0,
-		addState: function() {
-			game.mid_times.push(Date.now() - game.log.time);
-			game.log.time = Date.now()
-		},
-		init: function() {
-			game.log.time = Date.now()
-		}
-	},
-	res_changes: {
-		check: function() {
-			var t1 = game.msg1.t[player.id];
-			var t2 = game.msg2.t[player.id];
-			if (!game.msg1.res_checked) {
-				if (t1.ab.shot.amount > t2.ab.shot.amount) {
-					this.animate('You received ' + (t1.ab.shot.amount - t2.ab.shot.amount) + ' bullets');
-				}
-				if (t1.ab.nuke.amount > t2.ab.nuke.amount) {
-					this.animate('You received ' + (t1.ab.nuke.amount - t2.ab.nuke.amount) + ' nukes');
-				}
-				if (t1.life > t2.life) {
-					this.animate('You healed ' + (t1.life - t2.life) + ' damage');
-				}
-				if (t1.ab.tar_keg.amount > t2.ab.tar_keg.amount) {
-					this.animate('You received ' + (t1.ab.tar_keg.amount - t2.ab.tar_keg.amount) + ' tar kegs');
-				}
-				if (!!t1.auras.sb > !!t2.auras.sb) {
-					this.animate('You gained speed bust');
-				}		
-				game.msg1.res_checked = true;
-			}
-		},
-		animate: function(text) {
-			$('.game_msg:hidden').remove();
-			$('.game_msg').css('top', '+=20');
-			$('#main').append('<div class="game_msg"></div>');
-			$('.game_msg:last-child')
-				.text(text)
-				.animate({
-					left: player.SCREEN_WIDTH / 2 - $('.game_msg:last-child').width() / 2,
-					top: player.SCREEN_HEIGHT / 2 - $('.game_msg:last-child').height() / 2 + 30,
-				}, 0)
-				.delay(2000)
-				.fadeOut('1000')
-			return $('.game_msg:last-child');
-		}
-	},
-	switch_weapons: function() {
-		var ab = null;
-		var found = false;
-		var first = null;
-		for (var i in player.ab) {
-			if (player.ab.hasOwnProperty(i) && player.ab[i] != 0 && i != 'shot') {
-				if (!first) first = i;
-				if (found) ab = i;
-				if (i == player.active_ability) found = 1;
-			}
-		}
-		player.active_ability = ab || first || 'nuke';
-		game.display_right_ab();
-		//game.show_ab_info();
-	},
-	get_ab: function(x) {
-		var s = 0;
-		for (var i in player.ab) {
-			if (s == x) {
-				player.active_ability = i;
-				game.display_right_ab();
-				//show_ab_info();
-			}
-			if (player.ab.hasOwnProperty(i) && i != 'shot') {
-				s++
-			}
-		}
-	},
-	display_right_ab: function() {
-		$('#ppm').css('background-image', 'url("' + abilities[player.active_ability].img.src + '")');
-		if (game.msg1) $('#ppm .amount').text(game.msg1.t[player.id].ab[player.active_ability].amount);
-	},
-	get_players: function(msg) {
-		console.log(JSON.parse(msg));
-	},
-	show_ab_info: function(e) {
-		var id = e? e.target.id : 'ppm';
-		$('.opis').remove();
-		var changes = {
-			'dmg': 'Obrażenia',
-			'radius': 'Promień',
-			'opis': 'Opis',
-			'amount': 'Ilość'
-		}
-		$('#' + id).append('<div class="opis"></div>');
-		var a = (id == 'lpm')? player.ab['shot'] : player.ab[player.active_ability]
-		for(var i in a) {
-			$('.opis').append('<div class="oopis">');
-			$('.oopis:last-child').append('<div class="cecha">' + changes[i] + ':</div>')
-				.append('<div class="wartosc">' + a[i] + '</div>');
-		}
-	},
-	remove_ab_info: function() {
-		$('.opis').remove();
-	},
-	get_map: function(msg) {
-		if(map) map.layers[1].data = msg.split('');
-	}
-
-}
-
-var debug = {
-	pl: function() { 
-		console.log(JSON.stringify(packages[0]).length);
-	},
-	fps: function() {
-
-	},
-	ping: function() {
-
-	},
-
-	sl: function() {
-		return packages[0].sl;
-	},
-	logs: function() {
-
-	}	
 }
 
 var player = {
@@ -420,6 +416,11 @@ var player = {
 		hp: 0,
 		lpm_amount: 0,
 		ppm_amount: 0
+	},
+	tr: { // transform
+		shot: 0,
+		nuke: 1,
+		tar_keg: 2
 	}
 }
 
@@ -442,7 +443,7 @@ var board = {
 		ctx.fillStyle = 'white';
 		ctx.textAlign = "center";
 		ctx.font = "100px Lato";
-		ctx.fillText('Zostałeś zabity', player.SCREEN_WIDTH/2, player.SCREEN_HEIGHT/2);
+		ctx.fillText('Zostałeś zabity', player.SCREEN_WIDTH / 2, player.SCREEN_HEIGHT / 2);
 	},
 	draw_sp_objects: function() {
 		for (var i in game.msg1.sp) {
@@ -452,45 +453,45 @@ var board = {
 				var x = game.interp(ob1.x, ob2.x);
 				var y = game.interp(ob1.y, ob2.y);
 				var wsp = game.rel(x, y);
-				switch (game.msg1.sp[i].kind) {	
-						case 'dark-spot':				
+				switch (game.msg1.sp[i].k) {
+					case 'd': // dark spot
 						var r = game.interp(ob1.r, ob2.r);
 						ctx.beginPath();
-						ctx.fillStyle = 'rgba(0, 0, 0, ' + ob1.op + ')';
+						ctx.fillStyle = 'rgba(0, 0, 0, ' + ob1.o + ')';
 						ctx.beginPath();
 						ctx.arc(wsp.x, wsp.y, r, 0, 2 * Math.PI);
 						ctx.fill();
-						ctx.closePath();	
+						ctx.closePath();
 						break;
-					case 'nuke-mark':
+					case 'n': // nuke mark
 						var mark = abilities.nuke.mark;
-						ctx.drawImage(mark, wsp.x - mark.width/2, wsp.y - mark.width/2, 32, 32);
+						ctx.drawImage(mark, wsp.x - mark.width / 2, wsp.y - mark.width / 2, 32, 32);
 						break;
 					default:
-						logs['dziwny_obiekt']++
-					}
+						logs['dziwny_obiekt'] ++
+				}
 			}
 		}
 	},
 	draw_icons: function() {
 		var t = game.msg1.t[player.id]
 
-		if(player.html.hp != t.life) {
-			$('#hp div').height(t.life /  t.max_life * 80);
-			$('#hp span').text(t.life + ' / ' + t.max_life);
-			player.html.hp = t.life
-			player.html.max_hp = t.max_life;
+		if (player.html.hp != t.lf) {
+			$('#hp div').height(t.lf / t.mlf * 80);
+			$('#hp span').text(t.lf + ' / ' + t.mlf);
+			player.html.hp = t.lf
+			player.html.max_hp = t.mlf;
 		}
-		if(player.html.lpm != t.ab.shot.amount) {
-			$('#lpm .amount').text(t.ab.shot.amount)
-			player.html.lpm = t.ab.shot.amount;
+		if (player.html.lpm != t.ab[0].a) {
+			$('#lpm .amount').text(t.ab[0].a)
+			player.html.lpm = t.ab[0].a;
 		}
 		// Abilities
-		if(player.html.ppm != t.ab[player.active_ability].amount) {
-			$('#ppm .amount').text(t.ab[player.active_ability].amount);
-			player.html.ppm = t.ab[player.active_ability].amount;
+		if (player.html.ppm != t.ab[player.tr[player.active_ability]].a) {
+			$('#ppm .amount').text(t.ab[player.tr[player.active_ability]].a);
+			player.html.ppm = t.ab[player.tr[player.active_ability]].a;
 		}
-		
+
 	},
 	draw_animations: function() {
 		for (var i = 0; i < game.animations.length; i++) {
@@ -543,7 +544,7 @@ var board = {
 
 				}
 			}
-		} else logs['brak_mapy']++;
+		} else logs['brak_mapy'] ++;
 	},
 	clear: function() {
 		ctx.clearRect(0, 0, player.SCREEN_WIDTH, player.SCREEN_HEIGHT);
@@ -552,7 +553,7 @@ var board = {
 
 var tank = {
 	ab: function(ability) {
-		if (game.msg1.t[player.id].ab[ability].amount > 0) {
+		if (game.msg1.t[player.id].ab[player.tr[ability]].a > 0) {
 			socket.emit('client-event', {
 				ability: ability,
 				mx: player.mx,
@@ -567,8 +568,8 @@ var tank = {
 				var t2 = game.msg2.t[i];
 				var x = game.interp(t1.x, t2.x);
 				var y = game.interp(t1.y, t2.y);
-				var life = t1.life; 
-				var max_life = t1.max_life;
+				var life = t1.lf;
+				var max_life = t1.mlf;
 				var wsp = game.rel(x, y);
 
 				if (player.id == i) {
@@ -605,10 +606,10 @@ var tank = {
 				ctx.closePath();
 
 
-				var l_x1 = game.interp(t1.lufa.x1, t2.lufa.x1);
-				var l_x2 = game.interp(t1.lufa.x2, t2.lufa.x2);
-				var l_y1 = game.interp(t1.lufa.y1, t2.lufa.y1);
-				var l_y2 = game.interp(t1.lufa.y2, t2.lufa.y2);
+				var l_x1 = game.interp(t1.l.x1, t2.l.x1) / 10;
+				var l_x2 = game.interp(t1.l.x2, t2.l.x2) / 10;
+				var l_y1 = game.interp(t1.l.y1, t2.l.y1) / 10;
+				var l_y2 = game.interp(t1.l.y2, t2.l.y2) / 10;
 
 				var wsp1 = game.rel(l_x1, l_y1);
 				var wsp2 = game.rel(l_x2, l_y2);
@@ -625,7 +626,7 @@ var tank = {
 					ctx.font = "13px Arial";
 					ctx.textAlign = "center";
 					ctx.fillStyle = 'white'
-					ctx.fillText(t1.nick + ' [' + t1.kills + '] ', wsp.x, wsp.y - 30);
+					ctx.fillText(t1.n + ' [' + t1.k + '/' + t1.d + '] ', wsp.x, wsp.y - 30);
 				}
 			}
 		}
@@ -643,12 +644,13 @@ function game_events() {
 		} else if (player.exist && !chat.isFocus) {
 			switch (evt.which) {
 				case 8: // Backspace
-					evt.preventDefault();
+					if (evt.target.nodeName == CANVAS || evt.target.nodeName == DOCUMENT)
+						evt.preventDefault();
 					break;
 				case 9: // TAB
 				case 20: //capslock
 					evt.preventDefault();
-					game.switch_weapons();
+					game.ab.switch();
 					break;
 				case 13: // Enter - czat
 					chat.show();
@@ -754,8 +756,8 @@ function game_events() {
 		}
 	});
 	$('#ppm').click(game.switch_weapons);
-	$('#ppm, #lpm').mouseover(game.show_ab_info)
-		.mouseout(game.remove_ab_info);
+	$('#ppm, #lpm').mouseover(game.ab.show_info)
+		.mouseout(game.ab.remove_info);
 }
 
 var bullets = {

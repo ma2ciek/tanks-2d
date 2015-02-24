@@ -160,7 +160,7 @@ map.get_pos = function(id) {
 		y: y
 	};
 };
-map.changes= [];
+map.changes = [];
 map.av_places = [];
 map.boxes = [];
 
@@ -196,7 +196,7 @@ function mainLoop() {
 	}
 }
 
-function uploadMap () {
+function uploadMap() {
 	var data = map.layers[1].data;
 	io.emit('map', data.join(''));
 }
@@ -205,14 +205,14 @@ function uploadMap () {
 
 function send_data() {
 	var res = JSON.stringify({
-		t:  tank.list,
-		b:  bullets.export(),
+		t: tank.export(),
+		b: bullets.export(),
 		mc: map.changes,
-		sp: sp_objects.list,
-		a:  game.animations,
+		sp: sp_objects.export(),
+		a: game.animations,
 		sl: game.latency,
 		ts: Date.now(),
-		m:  game.murders,
+		m: game.murders,
 		nr: ++game.package_nr,
 	});
 	io.emit('game-update', res);
@@ -250,6 +250,7 @@ var sp_ob = {
 }
 var ab = {
 	nuke: {
+		id: 1,
 		base_dmg: 25,
 		dmg_per_lvl: 2,
 		latency: 500,
@@ -258,7 +259,6 @@ var ab = {
 		base_radius: 64,
 		radius_per_lvl: 3,
 		sp_object: 'nuke-mark',
-		opis: 'Mina wybuchająca po 0.5 sekundy',
 		start_amount: 2,
 		counted_values: ['dmg', 'radius'],
 		dmg: function(id) {
@@ -269,10 +269,10 @@ var ab = {
 		},
 	},
 	shot: {
+		id: 0,
 		base_dmg: 10,
 		dmg_per_lvl: 1,
 		bullets: true,
-		opis: 'Zwykły strzał z lufy',
 		start_amount: 60,
 		counted_values: ['dmg'],
 		dmg: function(id) {
@@ -280,11 +280,11 @@ var ab = {
 		}
 	},
 	tar_keg: {
+		id: 2,
 		AoE: true,
 		base_radius: 100,
 		radius_per_lvl: 10,
 		sp_object: 'dark-spot', // do zmiany na obiekt
-		opis: 'Beczka ze smołą spowalniająca przeciwnika',
 		start_amount: 2,
 		counted_values: ['radius'],
 		radius: function(id) {
@@ -297,11 +297,44 @@ var ab = {
 
 var tank = {
 	list: {},
+	export: function() {
+		var el = {}
+		for (i in this.list) {
+			el[i] = {
+				x: parseInt(this.list[i].x),
+				y: parseInt(this.list[i].y),
+				k: this.list[i].kills,
+				d: this.list[i].deaths,
+				l: {
+					x1: parseInt(this.list[i].lufa.x1 * 10), // zawsze jeden znak do przodu :D
+					x2: parseInt(this.list[i].lufa.x2 * 10),
+					y1: parseInt(this.list[i].lufa.y1 * 10),
+					y2: parseInt(this.list[i].lufa.y2 * 10)
+				},
+				lf: this.list[i].life,
+				mlf: this.list[i].max_life,
+				ab: (function(that) {
+					var res={};
+					for(var j in that.list[i].ab) {
+						var a = that.list[i].ab[j];
+						res[ab[j].id] = {};
+						for(var k in a) {
+							res[ab[j].id][k[0]] = a[k] // UWAGA - UCINA!!!!
+						}
+					}
+					return res;
+				})(this),
+				n: this.list[i].nick,
+				a: this.list[i].auras,
+			}
+		}
+		return el;
+	},
 	proto: function(id, pos) {
 		var wsp = map.get_pos(pos)
 		this.x = wsp.x;
 		this.y = wsp.y;
-		this.speed = Math.floor(300 / speed);
+		this.speed = 300 / speed;
 		this.dirX = 0;
 		this.dirY = 0;
 		this.radius = 22;
@@ -328,7 +361,6 @@ var tank = {
 		for (var i in ab) {
 			this.ab[i] = {
 				amount: ab[i].start_amount,
-				opis: ab[i].opis
 			}
 		}
 		this.count();
@@ -572,7 +604,7 @@ var bullets = {
 	list: {},
 	export: function() {
 		var el = {}
-		for(i in this.list) {
+		for (i in this.list) {
 			el[i] = {
 				x: parseInt(this.list[i].x),
 				y: parseInt(this.list[i].y),
@@ -652,6 +684,19 @@ var bullets = {
 var sp_objects = {
 	index: 0,
 	list: {},
+	export: function() {
+		var el = {}
+		for (i in this.list) {
+			el[i] = {
+				k: this.list[i].kind[0], // UWAGA na przyszłość!!!
+				x: parseInt(this.list[i].x),
+				y: parseInt(this.list[i].y),
+				r: this.list[i].r || 0,
+				o: this.list[i].op || 0
+			};
+		};
+		return el;
+	},
 	animate: function() {
 		for (var i in this.list) {
 			if (this.list.hasOwnProperty(i)) {

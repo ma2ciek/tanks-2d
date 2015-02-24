@@ -1,5 +1,11 @@
 [{
-  "commit": "dad98ed",
+  "commit": "749f9b8",
+  "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+  "date": "2015-02-24",
+  "message": "Ilość przesyłanych danych zmniejszona jeszcze o połowę :D; Natężenie dźwięku zależy teraz od odległości od użycia umiejętności"
+},
+{
+  "commit": "24fdacb",
   "author": "Maciej Bukowski <ma2ciek@gmail.com>",
   "date": "2015-02-23",
   "message": "Poprawiony duży bug w grze związany z przesyłaniem zbyt dużych ilości danych; Częściowo rozwiązny problem z deaktualizacją mapy; Mocniejsza kompresja i filtracja przesyłanych danych"

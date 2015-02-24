@@ -20,7 +20,8 @@ var abilities = {
 			var img = new Image();
 			img.src = './img/mark.png';
 			return img;
-		})()
+		})(),
+		opis: 'Mina wybuchająca po 0.5 sekundy',
 	},
 	shot: {
 		img: (function() {
@@ -32,7 +33,8 @@ var abilities = {
 			var a = new Audio('audio/gun_shot.wav');
 			a.load();
 			return a;
-		})()
+		})(),
+		opis: 'Zwykły strzał z lufy',
 	},
 	tar_keg: {
 		img: (function() {
@@ -40,6 +42,7 @@ var abilities = {
 			img.src = './img/tar_keg.png';
 			return img;
 		})(),
+		opis: 'Beczka ze smołą spowalniająca przeciwnika',
 	}
 }
 
