@@ -13,14 +13,6 @@
 	src:url('./fonts/lato/Lato-Regular.ttf') format('truetype');
 	font-weight: 400;
 }
-@-webkit-keyframes spin {
-	from { transform: rotate(0deg); }
-	to { transform: rotate(360deg); }
-}
-@keyframes spin {
-	from { transform: rotate(0deg); }
-	to { transform: rotate(360deg); }
-}
 
 
 body {

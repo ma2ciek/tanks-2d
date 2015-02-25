@@ -10,7 +10,10 @@ git log \
     $@ | \
     perl -pe 'BEGIN{print "["}; END{print "]\n"}' | \
     perl -pe 's/},]/}]/' > ./pub/data/logs.json
-    
+   
+git add .
 git commit --amend --no-edit
+
+git push -f heroku master
 
 #git log --date=short --pretty='format:%h %s%n\t%cd, %an <%ae>'

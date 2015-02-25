@@ -5,8 +5,8 @@ html(lang='pl')
 		meta(charset='utf-8')
 		meta(http-equiv='PRAGMA', content='NO-CACHE')
 		meta(http-equiv='CACHE-CONTROL', content='NO-CACHE')
-		meta(name='description', content='Simple 2D multiplayer game')
-		meta(name='keywords', content='tanks, 2d, tanks-2d, game, maciej, bukowski')
+		meta(name='description', content='Prosty multiplayer napisany używając technologii Canvas, Node.js & JS')
+		meta(name='keywords', content='HTML5, Canvas, JS, tanks-2d, game, maciej, bukowski')
 		meta(name='author', content='Maciej Bukowski')
 		meta(name='viewport' content='width=device-width, initial-scale=0.8, maximum-scale=0.8, minimum-scale=0.8')
 		meta(name="google-site-verification", content="Mq6-MEW-pga1FY9iN-dWloNFt5MGkOYlLXshVHmQTJU")
@@ -30,11 +30,11 @@ html(lang='pl')
 				span v 1.0
 		div#main
 			form(action="javascript:play()")
-				div#play Play as
+				div#play Zaloguj się do gry jako:
 					input.nick(placeholder="Your nick", pattern="[0-9A-Za-z]{4,15}", required="required")
-					button.big.positive(type='submit') Play
-			a.button.big(href='/tutorial') Tutorial
-			a.button.big(href='/settings') Settings
+					button.big.positive(type='submit') Graj
+			a.button.big(href='/tutorial') Tutorial & FAQ
+			a.button.big(href='/settings') Ustawienia
 			h2 Changelog:
 			div.changes
 		footer

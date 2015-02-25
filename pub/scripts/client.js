@@ -190,7 +190,7 @@ var game = {
 				}, 1000);
 				return;
 			}
-		} else logs["no_packages"] ++;
+		} else logs["missing_packages"] ++;
 		game.timerId = requestAnimationFrame(game.draw);
 	},
 	rel: function(x, y) {
@@ -236,7 +236,9 @@ var game = {
 	},
 
 	get_map: function(msg) {
-		if (map) map.layers[1].data = msg.split('');
+		try {
+			map.layers[1].data = msg.split('');
+		} catch (err) {}
 	},
 	res_changes: {
 		check: function() {
@@ -309,7 +311,7 @@ var game = {
 			if (game.msg1) $('#ppm .amount').text(game.msg1.t[player.id].ab[player.tr[player.active_ability]].a);
 		},
 		show_info: function(e) {
-			var id = e ? e.target.id : 'ppm';	
+			var id = e ? e.target.id : 'ppm';
 			var ability = (id == 'lpm') ? 'shot' : player.active_ability;
 			var cechy = player.ab[ability];
 			var changes = {
@@ -317,7 +319,7 @@ var game = {
 				r: 'Promień',
 				a: 'Ilość'
 			}
-			
+
 			$('.opis').remove();
 			$('#' + id).append('<div class="opis"></div>');
 			for (var i in cechy) {
@@ -335,66 +337,6 @@ var game = {
 		remove_info: function() {
 			$('.opis').remove();
 		},
-	},
-}
-
-var debug = {
-	pl: function() {
-		console.log(JSON.stringify(packages[0]).length);
-	},
-	sl: function() {
-		return packages[0].sl;
-	},
-	log: {
-		mid_times: [],
-		time: 0,
-		addState: function() {
-			this.mid_times.push(Date.now() - this.time);
-			this.time = Date.now()
-		},
-		init: function() {
-			this.time = Date.now()
-		}
-	},
-	ping: {
-		times: [1],
-		time_sum: 1,
-		addState: function(x) {
-			this.times.unshift(x);
-			if (this.times.length >= 50) this.time_sum -= this.times.pop();
-			this.time_sum += x;
-		},
-		av: function() {
-			return this.time_sum / this.times.length;
-		}
-	},
-	ping2: {
-		times: [1],
-		time_sum: 1,
-		addState: function(x) {
-			this.times.unshift(x);
-			if (this.times.length >= 50) this.time_sum -= this.times.pop();
-			this.time_sum += x;
-		},
-		av: function() {
-			return Math.round(this.time_sum / this.times.length);
-		}
-	},
-	fps: {
-		times: [60],
-		time_sum: 60,
-		last_time: Date.now(),
-		count: function() {
-			var d = Date.now() - this.last_time;
-			this.last_time = Date.now();
-			this.times.unshift(d);
-			if (this.times.length >= 50) this.time_sum -= this.times.pop();
-			this.time_sum += d;
-		},
-		av: function() {
-			return Math.round(1000 / (this.time_sum / this.times.length));
-		}
-
 	},
 }
 
@@ -606,19 +548,16 @@ var tank = {
 				ctx.closePath();
 
 
-				var l_x1 = game.interp(t1.l.x1, t2.l.x1) / 10;
-				var l_x2 = game.interp(t1.l.x2, t2.l.x2) / 10;
-				var l_y1 = game.interp(t1.l.y1, t2.l.y1) / 10;
-				var l_y2 = game.interp(t1.l.y2, t2.l.y2) / 10;
+				var l_x = game.interp(t1.l.x, t2.l.x) / 10;
+				var l_y = game.interp(t1.l.y, t2.l.y) / 10;
 
-				var wsp1 = game.rel(l_x1, l_y1);
-				var wsp2 = game.rel(l_x2, l_y2);
+				var wsp1 = game.rel(l_x, l_y);
 
 				(player.id == i) ? ctx.strokeStyle = '#333': ctx.strokeStyle = '#c60';
 				ctx.beginPath();
-				ctx.moveTo(wsp1.x, wsp1.y);
+				ctx.moveTo(wsp.x, wsp.y);
 				ctx.lineWidth = 6;
-				ctx.lineTo(wsp2.x, wsp2.y);
+				ctx.lineTo(wsp1.x, wsp1.y);
 				ctx.stroke();
 				ctx.closePath();
 

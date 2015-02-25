@@ -63,7 +63,7 @@ var resources = {
 
 
 
-/* ADDITIONS */
+/* DEBUGGING */
 
 var logs = {
 	LAG_1: 0,
@@ -74,52 +74,118 @@ var logs = {
 	LAG_6: 0,
 	brak_mapy: 0,
 	dziwny_obiekt: 0,
-	no_packages: 0
-
-
+	missing_packages: 0
 };
 
-
-
-
-var matrix = {
-	id: null,
-	speed: 60,
-	init: function() {
-		clearTimeout(this.id);
-		console.log(game.mid_times.join(' '))
-		this.id = setTimeout(matrix.init, 1000 / matrix.speed);
+var debug = {
+	pl: function() {
+		return JSON.stringify(packages[0]).length;
 	},
-	end: function() {
-		clearTimeout(this.id);
+	sl: function() {
+		return packages[0].sl;
+	},
+	log: {
+		mid_times: [],
+		time: 0,
+		addState: function() {
+			this.mid_times.push(Date.now() - this.time);
+			this.time = Date.now()
+		},
+		init: function() {
+			this.time = Date.now()
+		},
+		show: function() {
+			return this.mid_times.reduce(function(a, b) {
+				return (a + b);
+			})
+		}
+	},
+	ping: {
+		times: [1],
+		time_sum: 1,
+		addState: function(x) {
+			this.times.unshift(x);
+			if (this.times.length >= 50) this.time_sum -= this.times.pop();
+			this.time_sum += x;
+		},
+		av: function() {
+			return this.time_sum / this.times.length;
+		}
+	},
+	ping2: {
+		times: [1],
+		time_sum: 1,
+		addState: function(x) {
+			this.times.unshift(x);
+			if (this.times.length >= 50) this.time_sum -= this.times.pop();
+			this.time_sum += x;
+		},
+		av: function() {
+			return Math.round(this.time_sum / this.times.length);
+		}
+	},
+	fps: {
+		times: [60],
+		time_sum: 60,
+		last_time: Date.now(),
+		count: function() {
+			var d = Date.now() - this.last_time;
+			this.last_time = Date.now();
+			this.times.unshift(d);
+			if (this.times.length >= 50) this.time_sum -= this.times.pop();
+			this.time_sum += d;
+		},
+		av: function() {
+			return Math.round(1000 / (this.time_sum / this.times.length));
+		}
+
+	},
+	matrix: {
+		id: null,
+		speed: 10,
+		loop: function() {
+			console.log(
+				'Czas animacji:', debug.log.show(),
+				'Długość pakietu danych:', debug.pl(),
+				'Obc. serwera:', debug.sl(),
+				'FPS:', debug.fps.av(),
+				'PING', debug.ping2.av()
+			);
+		},
+		start: function() {
+			this.id = setInterval(this.loop, 1000 / this.speed);
+		},
+		end: function() {
+			clearInterval(this.id);
+		}
 	}
 }
 
 // prototyp wektora
 var vector = function(x, y) {
-	this.x = x;
-	this.y = y;
-	this.size = Math.sqrt(x * x + y * y);
-	this.unit = {
-		x: this.x / this.size,
-		y: this.y / this.size
-	};
-}
-// Prototryp Canvas roundRect
-/*
-CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
-	if (w < 2 * r) r = w / 2;
-	if (h < 2 * r) r = h / 2;
-	this.beginPath();
-	this.moveTo(x + r, y);
-	this.arcTo(x + w, y, x + w, y + h, r);
-	this.arcTo(x + w, y + h, x, y + h, r);
-	this.arcTo(x, y + h, x, y, r);
-	this.arcTo(x, y, x + w, y, r);
-	this.closePath();
-	return this;
-}
-*/
+		this.x = x;
+		this.y = y;
+		this.size = Math.sqrt(x * x + y * y);
+		this.unit = {
+			x: this.x / this.size,
+			y: this.y / this.size
+		};
+	}
+	// Prototryp Canvas roundRect
+	/*
+	CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+		if (w < 2 * r) r = w / 2;
+		if (h < 2 * r) r = h / 2;
+		this.beginPath();
+		this.moveTo(x + r, y);
+		this.arcTo(x + w, y, x + w, y + h, r);
+		this.arcTo(x + w, y + h, x, y + h, r);
+		this.arcTo(x, y + h, x, y, r);
+		this.arcTo(x, y, x + w, y, r);
+		this.closePath();
+		return this;
+	}
+	*/
 
 /* REDEFINED */
 

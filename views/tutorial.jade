@@ -8,7 +8,7 @@ html(lang='pl')
 		meta(name='description', content='Simple 2D multiplayer game')
 		meta(name='keywords', content='tanks, 2d, tanks-2d, game, maciej, bukowski')
 		meta(name='author', content='Maciej Bukowski')
-		link(rel='stylesheet', href='css/main.css', type='text/css')
+		link(rel='stylesheet', href='css/tutorial.css', type='text/css')
 		link(rel='stylesheet', href='css/buttons/buttons.css', type='text/css')
 		link(rel='icon', href='img/favicon.png')
 		script(src='/socket.io/socket.io.js')
@@ -16,7 +16,18 @@ html(lang='pl')
 		script(src='scripts/main.js')
 	body
 		header
-			h1 Tutorial
+			h1 Poradnik & FAQ
 		div#main
-			a#play.button.big.positive(href='/') Back
-			p In progress...
+			a#play.button.big(href='/') Strona Główna
+			div.faq
+				h3 Co zrobić jeśli gra działa wolno lub niepłynnie?
+				ul
+					li Zamknij inne karty i aplikacje działające w tle
+					li Wyłącz 'trawę' w ustawieniach
+					li Zmniejsz okno przeglądarki
+					li Dostosuj 'opóźnienie' w ustawieniach, żeby znaleźć kompromis pomiędzy opóźnieniem wyświetlanych informacji i płynnością gry
+					li Zrestartuj przeglądarkę
+					li Spróbuj na innej przeglądarce - najlepiej Google Chrome
+					li Jeśli ciągle masz problem, to wyślij 
+						a(href="mailto:ma2ciek@gmail.com&subject='Tank-2d, lagi'") e-maila
+						span , a postaram się go naprawić

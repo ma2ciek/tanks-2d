@@ -301,15 +301,13 @@ var tank = {
 		var el = {}
 		for (i in this.list) {
 			el[i] = {
-				x: parseInt(this.list[i].x),
-				y: parseInt(this.list[i].y),
+				x: Math.round(this.list[i].x),
+				y: Math.round(this.list[i].y),
 				k: this.list[i].kills,
 				d: this.list[i].deaths,
 				l: {
-					x1: parseInt(this.list[i].lufa.x1 * 10), // zawsze jeden znak do przodu :D
-					x2: parseInt(this.list[i].lufa.x2 * 10),
-					y1: parseInt(this.list[i].lufa.y1 * 10),
-					y2: parseInt(this.list[i].lufa.y2 * 10)
+					x: Math.round(this.list[i].lufa.x * 10), // zawsze jeden znak do przodu :D
+					y: Math.round(this.list[i].lufa.y * 10)
 				},
 				lf: this.list[i].life,
 				mlf: this.list[i].max_life,
@@ -340,17 +338,15 @@ var tank = {
 		this.radius = 22;
 		this.r = 22;
 		this.lufa = {
-			x1: this.x + 5,
-			y1: this.y,
-			x2: this.x + 15,
-			y2: this.y
+			x: 300,
+			y: 400
 		};
 		this.id = id;
 		this.life = 100 + players[id].kills * 10;
-		this.mx = 0;
-		this.my = 0;
-		this.posX = 0;
-		this.posY = 0;
+		this.mx = null,
+		this.my = null,
+		this.mPosX = this.x;
+		this.mPosY = this.y + 1;
 		this.kills = players[id].kills;
 		this.deaths = players[id].deaths;
 		this.Vx = 0;
@@ -570,20 +566,19 @@ var tank = {
 					}
 				}
 			}
-
-			t.x = x;
-			t.y = y;
-
+			// KURSOR
 			t.mx = t.mPosX + x - players[id].SCREEN_WIDTH / 2;
 			t.my = t.mPosY + y - players[id].SCREEN_HEIGHT / 2;
 
+			// RUCH:
+			t.x = x;
+			t.y = y;
 
+			// DIZAŁO:
 			var v = new game.vector(t.mx - t.x, t.my - t.y);
 			t.lufa = {
-				x1: t.x + v.unit.x * 8,
-				y1: t.y + v.unit.y * 8,
-				x2: t.x + v.unit.x * 30,
-				y2: t.y + v.unit.y * 30
+				x: t.x + v.unit.x * 30,
+				y: t.y + v.unit.y * 30
 			};
 		}
 	}
@@ -606,8 +601,8 @@ var bullets = {
 		var el = {}
 		for (i in this.list) {
 			el[i] = {
-				x: parseInt(this.list[i].x),
-				y: parseInt(this.list[i].y),
+				x: Math.round(this.list[i].x),
+				y: Math.round(this.list[i].y),
 				r: this.list[i].r
 			}
 		}
@@ -663,8 +658,8 @@ var bullets = {
 		var mx = tank.list[id].mx;
 		var my = tank.list[id].my;
 
-		this.x = tank.list[id].lufa.x2;
-		this.y = tank.list[id].lufa.y2;
+		this.x = tank.list[id].lufa.x;
+		this.y = tank.list[id].lufa.y;
 
 		var size = Math.sqrt((mx - x) * (mx - x) + (my - y) * (my - y));
 

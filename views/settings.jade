@@ -1,0 +1,58 @@
+doctype
+html(lang='pl')
+	head
+		title Tanks 2D - Settings
+		meta(charset='utf-8')
+		meta(http-equiv='PRAGMA', content='NO-CACHE')
+		meta(http-equiv='CACHE-CONTROL', content='NO-CACHE')
+		meta(name='author', content='Maciej Bukowski')
+		meta(name='viewport' content='width=device-width, initial-scale=0.8, maximum-scale=0.8, minimum-scale=0.8')
+		link(rel='stylesheet', href='css/buttons/buttons.css', type='text/css')
+		link(rel='stylesheet', href='css/settings.css', type='text/css')
+		link(rel='icon', href='img/favicon.png')
+		script(src='/socket.io/socket.io.js')
+		script(src='scripts/jquery-2.1.0.min.js')
+		script(src='scripts/settings.js')
+	body
+		div#settings
+			H1 Ustawienia
+
+			div
+				div.basic
+					h3 Podstawowe
+					ul
+						li 
+							span Poziom dźwięku:
+							input#sound_volume(type="range", min="0", max="1", step="0.02")
+						li
+							span Brak trawy
+							input#brak_trawy(type="checkbox")
+				div.advanced
+					h3 Zaawansowane
+					ul
+						li 
+							span Opóźnienie:
+							input#game_delay(type="text")
+				div.controls
+					h3 Sterowanie
+					ul
+						li
+							span Ruch:
+							span [WSAD], Strzałki
+						li
+							span Strzał:
+							span [Space], LPM
+						li
+							span Aktywny skill:
+							span PPM
+						li
+							span Skill'e
+							span [1], [2], ...
+						li
+							span Chat:
+							span [ENTER]
+						li
+							span Zmiana umiejętności:
+							span [TAB]
+
+		a.button.big.back(href='/') Strona główna

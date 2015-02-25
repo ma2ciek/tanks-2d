@@ -1,5 +1,11 @@
 [{
-  "commit": "749f9b8",
+  "commit": "11412c1",
+  "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+  "date": "2015-02-25",
+  "message": "Lufa pojawia się już na początku gry; Dodane ustwienia i tutorial dostępne na stronie głównej"
+},
+{
+  "commit": "0c99b95",
   "author": "Maciej Bukowski <ma2ciek@gmail.com>",
   "date": "2015-02-24",
   "message": "Ilość przesyłanych danych zmniejszona jeszcze o połowę :D; Natężenie dźwięku zależy teraz od odległości od użycia umiejętności"
