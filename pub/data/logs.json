@@ -1,5 +1,11 @@
 [{
-  "commit": "11412c1",
+  "commit": "000d520",
+  "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+  "date": "2015-03-20",
+  "message": "Dodany projekt zmiany wyglądu czołgu na bardziej realistyczny :D - /beta"
+},
+{
+  "commit": "a78fe5e",
   "author": "Maciej Bukowski <ma2ciek@gmail.com>",
   "date": "2015-02-25",
   "message": "Lufa pojawia się już na początku gry; Dodane ustwienia i tutorial dostępne na stronie głównej"

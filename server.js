@@ -22,6 +22,7 @@ app.use(methodOverride())
 app.use(express.static(__dirname + '/pub'));
 
 app.get('/', routes.index);
+app.get('/beta', routes.beta);
 app.get('/play', routes.play)
 app.get('/settings', routes.settings);
 app.get('/tutorial', routes.tutorial);

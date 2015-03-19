@@ -10,3 +10,6 @@ exports.tutorial = function(req, res) {
 exports.settings = function(req, res) {
 	res.render('settings');
 }
+exports.beta = function(req,res) {
+	res.render('beta');
+}
