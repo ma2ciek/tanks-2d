@@ -8,7 +8,7 @@ window.addEventListener('load', function load() {
 	})
 	ctx = $('canvas')[0].getContext('2d')
 	game.timer.start = +new Date();
-	ctx.webkitImageSmoothingEnabled = true;
+	ctx.ImageSmoothingEnabled = true;
 	events();
 	game.draw();
 });
@@ -138,7 +138,7 @@ var tanks =
 			oy: 88,
 			l: 115
 		},
-		img: new Img('../img/tanks/E-100_strip2.png'),
+		img: new Img('./sites/real-tanks/E-100_strip2.png'),
 		padding: 5,
 		speed: 7,
 		rot_speed: 0.08,
@@ -159,7 +159,7 @@ var tanks =
 			oy: 130,
 			l: 120
 		},
-		img: new Img('../img/tanks/KV-2_strip2.png'),
+		img: new Img('./sites/real-tanks/KV-2_strip2.png'),
 		padding: 5,
 		speed: 5,
 		rot_speed: 0.05,

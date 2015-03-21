@@ -1,34 +1,10 @@
-@font-face{
-	font-family: Lato;
-	src:url('./fonts/lato/Lato-Hairline.ttf') format('truetype');
-	font-weight: 100;
-}
-@font-face{
-	font-family: Lato;
-	src:url('./fonts/lato/Lato-Light.ttf') format('truetype');
-	font-weight: 200;
-}
-@font-face{
-	font-family: Lato;
-	src:url('./fonts/lato/Lato-Regular.ttf') format('truetype');
-	font-weight: 400;
-}
-
-
-
-body {
-	background-color: #333;
-	margin: 0;
-	color: #FFF;
-	font-family: Lato, Calibri, Arial;
-}
 a.back {
 	margin: 0 auto;
 	display: block;
 	width: 100px;
 }
 
-#settings {
+#main {
 	top: 0;
 	left: 0;
 	width: 100%;
@@ -36,47 +12,47 @@ a.back {
 	z-index: 100;
 	color: white;
 }
-#settings h1 {
+#main h1 {
 	font-family: 'Lato', 'Calibri', sans-serif;
 	font-size: 30pt;
 	font-weight: 200;
 	text-align: center;
 }
-#settings > div {
+#main > div {
 	display: flex;
 	justify-content: space-around;
 	text-align: center;
 }
-#settings div > div {
+#main div > div {
 	flex: 1;
 	max-width: 400px;
 }
-#settings h3 {
-	margin-top: 30px;
+#main h3 {
+	margin-top: 0;
 	margin-bottom: 10px;
 	font-weight: 400;
 }
-#settings ul {
+#main ul {
 	list-style-type: none;
 	margin: 0;
 	padding: 0;
 }
-#settings li {
+#main li {
 	padding: 10px 0;
 	border-bottom: 1px solid #AAA;
 	display: inline-block;
 }
-#settings span {
+#main span {
 	display: inline-block;
 	width: 140px;
 }
-#settings input {
+#main input {
 	width: 100px;
 }
-#settings button {
+#main button {
 	width: 100px;
 }
-#exit_settings {
+#exit_main {
 	text-align: center;
 	margin: 50px auto 0;
 	display: block;

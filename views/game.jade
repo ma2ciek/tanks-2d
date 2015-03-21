@@ -2,20 +2,13 @@ doctype
 html(lang='pl')
 	head
 		title Tanks 2D
-		meta(charset='utf-8')
-		meta(http-equiv='PRAGMA', content='NO-CACHE')
-		meta(http-equiv='CACHE-CONTROL', content='NO-CACHE')
-		meta(name='description', content='Simple 2D multiplayer game')
-		meta(name='keywords', content='tanks, 2d, tanks-2d, game, maciej, bukowski')
-		meta(name='author', content='Maciej Bukowski')
+		include ./includes/meta.jade
 		meta(name='viewport' content='width=device-width, initial-scale=0.5, maximum-scale=0.5, minimum-scale=0.5 user-scalable=no')
-		link(rel='stylesheet', href='css/game.css', type='text/css')
-		link(rel='icon', href='img/favicon.png')
-		script(src='/socket.io/socket.io.js')
-		script(src='scripts/jquery-2.1.0.min.js')
-		script(src='scripts/additions.js')
-		script(src='scripts/client.js')
-		script(src='scripts/chat_settings.js')
+		link(rel='stylesheet', href='sites/game/style.css', type='text/css')
+
+		script(src='sites/game/additions.js')
+		script(src='sites/game/index.js')
+		script(src='sites/game/chat_settings.js')
 
 	body.game
 		h1 Tanks 2D
@@ -28,8 +21,8 @@ html(lang='pl')
 			input#chat(autocomplete="off") 
 
 			div#player_panel
-				img.settings(src='img/settings.png')
-				img.chat(src='img/chat.png')
+				img.settings(src='sites/game/img/settings.png')
+				img.chat(src='sites/game/img/chat.png')
 
 			div#hp
 				div.taken_damage
@@ -80,4 +73,5 @@ html(lang='pl')
 						li
 							span Zmiana umiejętności:
 							span [TAB]
-			button#exit_settings EXIT
+			button#exit_settings Powrót do gry
+			button#exit_game(onclick='location.href="/"') Wyjdź z gry

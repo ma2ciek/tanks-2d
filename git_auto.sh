@@ -9,7 +9,7 @@ git log \
     --pretty='format:{%n  "commit": "%h",%n  "author": "%an <%ae>",%n  "date": "%cd",%n  "message": "%s"%n},' \
     $@ | \
     perl -pe 'BEGIN{print "["}; END{print "]\n"}' | \
-    perl -pe 's/},]/}]/' > ./pub/data/logs.json
+    perl -pe 's/},]/}]/' > ./pub/sites/home/changelog.json
    
 git add .
 git commit --amend --no-edit

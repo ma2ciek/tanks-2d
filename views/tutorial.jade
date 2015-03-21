@@ -1,24 +1,17 @@
 doctype
 html(lang='pl')
 	head
-		title Tanks 2D
-		meta(charset='utf-8')
-		meta(http-equiv='PRAGMA', content='NO-CACHE')
-		meta(http-equiv='CACHE-CONTROL', content='NO-CACHE')
-		meta(name='description', content='Simple 2D multiplayer game')
-		meta(name='keywords', content='tanks, 2d, tanks-2d, game, maciej, bukowski')
-		meta(name='author', content='Maciej Bukowski')
-		link(rel='stylesheet', href='css/tutorial.css', type='text/css')
-		link(rel='stylesheet', href='css/buttons/buttons.css', type='text/css')
-		link(rel='icon', href='img/favicon.png')
-		script(src='/socket.io/socket.io.js')
-		script(src='scripts/jquery-2.1.0.min.js')
-		script(src='scripts/main.js')
+		title Tanks 2D - Tutorial
+		include ./includes/meta.jade
+		link(rel='stylesheet', href='sites/tutorial/style.css', type='text/css')
 	body
 		header
-			h1 Poradnik & FAQ
+			include ./includes/menu.jade
+			h1. 
+				Tutorial
+				<span class="blue">&</span> 
+				FAQ
 		div#main
-			a#play.button.big(href='/') Strona Główna
 			div.faq
 				h3 Co zrobić jeśli gra działa wolno lub niepłynnie?
 				ul
@@ -31,3 +24,4 @@ html(lang='pl')
 					li Jeśli ciągle masz problem, to wyślij 
 						a(href="mailto:ma2ciek@gmail.com&subject='Tank-2d, lagi'") e-maila
 						span , a postaram się go naprawić
+		include ./includes/footer

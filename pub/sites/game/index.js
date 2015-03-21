@@ -175,7 +175,7 @@ var game = {
 				debug.log.addState(); // 6
 
 				for (var j = 0; j < debug.log.mid_times.length; j++) {
-					if (debug.log.mid_times[j] > 15) logs['LAG_' + j] ++;
+					if (debug.log.mid_times[j] > 15) debug.errors['LAG_' + (j+1)] ++;
 				}
 			} else {
 				board.clear();
@@ -190,7 +190,7 @@ var game = {
 				}, 1000);
 				return;
 			}
-		} else logs["missing_packages"] ++;
+		} else debug.errors["missing_packages"] ++;
 		game.timerId = requestAnimationFrame(game.draw);
 	},
 	rel: function(x, y) {
@@ -410,7 +410,7 @@ var board = {
 						ctx.drawImage(mark, wsp.x - mark.width / 2, wsp.y - mark.width / 2, 32, 32);
 						break;
 					default:
-						logs['dziwny_obiekt'] ++
+						debug.errors['dziwny_obiekt'] ++
 				}
 			}
 		}
@@ -486,7 +486,7 @@ var board = {
 
 				}
 			}
-		} else logs['brak_mapy'] ++;
+		} else debug.errors['brak_mapy'] ++;
 	},
 	clear: function() {
 		ctx.clearRect(0, 0, player.SCREEN_WIDTH, player.SCREEN_HEIGHT);

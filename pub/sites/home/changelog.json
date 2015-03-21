@@ -1,5 +1,11 @@
 [{
-  "commit": "000d520",
+  "commit": "6331fe5",
+  "author": "Maciej Bukowski <ma2ciek@gmail.com>",
+  "date": "2015-03-21",
+  "message": "Zmiana skórki; Wiele błędów poprawionych; Realokacja plików; Lekka automatyzacja tworzenia plików html"
+},
+{
+  "commit": "95efbaa",
   "author": "Maciej Bukowski <ma2ciek@gmail.com>",
   "date": "2015-03-20",
   "message": "Dodany projekt zmiany wyglądu czołgu na bardziej realistyczny :D - /beta"

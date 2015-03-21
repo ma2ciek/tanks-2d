@@ -1,9 +1,6 @@
 'use strict';
 $(document).ready(function() {
-
-	var nick = localStorage.getItem('nick');
-	if (nick)
-		$('#play input').val(nick);
+	get_nick();
 	changelog();
 })
 
@@ -15,7 +12,7 @@ function play() {
 }
 
 function changelog() {
-	$.getJSON('data/logs.json', function(data) {
+	$.getJSON('./sites/home/changelog.json', function(data) {
 		var logs = data;
 		var start = 88;
 		$('.changes').text('');
@@ -34,5 +31,12 @@ function changelog() {
 				}
 			}
 		}
+
+		$('h1 span').append('.' + (logs.length - start))
 	});
+}
+
+function get_nick() {
+	var nick = localStorage.getItem('nick');
+	if (nick) $('#play input').val(nick);
 }

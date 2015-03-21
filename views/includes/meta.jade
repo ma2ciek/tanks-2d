@@ -1,0 +1,17 @@
+meta(charset='utf-8')
+meta(http-equiv='PRAGMA', content='NO-CACHE')
+meta(http-equiv='CACHE-CONTROL', content='NO-CACHE')
+meta(name='description', content='Prosty multiplayer napisany używając technologii Canvas, Node.js & JS')
+meta(name='keywords', content='HTML5, Canvas, JS, tanks-2d, game, maciej, bukowski')
+meta(name='author', content='Maciej Bukowski')
+
+link(rel='icon', href='data/favicon.png')
+link(rel='stylesheet', href='data/style/multi.css', type='text/css')
+link(rel='stylesheet', href='data/buttons/buttons.css', type='text/css')
+
+script(src='data/scripts/jquery-2.1.0.min.js')
+script(src='/socket.io/socket.io.js')
+script#scroll.
+	$(window).scroll(function() {
+		(window.scrollY > 0) ? $('header').addClass('fixed') : $('header').removeClass('fixed');
+	})

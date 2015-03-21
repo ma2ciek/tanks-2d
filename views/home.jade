@@ -1,0 +1,25 @@
+doctype
+html(lang='pl')
+	head
+		title Tanks 2D
+		include ./includes/meta.jade
+
+		meta(name='viewport' content='width=device-width, initial-scale=0.8, maximum-scale=0.8, minimum-scale=0.8')
+		meta(name="google-site-verification", content="Mq6-MEW-pga1FY9iN-dWloNFt5MGkOYlLXshVHmQTJU")
+		
+		link(rel='stylesheet', href='sites/home/style.css', type='text/css')
+		script(src='sites/home/index.js')
+		script(src='data/scripts/google-analytics.js')
+	body
+		header
+			include ./includes/menu.jade
+			h1 Tanks 2D 
+				span.small.blue v 1.0
+		div#main
+			form(action="javascript:play()")
+				div#play Zaloguj się do gry jako:
+					input.nick(placeholder="Twój nick", pattern="[0-9A-Za-z]{4,15}", required="required")
+					button#play_game.big.positive(type='submit') Graj
+			h2 Changelog:
+			div.changes
+		include ./includes/footer.jade

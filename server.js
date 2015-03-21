@@ -9,7 +9,7 @@ var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
 app.set('view engine', 'jade');
-app.set('views', __dirname + '/views');
+app.set('views', __dirname+'/views');
 app.set('view options', {
 	layout: false
 });
@@ -26,6 +26,7 @@ app.get('/beta', routes.beta);
 app.get('/play', routes.play)
 app.get('/settings', routes.settings);
 app.get('/tutorial', routes.tutorial);
+app.get('/real-tanks', routes.realTanks);
 
 var port = process.env.PORT || 8080;
 http.listen(port);

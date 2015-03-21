@@ -1,0 +1,35 @@
+div#main {
+	width: 700px;
+	margin-left: auto;
+	margin-right: auto;
+}
+#main .faq {
+	background: #555;
+	padding: 20px;
+	border-radius: 10px;
+	border: 1px solid #CCC;
+}
+h3 {
+	padding-bottom: 3px;
+	font-weight: normal;
+	font-size: 20px;
+	border-left: 30px solid #09f;
+	border-top: 20px solid transparent;
+	border-bottom: 20px solid transparent;
+	padding-left: 30px;
+	line-height: 0px;
+}
+h3:first-child {
+	margin-top: 0;
+}
+.faq a {
+	color: #f90;
+	text-decoration: none;
+}
+
+#main ul {
+	padding-left: 20px;
+}
+#main li {
+	list-style: decimal;
+}

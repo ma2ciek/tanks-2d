@@ -1,0 +1,23 @@
+nav
+	ul
+		li
+			a(href='/') Strona Główna
+		li
+			a(href='/settings') Ustawienia
+		li 
+			a(href='/tutorial') Tutorial & FAQ
+		li
+			a(href='/beta') Beta
+		li
+			a(href="#") Play
+script.
+	$('nav li:last a').click(function() {
+		if(location.pathname == '/') {
+			$('#play_game').trigger('click');
+		} else if (window.localStorage.getItem('nick') != null) {
+			location.href = '/play';
+		} else {
+			location.href = '/';
+		}
+
+	})

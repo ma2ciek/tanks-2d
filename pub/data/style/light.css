@@ -1,0 +1,8 @@
+body {
+	background: #EEE;
+	color: #555;
+}
+header {
+	box-shadow: none;
+	border-bottom: 1px solid #CCC;
+}

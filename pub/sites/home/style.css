@@ -1,0 +1,92 @@
+div#main {
+	text-align: center;
+}
+div#main a {
+	margin: 0 4px;
+}
+div#play {
+	padding: 10px;
+	text-transform: uppercase;
+  	letter-spacing: 2px;
+}
+#main .nick {
+	margin: 0 10px;
+	padding: 5px 10px;
+	width: 100px;
+}
+
+
+
+div.changes {
+	max-width: 500px;
+	margin: 0 auto;
+}
+
+h2 {
+	font-family: Lato;
+	font-weight: 200;
+	margin-bottom: 10px;
+	font-size: 30px;
+}
+
+div.comm {
+	padding: 20px 0;
+	border-bottom: 1px solid #DDD;
+}
+div.comm:last-child {
+  border: 0;
+}
+
+div.commit {
+	display: inline-block;
+	color: gold;
+}
+div.author {
+	display: inline-block;
+	padding-left: 30px;
+	color: gold;
+}
+.date {
+	color: orange;
+	display: inline-block;
+	margin-left: 30px;
+}
+.commit:before {
+	content: "Commit: ";
+	color: white;
+}
+.author:before {
+	content: "Author: ";
+	color: white;
+}
+ul.message {
+	text-align: left;
+	margin: 5px 0 5px 40px;
+	padding-left: 5px;
+}
+li.msg {
+	padding-bottom: 5px;
+}
+
+li.msg:before {
+  content: "\002022";
+  color: #09f;
+  padding-right: 5px;
+}
+
+
+
+
+footer {
+	padding: 10px;
+	margin-top: 20px;
+	text-align: center;
+	background: black;
+	position: relative;
+	box-shadow: 0 0 10px black;
+	color: #AAA;
+}
+footer a {
+	color: #CCC;
+	text-decoration: none;	
+}

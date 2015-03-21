@@ -1,5 +1,5 @@
 exports.index = function(req, res) {
-	res.render('index');
+	res.render('home');
 };
 exports.play = function(req, res) {
 	res.render('game');
@@ -12,4 +12,7 @@ exports.settings = function(req, res) {
 }
 exports.beta = function(req,res) {
 	res.render('beta');
+}
+exports.realTanks = function(req, res) {
+	res.render('real-tanks');
 }

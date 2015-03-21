@@ -3,22 +3,22 @@ var abilities = {
 	nuke: {
 		img: (function() {
 			var img = new Image();
-			img.src = './img/radio_active.png';
+			img.src = './sites/game/img/radio_active.png';
 			return img;
 		})(),
 		audio: (function() {
-			var a = new Audio('audio/explosion.mp3');
+			var a = new Audio('sites/game/audio/explosion.mp3');
 			a.load()
 			return a;
 		})(),
 		animation: {
-			src: './img/explosion.png',
+			src: './sites/game/img/explosion.png',
 			size: 13,
 			speed: 30
 		},
 		mark: (function() {
 			var img = new Image();
-			img.src = './img/mark.png';
+			img.src = './sites/game/img/mark.png';
 			return img;
 		})(),
 		opis: 'Mina wybuchająca po 0.5 sekundy',
@@ -26,11 +26,11 @@ var abilities = {
 	shot: {
 		img: (function() {
 			var img = new Image();
-			img.src = './img/ammo.png';
+			img.src = './sites/game/img/ammo.png';
 			return img;
 		})(),
 		audio: (function() {
-			var a = new Audio('audio/gun_shot.wav');
+			var a = new Audio('sites/game/audio/gun_shot.wav');
 			a.load();
 			return a;
 		})(),
@@ -39,7 +39,7 @@ var abilities = {
 	tar_keg: {
 		img: (function() {
 			var img = new Image();
-			img.src = './img/tar_keg.png';
+			img.src = './sites/game/img/tar_keg.png';
 			return img;
 		})(),
 		opis: 'Beczka ze smołą spowalniająca przeciwnika',
@@ -50,12 +50,12 @@ var resources = {
 	img: {
 		tileset: (function() {
 			var img = new Image();
-			img.src = 'img/tileset_01.png'
+			img.src = 'sites/game/img/tileset_01.png'
 			return img;
 		})(),
 		grass: (function() {
 			var img = new Image();
-			img.src = 'img/grass.png'
+			img.src = 'sites/game/img/grass.png'
 			return img;
 		})()
 	},
@@ -64,18 +64,6 @@ var resources = {
 
 
 /* DEBUGGING */
-
-var logs = {
-	LAG_1: 0,
-	LAG_2: 0,
-	LAG_3: 0,
-	LAG_4: 0,
-	LAG_5: 0,
-	LAG_6: 0,
-	brak_mapy: 0,
-	dziwny_obiekt: 0,
-	missing_packages: 0
-};
 
 var debug = {
 	pl: function() {
@@ -158,6 +146,18 @@ var debug = {
 		end: function() {
 			clearInterval(this.id);
 		}
+	},
+
+	errors: {
+		LAG_1: 0,
+		LAG_2: 0,
+		LAG_3: 0,
+		LAG_4: 0,
+		LAG_5: 0,
+		LAG_6: 0,
+		brak_mapy: 0,
+		dziwny_obiekt: 0,
+		missing_packages: 0
 	}
 }
 
