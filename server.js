@@ -32,5 +32,25 @@ app.get('/real-tanks', routes.realTanks);
 var port = process.env.PORT || 8080;
 http.listen(port);
 
+/* Na przyszłość coś w ten deseń:
+
+	function RoomManager(io) {
+		this._index = 0;
+		this._list = {};
+	}
+
+	// Game -> Room
+	function Room(id) {
+		this._id = 
+		this._players = {}; // <-> [];
+		...
+	}
+
+	Room.prototype.play = function() {
+		
+	}	
+
+*/
+
 var game = new Game(io);
 game.start();

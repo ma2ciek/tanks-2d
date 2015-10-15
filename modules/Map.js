@@ -1,5 +1,5 @@
 // Do zmiany
-
+var myMath = require('./Math.js');
 var map = require('./../maps/map01.json');
 
 map.getId = function(x, y) {
@@ -23,7 +23,27 @@ for (var i = 0; i < map.layers[0].data.length; i++) {
 	map.boxes[i] = {
 		life: 60
 	}
-	if (map.layers[0].data[i] != 0) map.avPlaces.push(i);
+	if (map.layers[0].data[i] != 0) 
+		map.avPlaces.push(i);
+}
+
+map.creatingResources = function() {
+	var chances = [0, 0, 0.4, 0.25, 0.15, 0.1, 0.1];
+	var x = myMath.randInt(0, this.avPlaces.length);
+	if (this.layers[1].data[this.avPlaces[x]] == 0) {
+		var rand = Math.random();
+		for (var i = 0; i < chances.length; i++) {
+			if (rand > chances[i]) 
+				rand -= chances[i];
+			else break;
+		}
+		this.layers[1].data[this.avPlaces[x]] = i;
+	}
+}
+
+map.emit = function(io) {
+	var data = map.layers[1].data;
+	io.emit('map', data.join(''));
 }
 
 module.exports = exports = map;
