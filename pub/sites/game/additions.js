@@ -36,7 +36,7 @@ var abilities = {
 		})(),
 		opis: 'Zwykły strzał z lufy',
 	},
-	tar_keg: {
+	tarKeg: {
 		img: (function() {
 			var img = new Image();
 			img.src = './sites/game/img/tar_keg.png';

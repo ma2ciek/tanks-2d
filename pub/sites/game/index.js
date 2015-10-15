@@ -146,8 +146,8 @@ var game = {
 					player.ab.nuke = m.t[player.id].ab[1]
 					draw++;
 				}
-				if (player.ab.tar_keg != m.t[player.id].ab[2]) {
-					player.ab.tar_keg = m.t[player.id].ab[2];
+				if (player.ab.tarKeg != m.t[player.id].ab[2]) {
+					player.ab.tarKeg = m.t[player.id].ab[2];
 					draw++;
 				}
 				if (draw != 0) board.draw_icons();
@@ -362,7 +362,7 @@ var player = {
 	tr: { // transform
 		shot: 0,
 		nuke: 1,
-		tar_keg: 2
+		tarKeg: 2
 	}
 }
 
