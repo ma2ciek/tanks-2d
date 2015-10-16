@@ -469,7 +469,7 @@ var board = {
 			for (var i = 0; i < map.layers[1].data.length; i++) {
 				var tc = map.layers[1].data[i]; // tile content
 				var tc2 = map.layers[0].data[i]; // background
-				if (tc == 0 && tc2 == 0) {
+				if (tc === 0 && tc2 === 0) {
 					continue;
 				}
 
@@ -480,9 +480,15 @@ var board = {
 
 				var wsp = game.rel(x * 64, y * 64);
 
-				if (wsp.x > -64 && wsp.y > -64 && wsp.x < player.SCREEN_WIDTH + 64 && wsp.y < player.SCREEN_HEIGHT + 64) {
-					if (tc2 && !game.brak_trawy) ctx.drawImage(resources.img.grass, tc2 * 64 - 11 * 64, 0, 64, 64, wsp.x, wsp.y, 64, 64);
-					if (tc) ctx.drawImage(resources.img.tileset, tc * 64 - 64, 0, 64, 64, wsp.x, wsp.y, 64, 64);
+				if (wsp.x <= -64 || wsp.y <= -64 || wsp.x >= player.SCREEN_WIDTH + 64 || wsp.y >= player.SCREEN_HEIGHT + 64) {
+					return;
+					
+				if (tc2 && !game.brak_trawy) 
+					ctx.drawImage(resources.img.grass, tc2 * 64 - 11 * 64, 0, 64, 64, wsp.x, wsp.y, 64, 64);
+				if(wsp.x >= 0 && wsp.y >= 0 && tc >= 1) {
+						ctx.drawImage(resources.img.tileset, tc * 64 - 64, 0, 64, 64, wsp.x, wsp.y, 64, 64);
+					}
+				 
 
 				}
 			}
@@ -514,7 +520,7 @@ var tank = {
 				var max_life = t1.mlf;
 				var wsp = game.rel(x, y);
 
-				if (player.id == i) {
+				if (player.id === i) {
 					ctx.strokeStyle = '#333';
 					ctx.fillStyle = '#333';
 				} else {

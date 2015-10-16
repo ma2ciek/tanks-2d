@@ -1,3 +1,5 @@
+var SpecialObject = require('./SpecialObject');
+
 function SpecialObjectManager() {
 	this._list = {};
 	this._index = 0;
